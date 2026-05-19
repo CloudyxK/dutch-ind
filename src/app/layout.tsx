@@ -1,0 +1,60 @@
+import type { Metadata } from "next";
+import { Toaster } from "react-hot-toast";
+import { SessionProvider } from "next-auth/react";
+import { auth } from "@/lib/auth";
+import "./globals.css";
+
+export const metadata: Metadata = {
+  title: {
+    default: "DUTCH.IND — Brand Streetwear Premium Indonesia",
+    template: "%s | DUTCH.IND",
+  },
+  description:
+    "Temukan koleksi streetwear premium Indonesia. Hoodie, kaos, celana, dan aksesori eksklusif untuk gaya urban modern kamu.",
+  keywords: ["streetwear", "fashion", "indonesia", "hoodie", "kaos", "urban"],
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "DUTCH.IND",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+};
+
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await auth();
+
+  return (
+    <html lang="id" className="dark">
+      <body className="font-sans antialiased">
+        <SessionProvider session={session}>
+          {children}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "#171717",
+                color: "#F5F5F5",
+                border: "1px solid #262626",
+                borderRadius: "0",
+                fontSize: "14px",
+              },
+              success: {
+                iconTheme: { primary: "#F5F5F5", secondary: "#0A0A0A" },
+              },
+              error: {
+                iconTheme: { primary: "#ef4444", secondary: "#F5F5F5" },
+              },
+            }}
+          />
+        </SessionProvider>
+      </body>
+    </html>
+  );
+}
