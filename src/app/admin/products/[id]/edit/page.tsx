@@ -24,8 +24,21 @@ export default async function EditProductPage({ params }: Props) {
   if (!product) notFound();
 
   const initialData = {
-    ...product,
-    images: product.images,
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    description: product.description,
+    price: product.price,
+    comparePrice: product.comparePrice,
+    sku: product.sku ?? "",
+    categoryId: product.categoryId,
+    weight: product.weight,
+    isActive: product.isActive,
+    isFeatured: product.isFeatured,
+    isNewArrival: product.isNewArrival,
+    isBestSeller: product.isBestSeller,
+    tags: product.tags,
+    images: product.images.map((img) => ({ url: img.url })),
     variants: product.variants.map((v) => ({ size: v.size, stock: v.stock })),
   };
 
