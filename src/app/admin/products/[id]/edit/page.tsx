@@ -40,7 +40,7 @@ export default async function EditProductPage({ params }: Props) {
     isFeatured: product.isFeatured,
     isNewArrival: product.isNewArrival,
     isBestSeller: product.isBestSeller,
-    tags: product.tags,
+    tags: (() => { try { return JSON.parse(product.tags || "[]"); } catch { return []; } })(),
     images: product.images.map((img) => ({ url: img.url })),
     variants: product.variants.map((v) => ({ size: v.size, stock: v.stock })),
   };

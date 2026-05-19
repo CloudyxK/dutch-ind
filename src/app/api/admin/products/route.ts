@@ -29,7 +29,9 @@ export async function POST(request: NextRequest) {
         data: {
           name, slug, description, price, comparePrice, sku,
           categoryId, weight, isActive, isFeatured, isNewArrival,
-          isBestSeller, tags, totalStock,
+          isBestSeller,
+          tags: Array.isArray(tags) ? JSON.stringify(tags) : (tags ?? "[]"),
+          totalStock,
           images: {
             create: images.map((url: string, i: number) => ({
               url, alt: name, isPrimary: i === 0, sortOrder: i,

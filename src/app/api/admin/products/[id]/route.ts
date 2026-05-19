@@ -13,7 +13,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     const { id } = await params;
     const body = await request.json();
-    const { images, variants, ...data } = body;
+    const { images, variants, tags, ...rest } = body;
+    const data = {
+      ...rest,
+      tags: Array.isArray(tags) ? JSON.stringify(tags) : (tags ?? "[]"),
+    };
 
     const totalStock = variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) ?? undefined;
 
