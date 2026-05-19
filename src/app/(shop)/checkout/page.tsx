@@ -9,7 +9,20 @@ import Script from "next/script";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Tag, Loader2, ShieldCheck } from "lucide-react";
+import { Tag, Loader2, MapPin, ChevronDown, Check, X } from "lucide-react";
+
+type SavedAddress = {
+  id: string;
+  label: string;
+  recipientName: string;
+  phone: string;
+  province: string;
+  city: string;
+  district: string;
+  postalCode: string;
+  street: string;
+  isDefault: boolean;
+};
 
 export default function CheckoutPage() {
   const { data: session } = useSession();
@@ -27,6 +40,10 @@ export default function CheckoutPage() {
     notes: "",
     shippingMethod: "reguler",
   });
+
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [showAddressPicker, setShowAddressPicker] = useState(false);
 
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
@@ -47,8 +64,19 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!session) {
       router.push("/login?callbackUrl=/checkout");
+      return;
     }
-  }, [session, router]);
+    fetch("/api/addresses")
+      .then((r) => r.json())
+      .then(({ data }) => {
+        if (!data?.length) return;
+        setSavedAddresses(data);
+        const def = data.find((a: SavedAddress) => a.isDefault) ?? data[0];
+        applyAddress(def);
+        setSelectedAddressId(def.id);
+      });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
 
   useEffect(() => {
     if (items.length === 0 && !orderPlaced.current) {
@@ -56,9 +84,43 @@ export default function CheckoutPage() {
     }
   }, [items, router]);
 
+  function applyAddress(addr: SavedAddress) {
+    setForm((prev) => ({
+      ...prev,
+      recipientName: addr.recipientName,
+      phone: addr.phone,
+      province: addr.province,
+      city: addr.city,
+      district: addr.district,
+      postalCode: addr.postalCode,
+      street: addr.street,
+    }));
+  }
+
+  function selectSavedAddress(addr: SavedAddress) {
+    setSelectedAddressId(addr.id);
+    applyAddress(addr);
+    setShowAddressPicker(false);
+  }
+
+  function clearSavedAddress() {
+    setSelectedAddressId(null);
+    setForm((prev) => ({
+      ...prev,
+      recipientName: "",
+      phone: "",
+      province: "",
+      city: "",
+      district: "",
+      postalCode: "",
+      street: "",
+    }));
+  }
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
+    if (selectedAddressId) setSelectedAddressId(null);
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
@@ -164,6 +226,84 @@ export default function CheckoutPage() {
                   <h2 className="text-sm font-bold uppercase tracking-widest mb-5">
                     Alamat Pengiriman
                   </h2>
+
+                  {/* Saved address picker */}
+                  {savedAddresses.length > 0 && (
+                    <div className="mb-5">
+                      <div className="relative">
+                        <div className="flex items-stretch border border-brand-gray-600 hover:border-white transition-colors">
+                          <button
+                            type="button"
+                            onClick={() => setShowAddressPicker((v) => !v)}
+                            className="flex-1 flex items-center gap-3 px-4 py-3 text-left"
+                          >
+                            <MapPin className="w-4 h-4 flex-shrink-0 text-brand-gray-400" />
+                            {selectedAddressId ? (
+                              <span className="text-sm truncate">
+                                {savedAddresses.find((a) => a.id === selectedAddressId)?.recipientName}
+                                {" — "}
+                                {savedAddresses.find((a) => a.id === selectedAddressId)?.city}
+                                <span className="ml-2 text-xs text-brand-gray-400">
+                                  [{savedAddresses.find((a) => a.id === selectedAddressId)?.label}]
+                                </span>
+                              </span>
+                            ) : (
+                              <span className="text-sm text-brand-gray-400">Pilih dari alamat tersimpan</span>
+                            )}
+                          </button>
+                          {selectedAddressId ? (
+                            <button
+                              type="button"
+                              onClick={clearSavedAddress}
+                              title="Hapus pilihan"
+                              className="px-3 text-brand-gray-500 hover:text-white transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowAddressPicker((v) => !v)}
+                              className="px-3 text-brand-gray-500"
+                            >
+                              <ChevronDown className={`w-4 h-4 transition-transform ${showAddressPicker ? "rotate-180" : ""}`} />
+                            </button>
+                          )}
+                        </div>
+
+                        {showAddressPicker && (
+                          <div className="absolute z-20 top-full left-0 right-0 bg-brand-gray-900 border border-brand-gray-600 border-t-0 max-h-64 overflow-y-auto">
+                            {savedAddresses.map((addr) => (
+                              <button
+                                key={addr.id}
+                                type="button"
+                                onClick={() => selectSavedAddress(addr)}
+                                className="w-full flex items-start gap-3 px-4 py-3 hover:bg-brand-gray-800 transition-colors text-left border-b border-brand-gray-800 last:border-b-0"
+                              >
+                                <Check className={`w-4 h-4 mt-0.5 flex-shrink-0 ${selectedAddressId === addr.id ? "text-white" : "text-transparent"}`} />
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <span className="text-xs font-bold uppercase tracking-wider text-brand-gray-400">{addr.label}</span>
+                                    {addr.isDefault && <span className="text-xs text-white font-bold">• Utama</span>}
+                                  </div>
+                                  <p className="text-sm font-semibold">{addr.recipientName} — {addr.phone}</p>
+                                  <p className="text-xs text-brand-gray-400 truncate">{addr.street}, {addr.district}, {addr.city}</p>
+                                </div>
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={clearSavedAddress}
+                              className="w-full px-4 py-3 text-xs text-brand-gray-400 hover:text-white hover:bg-brand-gray-800 transition-colors text-left"
+                            >
+                              + Isi alamat baru secara manual
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="input-label">Nama Penerima</label>
