@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -6,37 +6,32 @@ const protectedRoutes = ["/profile", "/checkout", "/order-success", "/wishlist"]
 const adminRoutes = ["/admin"];
 const authRoutes = ["/login", "/register"];
 
-export default auth((req) => {
-  const { nextUrl, auth: session } = req as any;
-  const pathname = nextUrl.pathname;
+export async function middleware(req: NextRequest) {
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  const pathname = req.nextUrl.pathname;
 
-  // Redirect authenticated users away from auth pages
-  if (authRoutes.some((r) => pathname.startsWith(r)) && session) {
-    return NextResponse.redirect(new URL("/", nextUrl));
+  if (authRoutes.some((r) => pathname.startsWith(r)) && token) {
+    return NextResponse.redirect(new URL("/", req.nextUrl));
   }
 
-  // Redirect unauthenticated users from protected routes
-  if (protectedRoutes.some((r) => pathname.startsWith(r)) && !session) {
+  if (protectedRoutes.some((r) => pathname.startsWith(r)) && !token) {
     return NextResponse.redirect(
-      new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, nextUrl)
+      new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, req.nextUrl)
     );
   }
 
-  // Admin-only routes
   if (adminRoutes.some((r) => pathname.startsWith(r))) {
-    if (!session) {
-      return NextResponse.redirect(new URL("/login", nextUrl));
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
     }
-    if ((session.user as any).role !== "ADMIN") {
-      return NextResponse.redirect(new URL("/", nextUrl));
+    if ((token as any).role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/", req.nextUrl));
     }
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
-  matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|images).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|images).*)"],
 };
