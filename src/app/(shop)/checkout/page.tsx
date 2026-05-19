@@ -160,6 +160,7 @@ export default function CheckoutPage() {
             quantity: item.quantity,
             price: item.product.price,
           })),
+          addressId: selectedAddressId ?? undefined,
           address: form,
           couponCode: couponData ? couponCode : undefined,
           shippingMethod: form.shippingMethod,

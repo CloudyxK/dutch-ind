@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { items, address, couponCode, shippingMethod, shippingCost, notes } = body;
+    const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
@@ -76,20 +76,18 @@ export async function POST(request: NextRequest) {
 
     const total = subtotal + (shippingCost || 0) - discountAmount;
 
-    // Buat atau cari alamat
-    const savedAddress = await prisma.address.create({
-      data: {
-        userId: session.user.id,
-        label: "Checkout",
-        recipientName: address.recipientName,
-        phone: address.phone,
-        province: address.province,
-        city: address.city,
-        district: address.district,
-        postalCode: address.postalCode,
-        street: address.street,
-      },
-    });
+    // Use existing saved address or create a new one
+    let savedAddress;
+    if (existingAddressId) {
+      const found = await prisma.address.findFirst({ where: { id: existingAddressId, userId: session.user.id } });
+      savedAddress = found ?? await prisma.address.create({
+        data: { userId: session.user.id, label: "Checkout", recipientName: address.recipientName, phone: address.phone, province: address.province, city: address.city, district: address.district, postalCode: address.postalCode, street: address.street },
+      });
+    } else {
+      savedAddress = await prisma.address.create({
+        data: { userId: session.user.id, label: "Checkout", recipientName: address.recipientName, phone: address.phone, province: address.province, city: address.city, district: address.district, postalCode: address.postalCode, street: address.street },
+      });
+    }
 
     // Buat order dalam transaksi
     const order = await prisma.$transaction(async (tx) => {

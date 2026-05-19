@@ -103,7 +103,7 @@ export default function OrdersPage() {
               {orders.map((order) => (
                 <div key={order.id} className="bg-brand-gray-900 border border-brand-gray-700">
                   {/* Header */}
-                  <div className="flex items-start justify-between p-4 border-b border-brand-gray-700">
+                  <Link href={`/profile/orders/${order.id}`} className="flex items-start justify-between p-4 border-b border-brand-gray-700 hover:bg-brand-gray-800/50 transition-colors">
                     <div>
                       <p className="font-mono font-bold text-sm">#{order.orderNumber}</p>
                       <p className="text-xs text-brand-gray-500 mt-0.5">
@@ -116,7 +116,7 @@ export default function OrdersPage() {
                       </span>
                       <p className="text-sm font-bold mt-1">{formatPrice(order.total)}</p>
                     </div>
-                  </div>
+                  </Link>
 
                   {/* Items preview */}
                   <div className="p-4 flex gap-3 flex-wrap">

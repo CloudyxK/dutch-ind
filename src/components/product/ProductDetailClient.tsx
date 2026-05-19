@@ -5,8 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShoppingBag, Heart, Star, Share2, ChevronDown, Minus, Plus } from "lucide-react";
 import { useCartStore, useWishlistStore } from "@/store/useCartStore";
+import { useSession } from "next-auth/react";
 import { formatPrice, calculateDiscount, formatDate } from "@/lib/utils";
 import ProductCard from "./ProductCard";
+import ReviewForm from "./ReviewForm";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -18,10 +20,23 @@ interface Props {
 export default function ProductDetailClient({ product, related }: Props) {
   const { addItem } = useCartStore();
   const { toggleWishlist, isWishlisted } = useWishlistStore();
+  const { data: session } = useSession();
   const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [activeImage, setActiveImage] = useState(0);
   const [expandedSection, setExpandedSection] = useState<string | null>("deskripsi");
+  const [reviews, setReviews] = useState<any[]>(product.reviews || []);
+  const [avgRating, setAvgRating] = useState(product.averageRating);
+
+  const userReview = session?.user
+    ? reviews.find((r) => r.user?.id === (session.user as any).id) ?? null
+    : null;
+
+  function handleReviewAdded(review: any) {
+    setReviews((prev) => [review, ...prev]);
+    const newAvg = [...reviews, review].reduce((s, r) => s + r.rating, 0) / (reviews.length + 1);
+    setAvgRating(newAvg);
+  }
 
   const wishlisted = isWishlisted(product.id);
   const discount = product.comparePrice
@@ -130,7 +145,7 @@ export default function ProductDetailClient({ product, related }: Props) {
             </h1>
 
             {/* Rating */}
-            {product.averageRating > 0 && (
+            {avgRating > 0 && (
               <div className="flex items-center gap-2 mt-3">
                 <div className="flex">
                   {[1, 2, 3, 4, 5].map((star) => (
@@ -138,7 +153,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                       key={star}
                       className={cn(
                         "w-4 h-4",
-                        star <= Math.round(product.averageRating)
+                        star <= Math.round(avgRating)
                           ? "fill-white text-white"
                           : "text-brand-gray-600"
                       )}
@@ -146,7 +161,7 @@ export default function ProductDetailClient({ product, related }: Props) {
                   ))}
                 </div>
                 <span className="text-xs text-brand-gray-400">
-                  {product.averageRating.toFixed(1)} ({product.reviews?.length} ulasan)
+                  {avgRating.toFixed(1)} ({reviews.length} ulasan)
                 </span>
               </div>
             )}
@@ -299,11 +314,19 @@ export default function ProductDetailClient({ product, related }: Props) {
         </div>
 
         {/* Reviews */}
-        {product.reviews && product.reviews.length > 0 && (
-          <div className="mt-16 border-t border-brand-gray-800 pt-12">
-            <h2 className="section-title mb-8">Ulasan Pembeli</h2>
+        <div className="mt-16 border-t border-brand-gray-800 pt-12">
+          <h2 className="section-title mb-8">
+            Ulasan Pembeli
+            {reviews.length > 0 && (
+              <span className="ml-3 text-sm font-sans font-normal text-brand-gray-500 normal-case tracking-normal">
+                ({reviews.length} ulasan)
+              </span>
+            )}
+          </h2>
+
+          {reviews.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {product.reviews.map((review) => (
+              {reviews.map((review) => (
                 <div key={review.id} className="bg-brand-gray-900 p-5">
                   <div className="flex items-start justify-between">
                     <div>
@@ -337,8 +360,33 @@ export default function ProductDetailClient({ product, related }: Props) {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <p className="text-brand-gray-500 text-sm">Belum ada ulasan untuk produk ini.</p>
+          )}
+
+          {/* Review form for logged-in users */}
+          {session?.user && !userReview && (
+            <ReviewForm
+              productSlug={product.slug}
+              userId={(session.user as any).id}
+              existingReview={null}
+              onReviewAdded={handleReviewAdded}
+            />
+          )}
+          {session?.user && userReview && (
+            <ReviewForm
+              productSlug={product.slug}
+              userId={(session.user as any).id}
+              existingReview={userReview}
+              onReviewAdded={handleReviewAdded}
+            />
+          )}
+          {!session && (
+            <p className="text-xs text-brand-gray-500 mt-6">
+              <Link href="/login" className="underline hover:text-white">Login</Link> untuk memberi ulasan.
+            </p>
+          )}
+        </div>
 
         {/* Related products */}
         {related.length > 0 && (
