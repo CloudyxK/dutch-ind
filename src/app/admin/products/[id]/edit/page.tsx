@@ -7,7 +7,7 @@ type Props = { params: Promise<{ id: string }> };
 export default async function EditProductPage({ params }: Props) {
   const { id } = await params;
 
-  const [product, categories] = await Promise.all([
+  const [product, rawCategories] = await Promise.all([
     prisma.product.findUnique({
       where: { id },
       include: {
@@ -18,8 +18,11 @@ export default async function EditProductPage({ params }: Props) {
     prisma.category.findMany({
       where: { isActive: true },
       orderBy: { sortOrder: "asc" },
+      select: { id: true, name: true },
     }),
   ]);
+
+  const categories = rawCategories;
 
   if (!product) notFound();
 
