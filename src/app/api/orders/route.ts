@@ -2,20 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
+import { orderLimiter, getIp } from "@/lib/rateLimit";
+import { parseJsonSafe, verifySameOrigin, rateLimitResponse, sanitize } from "@/lib/security";
 
 export async function POST(request: NextRequest) {
   try {
+    if (!verifySameOrigin(request)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Tidak terautentikasi" }, { status: 401 });
     }
 
-    const body = await request.json();
+    // Rate limit: 10 orders per minute per user
+    const rl = orderLimiter(`order:${session.user.id}`);
+    if (!rl.success) return rateLimitResponse(rl.retryAfter);
+
+    // Max 50 KB body
+    const parsed = await parseJsonSafe(request, 50_000);
+    if (!parsed.ok) return parsed.response;
+
+    const body = parsed.data;
     const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes } = body;
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
     }
+
+    // Hard cap on items per order to prevent abuse
+    if (items.length > 50) {
+      return NextResponse.json({ error: "Terlalu banyak item" }, { status: 400 });
+    }
+
+    // Sanitize notes
+    const cleanNotes = notes ? sanitize(String(notes)).slice(0, 500) : undefined;
 
     // Validasi stok dan hitung subtotal
     let subtotal = 0;
@@ -101,7 +123,7 @@ export async function POST(request: NextRequest) {
           discountAmount,
           shippingCost: shippingCost || 0,
           total,
-          notes,
+          notes: cleanNotes,
           shippingMethod,
           status: "AWAITING_PAYMENT",
           items: {
