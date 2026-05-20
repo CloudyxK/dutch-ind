@@ -6,28 +6,45 @@ export default function BestSellers({ products }: { products: Product[] }) {
   if (products.length === 0) return null;
 
   return (
-    <section className="py-16 bg-brand-gray-900">
-      <div className="container-main">
-        <div className="flex items-end justify-between mb-8">
+    <section className="relative overflow-hidden py-20" style={{ background: "#0a0a0c" }}>
+      {/* Grain */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.04 }} aria-hidden>
+        <filter id="bs-grain"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+        <rect width="100%" height="100%" filter="url(#bs-grain)"/>
+      </svg>
+
+      <div className="container-main relative z-10">
+        <div className="flex items-end justify-between mb-12">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-brand-gray-500 mb-2">
-              Paling Diminati
-            </p>
-            <h2 className="section-title">Best Sellers</h2>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }}/>
+              <span className="text-[10px] uppercase tracking-[0.45em]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Paling Diminati
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">
+              Best Sellers
+            </h2>
           </div>
-          <Link
-            href="/products?isBestSeller=true"
-            className="text-xs uppercase tracking-widest text-brand-gray-400 hover:text-white transition-colors hidden sm:block"
-          >
+          <Link href="/products?isBestSeller=true"
+                className="hidden sm:block text-[10px] uppercase tracking-[0.3em] transition-colors hover:text-white"
+                style={{ color: "rgba(255,255,255,0.35)" }}>
             Lihat Semua →
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {products.map((product, index) => (
-            <div key={product.id} className="relative">
-              <div className="absolute -top-3 -left-1 z-10 w-8 h-8 bg-white text-black flex items-center justify-center text-xs font-bold">
-                #{index + 1}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {products.map((product, i) => (
+            <div key={product.id} className="relative group">
+              {/* Rank badge — cinematic number */}
+              <div className="absolute -top-2 -left-2 z-10 w-7 h-7 flex items-center justify-center
+                              text-[10px] font-mono font-bold text-white transition-all duration-300
+                              group-hover:scale-110"
+                   style={{
+                     background: "rgba(255,255,255,0.08)",
+                     border: "1px solid rgba(255,255,255,0.15)",
+                   }}>
+                {String(i + 1).padStart(2, "0")}
               </div>
               <ProductCard product={product} />
             </div>

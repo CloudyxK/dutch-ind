@@ -5,6 +5,7 @@ import PromoBanner from "@/components/home/PromoBanner";
 import BestSellers from "@/components/home/BestSellers";
 import NewArrivals from "@/components/home/NewArrivals";
 import BrandFeatures from "@/components/home/BrandFeatures";
+import MarqueeTicker from "@/components/home/MarqueeTicker";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
 
@@ -60,8 +61,10 @@ export default async function HomePage() {
   return (
     <>
       <HeroSection />
+      <MarqueeTicker />
       <CategorySection categories={categories as any} />
       <FeaturedProducts products={featured as any} />
+      <MarqueeTicker />
       <PromoBanner />
       <NewArrivals products={newArrivals as any} />
       <BestSellers products={bestSellers as any} />

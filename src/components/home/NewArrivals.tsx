@@ -6,24 +6,34 @@ export default function NewArrivals({ products }: { products: Product[] }) {
   if (products.length === 0) return null;
 
   return (
-    <section className="py-16 bg-brand-black">
-      <div className="container-main">
-        <div className="flex items-end justify-between mb-8">
+    <section className="relative overflow-hidden py-20" style={{ background: "#080808" }}>
+      {/* Grain */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.04 }} aria-hidden>
+        <filter id="na-grain"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
+        <rect width="100%" height="100%" filter="url(#na-grain)"/>
+      </svg>
+
+      <div className="container-main relative z-10">
+        <div className="flex items-end justify-between mb-12">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] text-brand-gray-500 mb-2">
-              Koleksi Terbaru
-            </p>
-            <h2 className="section-title">New Arrivals</h2>
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }}/>
+              <span className="text-[10px] uppercase tracking-[0.45em]" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Koleksi Terbaru
+              </span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">
+              New Arrivals
+            </h2>
           </div>
-          <Link
-            href="/products?isNewArrival=true"
-            className="text-xs uppercase tracking-widest text-brand-gray-400 hover:text-white transition-colors hidden sm:block"
-          >
+          <Link href="/products?isNewArrival=true"
+                className="hidden sm:block text-[10px] uppercase tracking-[0.3em] transition-colors hover:text-white"
+                style={{ color: "rgba(255,255,255,0.35)" }}>
             Lihat Semua →
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
