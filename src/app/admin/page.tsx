@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { ShoppingCart, Users, Package, TrendingUp, AlertCircle } from "lucide-react";
+import RecentOrdersWidget from "@/components/admin/RecentOrdersWidget";
 
 async function getDashboardStats() {
   const today = new Date();
@@ -30,11 +31,13 @@ async function getDashboardStats() {
       _sum: { amount: true },
     }),
     prisma.order.findMany({
-      take: 5,
+      take: 8,
       orderBy: { createdAt: "desc" },
       include: {
         user: { select: { name: true, email: true } },
-        payment: true,
+        address: true,
+        items: { select: { id: true } },
+        payment: { select: { status: true } },
       },
     }),
     prisma.product.findMany({
@@ -91,16 +94,6 @@ export default async function AdminDashboard() {
     },
   ];
 
-  const statusLabels: Record<string, string> = {
-    PENDING: "Menunggu",
-    AWAITING_PAYMENT: "Menunggu Bayar",
-    PAID: "Dibayar",
-    PROCESSING: "Diproses",
-    SHIPPED: "Dikirim",
-    DELIVERED: "Terkirim",
-    CANCELLED: "Dibatalkan",
-  };
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -130,42 +123,10 @@ export default async function AdminDashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Recent orders */}
-        <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-sm font-bold uppercase tracking-widest">Pesanan Terbaru</h2>
-            <a href="/admin/orders" className="text-xs text-brand-gray-400 hover:text-white">
-              Lihat Semua →
-            </a>
-          </div>
-          <div className="space-y-3">
-            {stats.recentOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between py-2 border-b border-brand-gray-800 last:border-0"
-              >
-                <div>
-                  <p className="text-sm font-mono font-bold">#{order.orderNumber}</p>
-                  <p className="text-xs text-brand-gray-500">{order.user.name}</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-bold">{formatPrice(order.total)}</p>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 font-bold uppercase ${
-                      order.status === "DELIVERED"
-                        ? "text-green-400"
-                        : order.status === "CANCELLED"
-                        ? "text-red-400"
-                        : "text-yellow-400"
-                    }`}
-                  >
-                    {statusLabels[order.status]}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <div className="xl:col-span-2">
+          <RecentOrdersWidget orders={stats.recentOrders as any} />
         </div>
 
         {/* Low stock warning */}
