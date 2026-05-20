@@ -138,7 +138,7 @@ export default function HeroSection() {
                transitionDelay: "700ms",
                color: "rgba(255,255,255,0.38)",
              }}>
-            Streetwear premium Indonesia — desain eksklusif untuk mereka yang berani tampil beda.
+            Seller brand lokal streetwear #1 termurah di Samarinda — kualitas premium, harga terjangkau.
           </p>
 
           {/* CTAs */}
