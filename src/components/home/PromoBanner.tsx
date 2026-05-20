@@ -5,19 +5,29 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function PromoBanner() {
-  const [timeLeft, setTimeLeft] = useState({ jam: 23, menit: 59, detik: 59 });
+  const [timeLeft, setTimeLeft] = useState({ jam: 0, menit: 0, detik: 0 });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const id = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.detik > 0) return { ...prev, detik: prev.detik - 1 };
-        if (prev.menit > 0) return { ...prev, menit: prev.menit - 1, detik: 59 };
-        if (prev.jam > 0)   return { jam: prev.jam - 1, menit: 59, detik: 59 };
-        return prev;
-      });
-    }, 1000);
+
+    const calcTimeLeft = () => {
+      // Target: tengah malam (00:00:00) hari berikutnya — real-time, tidak reset
+      const now    = new Date();
+      const target = new Date();
+      target.setHours(24, 0, 0, 0); // besok 00:00:00
+      const diff = Math.max(0, target.getTime() - now.getTime());
+
+      const totalSec = Math.floor(diff / 1000);
+      return {
+        jam:   Math.floor(totalSec / 3600),
+        menit: Math.floor((totalSec % 3600) / 60),
+        detik: totalSec % 60,
+      };
+    };
+
+    setTimeLeft(calcTimeLeft());
+    const id = setInterval(() => setTimeLeft(calcTimeLeft()), 1000);
     return () => clearInterval(id);
   }, []);
 
