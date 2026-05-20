@@ -166,7 +166,7 @@ export default function HeroSection() {
             {[
               { n: "100+", label: "Produk" },
               { n: "100%", label: "Original" },
-              { n: "Free", label: "Retur" },
+              { n: "Free", label: "Ongkir" },
             ].map(({ n, label }) => (
               <div key={label} className="flex items-center gap-2.5">
                 <span className="text-xs font-bold text-white">{n}</span>
