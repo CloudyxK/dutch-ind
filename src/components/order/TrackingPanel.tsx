@@ -66,6 +66,7 @@ export default function TrackingPanel({
   const isDelivered  = orderStatus === "DELIVERED" || orderStatus === "COMPLETED";
   const showFlight   = isInTransit || isDelivered;
   const hasMap       = !!(originCoords && destCoords);
+  const hasResi      = !!trackingNumber;
 
   const lastEvent = tracking?.history?.[0]?.desc ?? tracking?.summary ?? null;
 
@@ -106,7 +107,7 @@ export default function TrackingPanel({
       )}
 
       {/* ── Satellite map toggle ── */}
-      {hasMap && isInTransit && (
+      {hasMap && isInTransit && hasResi && (
         <button
           onClick={() => setShowMap((v) => !v)}
           className="w-full flex items-center justify-center gap-2 py-2.5 text-[10px] text-brand-gray-500 hover:text-white transition-colors uppercase tracking-widest"
@@ -120,7 +121,7 @@ export default function TrackingPanel({
       )}
 
       {/* ── Leaflet map ── */}
-      {hasMap && showMap && isInTransit && (
+      {hasMap && showMap && isInTransit && hasResi && (
         <ShippingMap
           originCoords={originCoords!}
           destCoords={destCoords!}
@@ -129,7 +130,22 @@ export default function TrackingPanel({
         />
       )}
 
+      {/* ── No resi yet message ── */}
+      {!hasResi && (
+        <div className="bg-brand-gray-900 p-5 flex items-center gap-3"
+             style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="w-1.5 h-8 bg-brand-gray-700 rounded-full flex-shrink-0"/>
+          <div>
+            <p className="text-xs font-semibold text-brand-gray-300">Nomor resi belum diinput</p>
+            <p className="text-[10px] text-brand-gray-600 mt-0.5">
+              Penjual sedang memproses pengirimanmu — nomor resi akan muncul di sini setelah paket diserahkan ke kurir.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* ── Tracking detail panel ── */}
+      {hasResi && (
       <div className="bg-brand-gray-900 p-5" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         {/* Header row */}
         <div className="flex items-center justify-between mb-4">
@@ -245,6 +261,7 @@ export default function TrackingPanel({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

@@ -61,9 +61,14 @@ export default async function OrderDetailPage({ params }: Props) {
   let destCoords:        [number, number] | null = null;
   let originCity = "Jakarta";
 
-  if (order.trackingNumber) {
+  const showTracking = !!(order.trackingNumber) ||
+    ["SHIPPED", "DELIVERED", "COMPLETED"].includes(order.status);
+
+  if (showTracking) {
     const [cached, latSetting, lngSetting, citySettingRow, destGeo] = await Promise.all([
-      prisma.setting.findUnique({ where: { key: `tracking:${id}` } }),
+      order.trackingNumber
+        ? prisma.setting.findUnique({ where: { key: `tracking:${id}` } })
+        : null,
       prisma.setting.findUnique({ where: { key: "store.lat" } }),
       prisma.setting.findUnique({ where: { key: "store.lng" } }),
       prisma.setting.findUnique({ where: { key: "store.address" } }),
@@ -233,11 +238,11 @@ export default async function OrderDetailPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Tracking panel */}
-          {order.trackingNumber && (
+          {/* Tracking panel — shows whenever SHIPPED/DELIVERED, resi optional */}
+          {showTracking && (
             <TrackingPanel
               orderId={order.id}
-              trackingNumber={order.trackingNumber}
+              trackingNumber={order.trackingNumber ?? ""}
               trackingCarrier={order.trackingCarrier}
               orderStatus={order.status}
               initialTracking={cachedTracking}
