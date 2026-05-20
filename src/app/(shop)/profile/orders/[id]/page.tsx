@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import { formatPrice, formatDate, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
 import { ChevronLeft, MapPin, CreditCard, Package } from "lucide-react";
 import TrackingPanel from "@/components/order/TrackingPanel";
+import OrderReviewSection from "@/components/order/OrderReviewSection";
 
 const STATUS_STEPS = [
   { key: "AWAITING_PAYMENT", label: "Menunggu Bayar" },
@@ -88,6 +89,19 @@ export default async function OrderDetailPage({ params }: Props) {
 
     destCoords = destGeo;
     if (citySettingRow?.value) originCity = citySettingRow.value;
+  }
+
+  /* ── Reviews (only for COMPLETED / DELIVERED) ── */
+  const canReview = order.status === "COMPLETED" || order.status === "DELIVERED";
+  let reviewMap: Record<string, { id: string; rating: number; comment: string | null }> = {};
+
+  if (canReview) {
+    const productIds = [...new Set(order.items.map((i) => i.productId))];
+    const reviews = await prisma.review.findMany({
+      where: { userId: session.user.id, productId: { in: productIds } },
+      select: { id: true, productId: true, rating: true, comment: true },
+    });
+    reviews.forEach((r) => { reviewMap[r.productId] = r; });
   }
 
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
@@ -251,6 +265,20 @@ export default async function OrderDetailPage({ params }: Props) {
               destCity={order.address.city}
               originCoords={originCoords}
               destCoords={destCoords}
+            />
+          )}
+
+          {/* Review section — COMPLETED or DELIVERED */}
+          {canReview && (
+            <OrderReviewSection
+              items={order.items.map((item) => ({
+                productId:     item.productId,
+                productSlug:   item.product.slug,
+                productName:   item.product.name,
+                productImage:  item.product.images[0]?.url ?? null,
+                variantSize:   item.variant.size,
+                existingReview: reviewMap[item.productId] ?? null,
+              }))}
             />
           )}
 
