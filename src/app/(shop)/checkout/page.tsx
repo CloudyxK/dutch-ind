@@ -80,6 +80,11 @@ export default function CheckoutPage() {
     sameday: samedayCost,
   };
   const shippingCost = shippingCosts[form.shippingMethod] ?? 0;
+
+  // Same Day hanya tersedia di Samarinda
+  const cityFilled     = form.city.trim().length > 0;
+  const isSamarinda    = form.city.trim().toLowerCase().includes("samarinda");
+  const samedayBlocked = cityFilled && !isSamarinda;
   const discountAmount = couponData?.discountAmount || 0;
   const total = subtotal + shippingCost - discountAmount;
 
@@ -106,6 +111,14 @@ export default function CheckoutPage() {
     }
   }, [items, router]);
 
+  // Auto-switch away from sameday if city is not Samarinda
+  useEffect(() => {
+    if (samedayBlocked && form.shippingMethod === "sameday") {
+      setForm((prev) => ({ ...prev, shippingMethod: "reguler", shippingCarrier: "JNE REG" }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [samedayBlocked]);
+
   // Auto-estimate shipping when address fields change
   useEffect(() => {
     if (!form.city && !form.province) return;
@@ -121,8 +134,11 @@ export default function CheckoutPage() {
         if (!res.ok) return;
         const json = await res.json();
         setShippingEst(json.data);
-        // If sameday is out of range and current selection is sameday, switch to reguler
-        if (json.data?.outOfRange && form.shippingMethod === "sameday") {
+        // If sameday is unavailable and currently selected, switch back to reguler
+        const outOfRange  = json.data?.outOfRange;
+        const notSamarinda = form.city.trim().length > 0 &&
+                             !form.city.trim().toLowerCase().includes("samarinda");
+        if ((outOfRange || notSamarinda) && form.shippingMethod === "sameday") {
           setForm((prev) => ({ ...prev, shippingMethod: "reguler", shippingCarrier: "JNE REG" }));
         }
       } finally {
@@ -480,7 +496,7 @@ export default function CheckoutPage() {
                       {
                         value: "sameday",
                         label: "Same Day",
-                        desc: "Hari ini — khusus Jabodetabek",
+                        desc: "Hari ini — khusus Kota Samarinda",
                         price: shippingCosts.sameday,
                         carriers: [
                           { id: "GoSend (Gojek)", name: "GoSend", logo: "🟢" },
@@ -490,7 +506,9 @@ export default function CheckoutPage() {
                       },
                     ] as const).map((method) => {
                       const isSelected = form.shippingMethod === method.value;
-                      const isSamedayOutOfRange = method.value === "sameday" && shippingEst?.outOfRange;
+                      const isSamedayOutOfRange =
+                        method.value === "sameday" &&
+                        (samedayBlocked || !!shippingEst?.outOfRange);
                       return (
                         <div key={method.value} className={`border transition-colors ${isSamedayOutOfRange ? "border-brand-gray-800 opacity-50" : isSelected ? "border-white" : "border-brand-gray-700"}`}>
                           {/* Tier row */}
@@ -511,7 +529,9 @@ export default function CheckoutPage() {
                               <div>
                                 <p className="text-sm font-semibold">{method.label}</p>
                                 <p className="text-xs text-brand-gray-400">
-                                  {isSamedayOutOfRange ? "Di luar jangkauan pengiriman hari ini" : method.desc}
+                                  {isSamedayOutOfRange
+                                  ? (samedayBlocked ? "Hanya tersedia di Kota Samarinda" : "Di luar jangkauan pengiriman hari ini")
+                                  : method.desc}
                                 </p>
                               </div>
                             </div>
