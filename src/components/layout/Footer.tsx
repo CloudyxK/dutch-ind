@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Instagram, Twitter, Youtube } from "lucide-react";
+import { Instagram } from "lucide-react";
 
 const WA_NUMBER = "6285217733737";
 const WA_HREF = `https://wa.me/${WA_NUMBER}`;
@@ -14,11 +14,11 @@ const footerLinks = {
     { href: "/products?category=aksesori", label: "Aksesori" },
   ],
   bantuan: [
-    { href: "/faq", label: "FAQ" },
-    { href: "/shipping", label: "Informasi Pengiriman" },
-    { href: "/returns", label: "Pengembalian Barang" },
-    { href: "/size-guide", label: "Panduan Ukuran" },
-    { href: "/contact", label: "Hubungi Kami" },
+    { href: IG_HREF, label: "FAQ" },
+    { href: IG_HREF, label: "Informasi Pengiriman" },
+    { href: IG_HREF, label: "Pengembalian Barang" },
+    { href: IG_HREF, label: "Panduan Ukuran" },
+    { href: IG_HREF, label: "Hubungi Kami" },
   ],
   perusahaan: [
     { href: "/about", label: "Tentang Kami" },
@@ -124,13 +124,15 @@ export default function Footer() {
             <h3 className="text-xs font-bold uppercase tracking-widest mb-4">Bantuan</h3>
             <ul className="space-y-2">
               {footerLinks.bantuan.map((link) => (
-                <li key={link.href}>
-                  <Link
+                <li key={link.label}>
+                  <a
                     href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-sm text-brand-gray-400 hover:text-white transition-colors"
                   >
                     {link.label}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>

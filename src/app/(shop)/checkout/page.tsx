@@ -39,6 +39,7 @@ export default function CheckoutPage() {
     street: "",
     notes: "",
     shippingMethod: "reguler",
+    shippingCarrier: "JNE REG",
   });
 
   const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
@@ -163,7 +164,7 @@ export default function CheckoutPage() {
           addressId: selectedAddressId ?? undefined,
           address: form,
           couponCode: couponData ? couponCode : undefined,
-          shippingMethod: form.shippingMethod,
+          shippingMethod: `${form.shippingMethod} - ${form.shippingCarrier}`,
           shippingCost,
           notes: form.notes,
         }),
@@ -390,71 +391,108 @@ export default function CheckoutPage() {
                 {/* Shipping method */}
                 <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
                   <h2 className="text-sm font-bold uppercase tracking-widest mb-5">
-                    Metode Pengiriman
+                    Metode &amp; Ekspedisi Pengiriman
                   </h2>
-                  <div className="space-y-2">
-                    {[
+                  <div className="space-y-3">
+                    {([
                       {
                         value: "reguler",
                         label: "Reguler",
-                        desc: "3-5 hari kerja",
+                        desc: "3–5 hari kerja",
                         price: shippingCosts.reguler,
+                        carriers: [
+                          { id: "JNE REG", name: "JNE REG" },
+                          { id: "J&T Express", name: "J&T Express" },
+                          { id: "SiCepat HALU", name: "SiCepat HALU" },
+                          { id: "Pos Indonesia", name: "Pos Indonesia" },
+                        ],
                       },
                       {
                         value: "ekspres",
                         label: "Ekspres",
-                        desc: "1-2 hari kerja",
+                        desc: "1–2 hari kerja",
                         price: shippingCosts.ekspres,
+                        carriers: [
+                          { id: "JNE YES", name: "JNE YES" },
+                          { id: "J&T EZ", name: "J&T EZ" },
+                          { id: "SiCepat BEST", name: "SiCepat BEST" },
+                        ],
                       },
                       {
                         value: "sameday",
                         label: "Same Day",
-                        desc: "Hari ini (khusus Jabodetabek)",
+                        desc: "Hari ini — khusus Jabodetabek",
                         price: shippingCosts.sameday,
+                        carriers: [
+                          { id: "GoSend (Gojek)", name: "GoSend", logo: "🟢" },
+                          { id: "GrabExpress (Grab)", name: "GrabExpress", logo: "🟡" },
+                        ],
                       },
-                    ].map((method) => (
-                      <label
-                        key={method.value}
-                        className={`flex items-center justify-between p-4 border cursor-pointer transition-colors ${
-                          form.shippingMethod === method.value
-                            ? "border-white bg-brand-gray-800"
-                            : "border-brand-gray-700 hover:border-brand-gray-500"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="shippingMethod"
-                            value={method.value}
-                            checked={form.shippingMethod === method.value}
-                            onChange={handleChange}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${
-                              form.shippingMethod === method.value
-                                ? "border-white"
-                                : "border-brand-gray-600"
-                            }`}
+                    ] as const).map((method) => {
+                      const isSelected = form.shippingMethod === method.value;
+                      return (
+                        <div key={method.value} className={`border transition-colors ${isSelected ? "border-white" : "border-brand-gray-700"}`}>
+                          {/* Tier row */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const firstCarrier = method.carriers[0].id;
+                              setForm((prev) => ({ ...prev, shippingMethod: method.value, shippingCarrier: firstCarrier }));
+                            }}
+                            className="w-full flex items-center justify-between p-4 text-left hover:bg-brand-gray-800/40 transition-colors"
                           >
-                            {form.shippingMethod === method.value && (
-                              <div className="w-2 h-2 bg-white rounded-full" />
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold">{method.label}</p>
-                            <p className="text-xs text-brand-gray-400">{method.desc}</p>
-                          </div>
-                        </div>
-                        <span className="text-sm font-bold">
-                          {method.price === 0 ? (
-                            <span className="text-green-400">Gratis</span>
-                          ) : (
-                            formatPrice(method.price)
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? "border-white" : "border-brand-gray-600"}`}>
+                                {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold">{method.label}</p>
+                                <p className="text-xs text-brand-gray-400">{method.desc}</p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-bold flex-shrink-0">
+                              {method.price === 0
+                                ? <span className="text-green-400">Gratis</span>
+                                : formatPrice(method.price)}
+                            </span>
+                          </button>
+
+                          {/* Carrier sub-options — only shown when this tier is selected */}
+                          {isSelected && (
+                            <div className="px-4 pb-4 border-t border-brand-gray-800 pt-3">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-2">
+                                Pilih Ekspedisi
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {method.carriers.map((carrier) => {
+                                  const active = form.shippingCarrier === carrier.id;
+                                  return (
+                                    <button
+                                      key={carrier.id}
+                                      type="button"
+                                      onClick={() => setForm((prev) => ({ ...prev, shippingCarrier: carrier.id }))}
+                                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all ${
+                                        active
+                                          ? "border-white bg-white text-black"
+                                          : "border-brand-gray-600 hover:border-white text-brand-gray-300"
+                                      }`}
+                                    >
+                                      {"logo" in carrier && <span>{carrier.logo}</span>}
+                                      {carrier.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              {form.shippingCarrier && (
+                                <p className="text-xs text-brand-gray-500 mt-2">
+                                  Ekspedisi dipilih: <span className="text-white font-semibold">{form.shippingCarrier}</span>
+                                </p>
+                              )}
+                            </div>
                           )}
-                        </span>
-                      </label>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
