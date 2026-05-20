@@ -93,7 +93,7 @@ export default function HeroSection() {
             <div className="w-8 h-px" style={{ background: "rgba(255,255,255,0.3)" }}/>
             <span className="text-[10px] font-semibold uppercase tracking-[0.5em]"
                   style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.5em" }}>
-              Koleksi 2025
+              Koleksi Terbaru
             </span>
           </div>
 
