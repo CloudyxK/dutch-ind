@@ -1,18 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MapPin, User, Phone, Package, Truck, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-import { formatPrice, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import { formatPrice, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
 
-type Order = {
+type OrderRow = {
   id: string;
   orderNumber: string;
-  status: string;
   total: number;
-  shippingMethod: string | null;
-  createdAt: string;
+  status: string;
+  createdAt: Date;
   user: { name: string; email: string };
   address: {
     recipientName: string;
@@ -27,146 +27,134 @@ type Order = {
   payment: { status: string } | null;
 };
 
-const STATUS_OPTIONS = [
-  { value: "AWAITING_PAYMENT", label: "Menunggu Bayar" },
-  { value: "PAID", label: "Dibayar" },
-  { value: "PROCESSING", label: "Diproses" },
-  { value: "SHIPPED", label: "Dikirim" },
-  { value: "DELIVERED", label: "Terkirim" },
-  { value: "COMPLETED", label: "Selesai" },
-  { value: "CANCELLED", label: "Dibatalkan" },
-];
-
-function OrderCard({ order: initial }: { order: Order }) {
-  const [order, setOrder] = useState(initial);
+function OrderRow({ order }: { order: OrderRow }) {
+  const router = useRouter();
   const [expanded, setExpanded] = useState(false);
-  const [updating, setUpdating] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  async function updateStatus(status: string) {
-    if (status === order.status) return;
-    setUpdating(true);
+  const setToProcessing = async () => {
+    setLoading(true);
     try {
       const res = await fetch(`/api/admin/orders/${order.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: "PROCESSING" }),
       });
       if (!res.ok) throw new Error();
-      setOrder((o) => ({ ...o, status }));
-      toast.success(`Status → ${getOrderStatusLabel(status)}`);
+      toast.success("Status diubah ke Diproses");
+      router.refresh();
     } catch {
-      toast.error("Gagal memperbarui status");
+      toast.error("Gagal mengubah status");
     } finally {
-      setUpdating(false);
+      setLoading(false);
     }
-  }
+  };
 
-  const canProcess = order.status === "AWAITING_PAYMENT" || order.status === "PAID";
+  const isPending =
+    order.status === "AWAITING_PAYMENT" || order.status === "PAID";
 
   return (
-    <div className="border border-brand-gray-700 bg-brand-gray-950 rounded-sm overflow-hidden">
-      {/* Header row */}
-      <div
-        className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-brand-gray-800/40 transition-colors"
-        onClick={() => setExpanded((v) => !v)}
-      >
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="min-w-0">
-            <p className="font-mono font-bold text-sm">#{order.orderNumber}</p>
-            <p className="text-[10px] text-brand-gray-500">{formatDateTime(order.createdAt)}</p>
-          </div>
+    <div className="border-b border-brand-gray-800 last:border-0">
+      {/* Main row */}
+      <div className="flex items-center gap-3 p-4 hover:bg-brand-gray-800/30 transition-colors">
+        {/* Order number */}
+        <div className="w-28 flex-shrink-0">
+          <Link
+            href="/admin/orders"
+            className="font-mono text-xs font-bold hover:text-brand-gray-300 transition-colors"
+          >
+            #{order.orderNumber}
+          </Link>
+          <p className="text-[10px] text-brand-gray-600 mt-0.5">
+            {formatDateTime(order.createdAt)}
+          </p>
         </div>
 
-        <div className="flex items-center gap-3 flex-shrink-0">
+        {/* Buyer */}
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{order.user.name}</p>
+          <p className="text-[10px] text-brand-gray-500 truncate">{order.user.email}</p>
+        </div>
+
+        {/* Total + items */}
+        <div className="text-right flex-shrink-0 w-24">
           <p className="text-sm font-bold">{formatPrice(order.total)}</p>
-          <span className={`text-[10px] font-bold px-2 py-0.5 ${getOrderStatusColor(order.status)}`}>
+          <p className="text-[10px] text-brand-gray-600">{order.items.length} item</p>
+        </div>
+
+        {/* Payment badge */}
+        <div className="flex-shrink-0 w-14">
+          {order.payment && (
+            <span
+              className={`text-[10px] font-bold px-1.5 py-0.5 ${
+                order.payment.status === "SUCCESS"
+                  ? "bg-green-900/40 text-green-400"
+                  : order.payment.status === "FAILED"
+                  ? "bg-red-900/40 text-red-400"
+                  : "bg-yellow-900/40 text-yellow-400"
+              }`}
+            >
+              {order.payment.status === "SUCCESS"
+                ? "Lunas"
+                : order.payment.status === "FAILED"
+                ? "Gagal"
+                : "Pending"}
+            </span>
+          )}
+        </div>
+
+        {/* Status badge */}
+        <div className="flex-shrink-0 w-20">
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 ${getOrderStatusColor(order.status)}`}>
             {getOrderStatusLabel(order.status)}
           </span>
-          {expanded ? <ChevronUp className="w-3 h-3 text-brand-gray-500" /> : <ChevronDown className="w-3 h-3 text-brand-gray-500" />}
         </div>
+
+        {/* Quick Proses button */}
+        <div className="flex-shrink-0 w-20">
+          {isPending && (
+            <button
+              onClick={setToProcessing}
+              disabled={loading}
+              className="text-[10px] font-bold px-2 py-1 bg-white text-black hover:bg-brand-gray-200 disabled:opacity-50 flex items-center gap-1 w-full justify-center"
+            >
+              {loading && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+              Proses
+            </button>
+          )}
+        </div>
+
+        {/* Expand toggle */}
+        <button
+          onClick={() => setExpanded(!expanded)}
+          className="flex-shrink-0 text-brand-gray-500 hover:text-white transition-colors"
+        >
+          {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
       </div>
 
-      {/* Expanded detail */}
+      {/* Expanded: address detail */}
       {expanded && (
-        <div className="border-t border-brand-gray-800 px-4 pb-4 pt-3 space-y-4">
-          {/* Buyer + Address info */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Pembeli */}
-            <div className="space-y-1.5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-2">Data Pembeli</p>
-              <div className="flex items-start gap-2">
-                <User className="w-3.5 h-3.5 text-brand-gray-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold">{order.user.name}</p>
-                  <p className="text-xs text-brand-gray-400">{order.user.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-brand-gray-500 flex-shrink-0" />
-                <p className="text-xs text-brand-gray-400">{order.address.phone}</p>
-              </div>
-              <div className="flex items-start gap-2">
-                <Package className="w-3.5 h-3.5 text-brand-gray-500 mt-0.5 flex-shrink-0" />
-                <p className="text-xs text-brand-gray-400">
-                  {order.items.length} produk
-                  {order.shippingMethod && ` · ${order.shippingMethod}`}
-                </p>
-              </div>
-            </div>
-
-            {/* Alamat pengiriman */}
+        <div className="px-4 pb-4 bg-brand-gray-800/20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs border-t border-brand-gray-800 pt-3">
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-2">Alamat Pengiriman</p>
-              <div className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-brand-gray-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold">{order.address.recipientName}</p>
-                  <p className="text-xs text-brand-gray-400 leading-relaxed">
-                    {order.address.street},<br />
-                    {order.address.district}, {order.address.city},<br />
-                    {order.address.province} {order.address.postalCode}
-                  </p>
-                </div>
-              </div>
+              <p className="text-brand-gray-500 uppercase tracking-wider mb-1">Alamat Pengiriman</p>
+              <p className="font-semibold">{order.address.recipientName}</p>
+              <p className="text-brand-gray-400">{order.address.phone}</p>
+              <p className="text-brand-gray-400 mt-1 leading-relaxed">
+                {order.address.street}, {order.address.district},{" "}
+                {order.address.city}, {order.address.province}{" "}
+                {order.address.postalCode}
+              </p>
             </div>
-          </div>
-
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-1 border-t border-brand-gray-800">
-            {/* Quick process button */}
-            {canProcess && (
-              <button
-                onClick={() => updateStatus("PROCESSING")}
-                disabled={updating}
-                className="flex items-center gap-1.5 bg-white text-black text-xs font-bold px-4 py-2 hover:bg-brand-gray-200 disabled:opacity-50 transition-colors"
+            <div className="flex items-end">
+              <Link
+                href="/admin/orders"
+                className="text-brand-gray-400 hover:text-white underline underline-offset-2 transition-colors"
               >
-                {updating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Package className="w-3 h-3" />}
-                Proses Sekarang
-              </button>
-            )}
-
-            {/* Status dropdown */}
-            <div className="flex items-center gap-2">
-              <select
-                value={order.status}
-                onChange={(e) => updateStatus(e.target.value)}
-                disabled={updating}
-                className="bg-brand-gray-800 border border-brand-gray-600 text-xs px-2 py-1.5 text-white focus:outline-none focus:border-white disabled:opacity-50"
-              >
-                {STATUS_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              {updating && <Loader2 className="w-3 h-3 animate-spin text-brand-gray-400" />}
+                Kelola pesanan ini →
+              </Link>
             </div>
-
-            <Link
-              href={`/admin/orders`}
-              className="ml-auto text-xs text-brand-gray-400 hover:text-white transition-colors flex items-center gap-1"
-            >
-              <Truck className="w-3 h-3" />
-              Detail lengkap
-            </Link>
           </div>
         </div>
       )}
@@ -174,22 +162,46 @@ function OrderCard({ order: initial }: { order: Order }) {
   );
 }
 
-export default function RecentOrdersWidget({ orders }: { orders: Order[] }) {
+export default function RecentOrdersWidget({ orders }: { orders: OrderRow[] }) {
   return (
-    <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-      <div className="flex items-center justify-between mb-5">
+    <div className="bg-brand-gray-900 border border-brand-gray-700">
+      <div className="p-5 border-b border-brand-gray-700 flex items-center justify-between">
         <h2 className="text-sm font-bold uppercase tracking-widest">Pesanan Terbaru</h2>
-        <Link href="/admin/orders" className="text-xs text-brand-gray-400 hover:text-white transition-colors">
-          Lihat Semua →
+        <Link
+          href="/admin/orders"
+          className="text-xs text-brand-gray-500 hover:text-white transition-colors"
+        >
+          Lihat semua →
         </Link>
       </div>
 
       {orders.length === 0 ? (
-        <p className="text-sm text-brand-gray-500">Belum ada pesanan</p>
+        <p className="p-6 text-sm text-brand-gray-500 text-center">Belum ada pesanan</p>
       ) : (
-        <div className="space-y-2">
+        <div>
+          {/* Column headers */}
+          <div className="flex items-center gap-3 px-4 py-2 bg-brand-gray-800/50 border-b border-brand-gray-800">
+            <div className="w-28 flex-shrink-0 text-[10px] text-brand-gray-500 uppercase tracking-wider">
+              No. Pesanan
+            </div>
+            <div className="flex-1 text-[10px] text-brand-gray-500 uppercase tracking-wider">
+              Pembeli
+            </div>
+            <div className="w-24 flex-shrink-0 text-[10px] text-brand-gray-500 uppercase tracking-wider text-right">
+              Total
+            </div>
+            <div className="w-14 flex-shrink-0 text-[10px] text-brand-gray-500 uppercase tracking-wider">
+              Bayar
+            </div>
+            <div className="w-20 flex-shrink-0 text-[10px] text-brand-gray-500 uppercase tracking-wider">
+              Status
+            </div>
+            <div className="w-20 flex-shrink-0" />
+            <div className="w-4 flex-shrink-0" />
+          </div>
+
           {orders.map((order) => (
-            <OrderCard key={order.id} order={order} />
+            <OrderRow key={order.id} order={order} />
           ))}
         </div>
       )}

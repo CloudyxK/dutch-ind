@@ -5,13 +5,14 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { formatPrice, formatDate, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
 import { ChevronLeft, Truck, MapPin, CreditCard, Package } from "lucide-react";
+import TrackingPanel from "@/components/order/TrackingPanel";
 
 const STATUS_STEPS = [
   { key: "AWAITING_PAYMENT", label: "Menunggu Bayar" },
-  { key: "PROCESSING", label: "Diproses" },
-  { key: "SHIPPED", label: "Dikirim" },
-  { key: "DELIVERED", label: "Terkirim" },
-  { key: "COMPLETED", label: "Selesai" },
+  { key: "PROCESSING",       label: "Diproses" },
+  { key: "SHIPPED",          label: "Dikirim" },
+  { key: "DELIVERED",        label: "Terkirim" },
+  { key: "COMPLETED",        label: "Selesai" },
 ];
 
 type Props = { params: Promise<{ id: string }> };
@@ -38,6 +39,21 @@ export default async function OrderDetailPage({ params }: Props) {
   });
 
   if (!order) notFound();
+
+  // Fetch cached tracking if available
+  let cachedTracking: any = null;
+  let trackingUpdatedAt: Date | null = null;
+  if (order.trackingNumber) {
+    const cached = await prisma.setting.findUnique({
+      where: { key: `tracking:${id}` },
+    });
+    if (cached) {
+      try {
+        cachedTracking = JSON.parse(cached.value);
+        trackingUpdatedAt = cached.updatedAt;
+      } catch {}
+    }
+  }
 
   const currentStepIndex = STATUS_STEPS.findIndex((s) => s.key === order.status);
   const isCancelled = order.status === "CANCELLED";
@@ -76,15 +92,29 @@ export default async function OrderDetailPage({ params }: Props) {
                 return (
                   <div key={step.key} className="flex items-center flex-1 last:flex-none">
                     <div className="flex flex-col items-center">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${done ? "bg-white border-white text-black" : "border-brand-gray-600 text-brand-gray-600"}`}>
+                      <div
+                        className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                          done
+                            ? "bg-white border-white text-black"
+                            : "border-brand-gray-600 text-brand-gray-600"
+                        }`}
+                      >
                         {i + 1}
                       </div>
-                      <span className={`text-[9px] mt-1 text-center leading-tight max-w-[60px] ${done ? "text-white" : "text-brand-gray-600"}`}>
+                      <span
+                        className={`text-[9px] mt-1 text-center leading-tight max-w-[60px] ${
+                          done ? "text-white" : "text-brand-gray-600"
+                        }`}
+                      >
                         {step.label}
                       </span>
                     </div>
                     {!isLast && (
-                      <div className={`flex-1 h-0.5 mb-4 mx-1 ${i < currentStepIndex ? "bg-white" : "bg-brand-gray-700"}`} />
+                      <div
+                        className={`flex-1 h-0.5 mb-4 mx-1 ${
+                          i < currentStepIndex ? "bg-white" : "bg-brand-gray-700"
+                        }`}
+                      />
                     )}
                   </div>
                 );
@@ -182,8 +212,20 @@ export default async function OrderDetailPage({ params }: Props) {
                 <div className="mt-3 pt-3 border-t border-brand-gray-800">
                   <p className="text-xs text-brand-gray-500">
                     Status Bayar:{" "}
-                    <span className={order.payment.status === "SUCCESS" ? "text-green-400" : order.payment.status === "FAILED" ? "text-red-400" : "text-yellow-400"}>
-                      {order.payment.status === "SUCCESS" ? "Lunas" : order.payment.status === "FAILED" ? "Gagal" : "Pending"}
+                    <span
+                      className={
+                        order.payment.status === "SUCCESS"
+                          ? "text-green-400"
+                          : order.payment.status === "FAILED"
+                          ? "text-red-400"
+                          : "text-yellow-400"
+                      }
+                    >
+                      {order.payment.status === "SUCCESS"
+                        ? "Lunas"
+                        : order.payment.status === "FAILED"
+                        ? "Gagal"
+                        : "Pending"}
                     </span>
                   </p>
                   {order.payment.paidAt && (
@@ -196,15 +238,15 @@ export default async function OrderDetailPage({ params }: Props) {
             </div>
           </div>
 
-          {/* Tracking number */}
+          {/* Tracking panel — interactive, client component */}
           {order.trackingNumber && (
-            <div className="bg-brand-gray-900 border border-brand-gray-700 p-5 flex items-center gap-3">
-              <Truck className="w-5 h-5 text-brand-gray-400 flex-shrink-0" />
-              <div>
-                <p className="text-[10px] text-brand-gray-500 uppercase tracking-wider">Nomor Resi</p>
-                <p className="font-mono font-bold text-lg">{order.trackingNumber}</p>
-              </div>
-            </div>
+            <TrackingPanel
+              orderId={order.id}
+              trackingNumber={order.trackingNumber}
+              trackingCarrier={order.trackingCarrier}
+              initialTracking={cachedTracking}
+              initialUpdatedAt={trackingUpdatedAt ? trackingUpdatedAt.toISOString() : null}
+            />
           )}
 
           {/* Notes */}

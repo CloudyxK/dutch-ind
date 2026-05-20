@@ -246,8 +246,9 @@ model Order {
   total          Float
   status         String   @default("PENDING")
   notes          String?
-  trackingNumber String?
-  shippingMethod String?
+  trackingNumber  String?
+  trackingCarrier String?
+  shippingMethod  String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

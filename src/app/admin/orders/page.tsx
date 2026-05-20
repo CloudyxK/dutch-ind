@@ -72,7 +72,12 @@ export default async function AdminOrdersPage() {
                   {formatDateTime(order.createdAt)}
                 </td>
                 <td className="p-4">
-                  <AdminOrderActions orderId={order.id} currentStatus={order.status} currentTrackingNumber={order.trackingNumber} />
+                  <AdminOrderActions
+                    orderId={order.id}
+                    currentStatus={order.status}
+                    currentTrackingNumber={order.trackingNumber}
+                    currentTrackingCarrier={order.trackingCarrier}
+                  />
                 </td>
               </tr>
             ))}
