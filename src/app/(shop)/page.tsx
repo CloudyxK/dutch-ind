@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 async function getHomeData() {
-  const [featured, newArrivals, bestSellers, categories] = await Promise.all([
+  const [featured, newArrivals, bestSellers, categories, flashSaleRow] = await Promise.all([
     prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
       include: {
@@ -50,13 +50,27 @@ async function getHomeData() {
       orderBy: { sortOrder: "asc" },
       include: { _count: { select: { products: true } } },
     }),
+    prisma.setting.findUnique({ where: { key: "flashsale.config" } }),
   ]);
 
-  return { featured, newArrivals, bestSellers, categories };
+  let flashSale = null;
+  if (flashSaleRow?.value) {
+    try {
+      const cfg = JSON.parse(flashSaleRow.value);
+      // Only expose if active and not expired
+      if (cfg.active && cfg.endAt && new Date(cfg.endAt) > new Date()) {
+        flashSale = cfg;
+      }
+    } catch {
+      // ignore malformed config
+    }
+  }
+
+  return { featured, newArrivals, bestSellers, categories, flashSale };
 }
 
 export default async function HomePage() {
-  const { featured, newArrivals, bestSellers, categories } = await getHomeData();
+  const { featured, newArrivals, bestSellers, categories, flashSale } = await getHomeData();
 
   return (
     <>
@@ -65,7 +79,7 @@ export default async function HomePage() {
       <CategorySection categories={categories as any} />
       <FeaturedProducts products={featured as any} />
       <MarqueeTicker />
-      <PromoBanner />
+      <PromoBanner flashSale={flashSale} />
       <NewArrivals products={newArrivals as any} />
       <BestSellers products={bestSellers as any} />
       <BrandFeatures />

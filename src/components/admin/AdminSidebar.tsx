@@ -12,6 +12,7 @@ import {
   Truck,
   LogOut,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/admin/coupons", label: "Kupon", icon: Tag },
   { href: "/admin/shipping", label: "Pengiriman", icon: Truck },
   { href: "/admin/analytics", label: "Analitik", icon: BarChart3 },
+  { href: "/admin/flashsale", label: "Flash Sale", icon: Zap },
 ];
 
 export default function AdminSidebar() {
