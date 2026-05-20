@@ -52,13 +52,34 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const orderPlaced = useRef(false);
 
+  // Distance-based shipping estimate
+  const [shippingEst, setShippingEst] = useState<{
+    distanceKm: number | null;
+    samedayFare: number | null;
+    outOfRange: boolean;
+    regulerFare: number;
+    ekspresFare: number;
+    freeRegulerAbove: number;
+    fallback?: boolean;
+  } | null>(null);
+  const [estimating, setEstimating] = useState(false);
+  const estimateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const subtotal = getTotalPrice();
+
+  // Dynamic costs from estimate, fallback to defaults
+  const regulerCost = shippingEst
+    ? (subtotal >= shippingEst.freeRegulerAbove ? 0 : shippingEst.regulerFare)
+    : (subtotal >= 500000 ? 0 : 15000);
+  const ekspresCost = shippingEst?.ekspresFare ?? 25000;
+  const samedayCost = shippingEst?.samedayFare ?? 50000;
+
   const shippingCosts: Record<string, number> = {
-    reguler: subtotal >= 500000 ? 0 : 15000,
-    ekspres: 25000,
-    sameday: 50000,
+    reguler: regulerCost,
+    ekspres: ekspresCost,
+    sameday: samedayCost,
   };
-  const shippingCost = shippingCosts[form.shippingMethod];
+  const shippingCost = shippingCosts[form.shippingMethod] ?? 0;
   const discountAmount = couponData?.discountAmount || 0;
   const total = subtotal + shippingCost - discountAmount;
 
@@ -84,6 +105,32 @@ export default function CheckoutPage() {
       router.push("/cart");
     }
   }, [items, router]);
+
+  // Auto-estimate shipping when address fields change
+  useEffect(() => {
+    if (!form.city && !form.province) return;
+    if (estimateTimer.current) clearTimeout(estimateTimer.current);
+    estimateTimer.current = setTimeout(async () => {
+      setEstimating(true);
+      try {
+        const res = await fetch("/api/shipping/estimate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ city: form.city, district: form.district, province: form.province }),
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        setShippingEst(json.data);
+        // If sameday is out of range and current selection is sameday, switch to reguler
+        if (json.data?.outOfRange && form.shippingMethod === "sameday") {
+          setForm((prev) => ({ ...prev, shippingMethod: "reguler", shippingCarrier: "JNE REG" }));
+        }
+      } finally {
+        setEstimating(false);
+      }
+    }, 800);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.city, form.district, form.province]);
 
   function applyAddress(addr: SavedAddress) {
     setForm((prev) => ({
@@ -390,9 +437,21 @@ export default function CheckoutPage() {
 
                 {/* Shipping method */}
                 <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-                  <h2 className="text-sm font-bold uppercase tracking-widest mb-5">
-                    Metode &amp; Ekspedisi Pengiriman
-                  </h2>
+                  <div className="flex items-center justify-between mb-5">
+                    <h2 className="text-sm font-bold uppercase tracking-widest">
+                      Metode &amp; Ekspedisi Pengiriman
+                    </h2>
+                    {estimating && (
+                      <span className="text-xs text-brand-gray-400 flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Menghitung ongkir...
+                      </span>
+                    )}
+                    {!estimating && shippingEst?.distanceKm != null && (
+                      <span className="text-xs text-brand-gray-400">
+                        Jarak ~<strong className="text-white">{shippingEst.distanceKm} km</strong> dari toko
+                      </span>
+                    )}
+                  </div>
                   <div className="space-y-3">
                     {([
                       {
@@ -426,20 +485,24 @@ export default function CheckoutPage() {
                         carriers: [
                           { id: "GoSend (Gojek)", name: "GoSend", logo: "🟢" },
                           { id: "GrabExpress (Grab)", name: "GrabExpress", logo: "🟡" },
+                          { id: "Maxim", name: "Maxim", logo: "🔵" },
                         ],
                       },
                     ] as const).map((method) => {
                       const isSelected = form.shippingMethod === method.value;
+                      const isSamedayOutOfRange = method.value === "sameday" && shippingEst?.outOfRange;
                       return (
-                        <div key={method.value} className={`border transition-colors ${isSelected ? "border-white" : "border-brand-gray-700"}`}>
+                        <div key={method.value} className={`border transition-colors ${isSamedayOutOfRange ? "border-brand-gray-800 opacity-50" : isSelected ? "border-white" : "border-brand-gray-700"}`}>
                           {/* Tier row */}
                           <button
                             type="button"
+                            disabled={!!isSamedayOutOfRange}
                             onClick={() => {
+                              if (isSamedayOutOfRange) return;
                               const firstCarrier = method.carriers[0].id;
                               setForm((prev) => ({ ...prev, shippingMethod: method.value, shippingCarrier: firstCarrier }));
                             }}
-                            className="w-full flex items-center justify-between p-4 text-left hover:bg-brand-gray-800/40 transition-colors"
+                            className="w-full flex items-center justify-between p-4 text-left hover:bg-brand-gray-800/40 transition-colors disabled:cursor-not-allowed"
                           >
                             <div className="flex items-center gap-3">
                               <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? "border-white" : "border-brand-gray-600"}`}>
@@ -447,13 +510,25 @@ export default function CheckoutPage() {
                               </div>
                               <div>
                                 <p className="text-sm font-semibold">{method.label}</p>
-                                <p className="text-xs text-brand-gray-400">{method.desc}</p>
+                                <p className="text-xs text-brand-gray-400">
+                                  {isSamedayOutOfRange ? "Di luar jangkauan pengiriman hari ini" : method.desc}
+                                </p>
                               </div>
                             </div>
                             <span className="text-sm font-bold flex-shrink-0">
-                              {method.price === 0
-                                ? <span className="text-green-400">Gratis</span>
-                                : formatPrice(method.price)}
+                              {isSamedayOutOfRange ? (
+                                <span className="text-red-400 text-xs">Tidak tersedia</span>
+                              ) : method.price === 0 ? (
+                                <span className="text-green-400">Gratis</span>
+                              ) : (
+                                <>
+                                  {estimating && method.value === "sameday" ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    formatPrice(method.price)
+                                  )}
+                                </>
+                              )}
                             </span>
                           </button>
 

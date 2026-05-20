@@ -9,6 +9,7 @@ import {
   Users,
   Tag,
   BarChart3,
+  Truck,
   LogOut,
   ChevronRight,
 } from "lucide-react";
@@ -21,6 +22,7 @@ const navItems = [
   { href: "/admin/orders", label: "Pesanan", icon: ShoppingCart },
   { href: "/admin/users", label: "Pengguna", icon: Users },
   { href: "/admin/coupons", label: "Kupon", icon: Tag },
+  { href: "/admin/shipping", label: "Pengiriman", icon: Truck },
   { href: "/admin/analytics", label: "Analitik", icon: BarChart3 },
 ];
 
