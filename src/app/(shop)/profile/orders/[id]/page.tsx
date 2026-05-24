@@ -7,6 +7,7 @@ import { formatPrice, formatDate, formatDateTime, getOrderStatusLabel, getOrderS
 import { ChevronLeft, MapPin, CreditCard, Package } from "lucide-react";
 import TrackingPanel from "@/components/order/TrackingPanel";
 import OrderReviewSection from "@/components/order/OrderReviewSection";
+import ManualPaymentPanel from "@/components/order/ManualPaymentPanel";
 
 const STATUS_STEPS = [
   { key: "AWAITING_PAYMENT", label: "Menunggu Bayar" },
@@ -237,9 +238,26 @@ export default async function OrderDetailPage({ params }: Props) {
               {order.payment && (
                 <div className="mt-3 pt-3 border-t border-brand-gray-800">
                   <p className="text-xs text-brand-gray-500">
+                    Metode:{" "}
+                    <span className="text-white">
+                      {order.payment.method === "MANUAL" ? "Transfer Manual" : "Midtrans"}
+                    </span>
+                  </p>
+                  <p className="text-xs text-brand-gray-500 mt-0.5">
                     Status Bayar:{" "}
-                    <span className={order.payment.status === "SUCCESS" ? "text-green-400" : order.payment.status === "FAILED" ? "text-red-400" : "text-yellow-400"}>
-                      {order.payment.status === "SUCCESS" ? "Lunas" : order.payment.status === "FAILED" ? "Gagal" : "Pending"}
+                    <span className={
+                      order.payment.status === "SUCCESS"              ? "text-green-400"  :
+                      order.payment.status === "REJECTED"             ? "text-red-400"    :
+                      order.payment.status === "WAITING_CONFIRMATION" ? "text-yellow-400" :
+                      order.payment.status === "FAILED"               ? "text-red-400"    :
+                                                                        "text-brand-gray-400"
+                    }>
+                      {order.payment.status === "SUCCESS"              ? "Lunas"                   :
+                       order.payment.status === "WAITING_CONFIRMATION" ? "Menunggu Konfirmasi"      :
+                       order.payment.status === "REJECTED"             ? "Ditolak"                  :
+                       order.payment.status === "MANUAL_PENDING"       ? "Belum Transfer"           :
+                       order.payment.status === "FAILED"               ? "Gagal"                    :
+                                                                         "Pending"}
                     </span>
                   </p>
                   {order.payment.paidAt && (
@@ -251,6 +269,17 @@ export default async function OrderDetailPage({ params }: Props) {
               )}
             </div>
           </div>
+
+          {/* Manual payment panel */}
+          {order.payment?.method === "MANUAL" &&
+           !["SUCCESS", "PROCESSING", "SHIPPED", "DELIVERED", "COMPLETED"].includes(order.status) && (
+            <ManualPaymentPanel
+              orderId={order.id}
+              amount={order.total}
+              status={order.payment.status}
+              rejectedReason={order.payment.rejectedReason}
+            />
+          )}
 
           {/* Tracking panel — shows whenever SHIPPED/DELIVERED, resi optional */}
           {showTracking && (

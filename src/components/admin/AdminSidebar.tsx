@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronRight,
   Zap,
+  Banknote,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -25,7 +26,8 @@ const navItems = [
   { href: "/admin/coupons", label: "Kupon", icon: Tag },
   { href: "/admin/shipping", label: "Pengiriman", icon: Truck },
   { href: "/admin/analytics", label: "Analitik", icon: BarChart3 },
-  { href: "/admin/flashsale", label: "Flash Sale", icon: Zap },
+  { href: "/admin/flashsale",         label: "Flash Sale",        icon: Zap      },
+  { href: "/admin/payment-settings",  label: "Pembayaran Manual", icon: Banknote  },
 ];
 
 export default function AdminSidebar() {

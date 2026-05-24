@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
     if (!parsed.ok) return parsed.response;
 
     const body = parsed.data;
-    const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes } = body;
+    const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes, paymentMethod } = body;
+    const isManual = paymentMethod === "MANUAL";
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
@@ -180,29 +181,31 @@ export async function POST(request: NextRequest) {
       await tx.payment.create({
         data: {
           orderId: newOrder.id,
-          method: "MIDTRANS",
-          status: "PENDING",
-          amount: total,
+          method:  isManual ? "MANUAL" : "MIDTRANS",
+          status:  isManual ? "MANUAL_PENDING" : "PENDING",
+          amount:  total,
         },
       });
 
       return newOrder;
     });
 
-    // Generate Midtrans Snap token
+    // Generate Midtrans Snap token (skip for manual payment)
     let snapToken: string | null = null;
-    try {
-      const midtransResponse = await createMidtransTransaction(order, session.user as any, validatedItems);
-      snapToken = midtransResponse.token;
+    if (!isManual) {
+      try {
+        const midtransResponse = await createMidtransTransaction(order, session.user as any, validatedItems);
+        snapToken = midtransResponse.token;
 
-      if (snapToken) {
-        await prisma.payment.update({
-          where: { orderId: order.id },
-          data: { snapToken },
-        });
+        if (snapToken) {
+          await prisma.payment.update({
+            where: { orderId: order.id },
+            data: { snapToken },
+          });
+        }
+      } catch (midtransError) {
+        console.error("Midtrans error:", midtransError);
       }
-    } catch (midtransError) {
-      console.error("Midtrans error:", midtransError);
     }
 
     return NextResponse.json({

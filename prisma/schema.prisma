@@ -294,6 +294,11 @@ model Payment {
   paidAt          DateTime?
   expiredAt       DateTime?
   metadata        String?
+  // Manual payment fields
+  proofImageUrl   String?
+  proofUploadedAt DateTime?
+  confirmedAt     DateTime?
+  rejectedReason  String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
