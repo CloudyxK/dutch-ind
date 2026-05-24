@@ -14,6 +14,7 @@ import {
   ChevronRight,
   Zap,
   Banknote,
+  MessageCircle,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -27,7 +28,8 @@ const navItems = [
   { href: "/admin/shipping", label: "Pengiriman", icon: Truck },
   { href: "/admin/analytics", label: "Analitik", icon: BarChart3 },
   { href: "/admin/flashsale",         label: "Flash Sale",        icon: Zap      },
-  { href: "/admin/payment-settings",  label: "Pembayaran Manual", icon: Banknote  },
+  { href: "/admin/payment-settings",  label: "Pembayaran Manual", icon: Banknote      },
+  { href: "/admin/contact-settings",  label: "Kontak & CS",       icon: MessageCircle },
 ];
 
 export default function AdminSidebar() {
