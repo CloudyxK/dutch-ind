@@ -27,6 +27,7 @@ export async function POST(request: NextRequest) {
     const body = parsed.data;
     const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes, paymentMethod } = body;
     const isManual = paymentMethod === "MANUAL";
+    const isCod    = paymentMethod === "COD";
 
     if (!items || items.length === 0) {
       return NextResponse.json({ error: "Keranjang kosong" }, { status: 400 });
@@ -126,7 +127,8 @@ export async function POST(request: NextRequest) {
           total,
           notes: cleanNotes,
           shippingMethod,
-          status: "AWAITING_PAYMENT",
+          // COD: langsung PROCESSING (tidak perlu bayar duluan)
+          status: isCod ? "PROCESSING" : "AWAITING_PAYMENT",
           items: {
             create: validatedItems.map((item) => ({
               productId: item.productId,
@@ -181,8 +183,8 @@ export async function POST(request: NextRequest) {
       await tx.payment.create({
         data: {
           orderId: newOrder.id,
-          method:  isManual ? "MANUAL" : "MIDTRANS",
-          status:  isManual ? "MANUAL_PENDING" : "PENDING",
+          method:  isCod ? "COD" : isManual ? "MANUAL" : "MIDTRANS",
+          status:  isCod ? "COD_PENDING" : isManual ? "MANUAL_PENDING" : "PENDING",
           amount:  total,
         },
       });
@@ -190,9 +192,9 @@ export async function POST(request: NextRequest) {
       return newOrder;
     });
 
-    // Generate Midtrans Snap token (skip for manual payment)
+    // Generate Midtrans Snap token (skip for manual/COD)
     let snapToken: string | null = null;
-    if (!isManual) {
+    if (!isManual && !isCod) {
       try {
         const midtransResponse = await createMidtransTransaction(order, session.user as any, validatedItems);
         snapToken = midtransResponse.token;

@@ -34,9 +34,10 @@ export default async function AdminOrdersPage() {
             {orders.map((order) => {
               const isManualWaiting = order.payment?.method === "MANUAL" &&
                 order.payment?.status === "WAITING_CONFIRMATION";
+              const isCod = order.payment?.method === "COD";
 
               return (
-                <tr key={order.id} className={`hover:bg-brand-gray-800/50 transition-colors ${isManualWaiting ? "border-l-2 border-l-yellow-500" : ""}`}>
+                <tr key={order.id} className={`hover:bg-brand-gray-800/50 transition-colors ${isManualWaiting ? "border-l-2 border-l-yellow-500" : isCod ? "border-l-2 border-l-amber-600" : ""}`}>
                   <td className="p-4 font-mono text-sm font-bold">#{order.orderNumber}</td>
                   <td className="p-4">
                     <p className="text-sm">{order.user.name}</p>
@@ -58,11 +59,15 @@ export default async function AdminOrdersPage() {
                            order.payment.status === "WAITING_CONFIRMATION" ? "⚡ Bukti Masuk"       :
                            order.payment.status === "REJECTED"             ? "Ditolak"              :
                            order.payment.status === "MANUAL_PENDING"       ? "Belum Transfer"       :
+                           order.payment.status === "COD_PENDING"          ? "COD — Belum Lunas"    :
                            order.payment.status === "FAILED"               ? "Gagal"                :
                                                                              "Pending"}
                         </span>
                         {order.payment.method === "MANUAL" && (
-                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">Manual</span>
+                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">Transfer</span>
+                        )}
+                        {order.payment.method === "COD" && (
+                          <span className="text-[9px] text-amber-600 uppercase tracking-wider font-bold">COD</span>
                         )}
                       </div>
                     )}
@@ -81,13 +86,25 @@ export default async function AdminOrdersPage() {
                         currentTrackingNumber={order.trackingNumber}
                         currentTrackingCarrier={order.trackingCarrier}
                       />
-                      {/* Manual payment confirm/reject */}
+                              {/* Manual payment confirm/reject */}
                       {order.payment?.method === "MANUAL" &&
                        (order.payment.status === "WAITING_CONFIRMATION" || order.payment.status === "MANUAL_PENDING") && (
                         <AdminManualPaymentActions
                           orderId={order.id}
                           proofImageUrl={order.payment.proofImageUrl}
                           paymentStatus={order.payment.status}
+                          paymentMethod={order.payment.method}
+                          orderStatus={order.status}
+                        />
+                      )}
+                      {/* COD confirm */}
+                      {order.payment?.method === "COD" && (
+                        <AdminManualPaymentActions
+                          orderId={order.id}
+                          proofImageUrl={null}
+                          paymentStatus={order.payment.status}
+                          paymentMethod="COD"
+                          orderStatus={order.status}
                         />
                       )}
                     </div>

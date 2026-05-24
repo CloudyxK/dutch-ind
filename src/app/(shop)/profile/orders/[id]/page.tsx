@@ -240,7 +240,9 @@ export default async function OrderDetailPage({ params }: Props) {
                   <p className="text-xs text-brand-gray-500">
                     Metode:{" "}
                     <span className="text-white">
-                      {order.payment.method === "MANUAL" ? "Transfer Manual" : "Midtrans"}
+                      {order.payment.method === "MANUAL" ? "Transfer / QRIS / E-Wallet" :
+                       order.payment.method === "COD"    ? "COD — Bayar di Tempat"       :
+                                                           "Midtrans"}
                     </span>
                   </p>
                   <p className="text-xs text-brand-gray-500 mt-0.5">
@@ -256,6 +258,7 @@ export default async function OrderDetailPage({ params }: Props) {
                        order.payment.status === "WAITING_CONFIRMATION" ? "Menunggu Konfirmasi"      :
                        order.payment.status === "REJECTED"             ? "Ditolak"                  :
                        order.payment.status === "MANUAL_PENDING"       ? "Belum Transfer"           :
+                       order.payment.status === "COD_PENDING"          ? "Bayar saat diterima"      :
                        order.payment.status === "FAILED"               ? "Gagal"                    :
                                                                          "Pending"}
                     </span>
@@ -272,13 +275,41 @@ export default async function OrderDetailPage({ params }: Props) {
 
           {/* Manual payment panel */}
           {order.payment?.method === "MANUAL" &&
-           !["SUCCESS", "PROCESSING", "SHIPPED", "DELIVERED", "COMPLETED"].includes(order.status) && (
+           !["SHIPPED", "DELIVERED", "COMPLETED"].includes(order.status) &&
+           order.payment.status !== "SUCCESS" && (
             <ManualPaymentPanel
               orderId={order.id}
               amount={order.total}
               status={order.payment.status}
               rejectedReason={order.payment.rejectedReason}
             />
+          )}
+
+          {/* COD panel */}
+          {order.payment?.method === "COD" && (
+            <div className={`border p-5 space-y-2 ${
+              order.payment.status === "SUCCESS"
+                ? "bg-brand-gray-900 border-green-800"
+                : "bg-amber-900/10 border-amber-800/50"
+            }`}>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
+                  {order.payment.status === "SUCCESS" ? "✅ COD — Sudah Lunas" : "🤝 COD — Bayar di Tempat"}
+                </span>
+              </div>
+              {order.payment.status !== "SUCCESS" ? (
+                <div className="space-y-1">
+                  <p className="text-sm text-amber-300/80">
+                    Siapkan uang tunai sebesar{" "}
+                    <span className="font-bold text-white">{formatPrice(order.total)}</span>{" "}
+                    saat paket tiba.
+                  </p>
+                  <p className="text-xs text-brand-gray-500">Pesananmu sedang diproses dan akan segera dikirim.</p>
+                </div>
+              ) : (
+                <p className="text-sm text-green-400/80">Pembayaran COD telah diterima. Terima kasih!</p>
+              )}
+            </div>
           )}
 
           {/* Tracking panel — shows whenever SHIPPED/DELIVERED, resi optional */}

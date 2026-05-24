@@ -5,11 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import Script from "next/script";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Tag, Loader2, MapPin, ChevronDown, Check, X, CreditCard, Banknote } from "lucide-react";
+import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins } from "lucide-react";
 
 type SavedAddress = {
   id: string;
@@ -46,7 +45,7 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState<"MIDTRANS" | "MANUAL">("MIDTRANS");
+  const [paymentMethod, setPaymentMethod] = useState<"MANUAL" | "COD">("MANUAL");
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
@@ -240,25 +239,8 @@ export default function CheckoutPage() {
 
       orderPlaced.current = true;
       clearCart();
-
-      if (paymentMethod === "MANUAL") {
-        // Redirect to order detail to show payment instructions
-        router.push(`/profile/orders/${data.data.orderId}`);
-        return;
-      }
-
-      // Load Midtrans Snap
-      if (data.data.snapToken) {
-        const snapWindow = window as any;
-        snapWindow.snap?.pay(data.data.snapToken, {
-          onSuccess: () => router.push(`/order-success?orderId=${data.data.orderId}`),
-          onPending: () => router.push(`/order-success?orderId=${data.data.orderId}`),
-          onError: () => toast.error("Pembayaran gagal"),
-          onClose: () => toast("Pembayaran ditutup"),
-        });
-      } else {
-        router.push(`/order-success?orderId=${data.data.orderId}`);
-      }
+      // Both MANUAL and COD redirect to order detail
+      router.push(`/profile/orders/${data.data.orderId}`);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
@@ -270,17 +252,6 @@ export default function CheckoutPage() {
 
   return (
     <>
-      {/* Midtrans Snap script */}
-      <Script
-        src={
-          process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true"
-            ? "https://app.midtrans.com/snap/snap.js"
-            : "https://app.sandbox.midtrans.com/snap/snap.js"
-        }
-        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ""}
-        strategy="afterInteractive"
-      />
-
       <div className="min-h-screen py-10">
         <div className="container-main">
           <h1 className="section-title mb-8">Checkout</h1>
@@ -479,10 +450,10 @@ export default function CheckoutPage() {
                         desc: "3–5 hari kerja",
                         price: shippingCosts.reguler,
                         carriers: [
-                          { id: "JNE REG", name: "JNE REG" },
-                          { id: "J&T Express", name: "J&T Express" },
-                          { id: "SiCepat HALU", name: "SiCepat HALU" },
-                          { id: "Pos Indonesia", name: "Pos Indonesia" },
+                          { id: "J&T Express", name: "J&T Express", cod: true  },
+                          { id: "SiCepat HALU", name: "SiCepat HALU", cod: true },
+                          { id: "JNE REG", name: "JNE REG", cod: true },
+                          { id: "Pos Indonesia", name: "Pos Indonesia", cod: false },
                         ],
                       },
                       {
@@ -491,9 +462,9 @@ export default function CheckoutPage() {
                         desc: "1–2 hari kerja",
                         price: shippingCosts.ekspres,
                         carriers: [
-                          { id: "JNE YES", name: "JNE YES" },
-                          { id: "J&T EZ", name: "J&T EZ" },
-                          { id: "SiCepat BEST", name: "SiCepat BEST" },
+                          { id: "J&T EZ", name: "J&T EZ", cod: true },
+                          { id: "SiCepat BEST", name: "SiCepat BEST", cod: true },
+                          { id: "JNE YES", name: "JNE YES", cod: false },
                         ],
                       },
                       {
@@ -564,6 +535,8 @@ export default function CheckoutPage() {
                               <div className="flex flex-wrap gap-2">
                                 {method.carriers.map((carrier) => {
                                   const active = form.shippingCarrier === carrier.id;
+                                  const supportsCod = "cod" in carrier && carrier.cod;
+                                  const codSelected = paymentMethod === "COD";
                                   return (
                                     <button
                                       key={carrier.id}
@@ -575,8 +548,11 @@ export default function CheckoutPage() {
                                           : "border-brand-gray-600 hover:border-white text-brand-gray-300"
                                       }`}
                                     >
-                                      {"logo" in carrier && <span>{carrier.logo}</span>}
+                                      {"logo" in carrier && <span>{(carrier as any).logo}</span>}
                                       {carrier.name}
+                                      {codSelected && supportsCod && (
+                                        <span className="text-[8px] bg-amber-600 text-white px-1 py-0.5 ml-0.5">COD</span>
+                                      )}
                                     </button>
                                   );
                                 })}
@@ -698,8 +674,18 @@ export default function CheckoutPage() {
                   <div className="border-t border-brand-gray-700 pt-4 space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-400">Metode Pembayaran</p>
                     {[
-                      { value: "MIDTRANS", label: "Kartu / GoPay / OVO / dll", desc: "Bayar via Midtrans (online)", icon: CreditCard },
-                      { value: "MANUAL",   label: "Transfer Bank / QRIS",      desc: "Transfer manual, konfirmasi admin", icon: Banknote },
+                      {
+                        value: "MANUAL",
+                        label: "Transfer / QRIS / E-Wallet",
+                        desc:  "Transfer Bank, QRIS, DANA, GoPay — upload bukti",
+                        icon:  Banknote,
+                      },
+                      {
+                        value: "COD",
+                        label: "COD — Bayar di Tempat",
+                        desc:  "Bayar tunai saat paket tiba",
+                        icon:  HandCoins,
+                      },
                     ].map(({ value, label, desc, icon: Icon }) => (
                       <button
                         key={value}
@@ -717,6 +703,14 @@ export default function CheckoutPage() {
                         </div>
                       </button>
                     ))}
+
+                    {/* COD notice */}
+                    {paymentMethod === "COD" && (
+                      <div className="p-3 bg-amber-900/20 border border-amber-800/50 text-xs text-amber-300 space-y-0.5">
+                        <p className="font-bold">⚠ Perhatian — COD</p>
+                        <p className="text-amber-300/70">Siapkan uang <span className="text-white font-bold">{formatPrice(total)}</span> (tunai) saat paket tiba. Pesanan akan langsung diproses tanpa pembayaran di muka.</p>
+                      </div>
+                    )}
                   </div>
 
                   <button
@@ -725,21 +719,18 @@ export default function CheckoutPage() {
                     className="btn-primary w-full disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {loading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Memproses...
-                      </>
-                    ) : paymentMethod === "MANUAL" ? (
-                      "Buat Pesanan"
+                      <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+                    ) : paymentMethod === "COD" ? (
+                      "Pesan Sekarang (COD)"
                     ) : (
-                      "Bayar Sekarang"
+                      "Buat Pesanan"
                     )}
                   </button>
 
                   <p className="text-center text-[10px] text-brand-gray-500">
-                    {paymentMethod === "MANUAL"
-                      ? "Kamu akan diarahkan ke halaman instruksi pembayaran"
-                      : "Pembayaran aman menggunakan Midtrans"}
+                    {paymentMethod === "COD"
+                      ? "Pesanan langsung diproses — bayar tunai saat paket diterima"
+                      : "Kamu akan diarahkan ke halaman instruksi pembayaran"}
                   </p>
                 </div>
               </div>

@@ -9,9 +9,11 @@ type Props = {
   orderId:       string;
   proofImageUrl: string | null;
   paymentStatus: string;
+  paymentMethod?: string;
+  orderStatus?:   string;
 };
 
-export default function AdminManualPaymentActions({ orderId, proofImageUrl, paymentStatus }: Props) {
+export default function AdminManualPaymentActions({ orderId, proofImageUrl, paymentStatus, paymentMethod, orderStatus }: Props) {
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [rejecting,  setRejecting]  = useState(false);
@@ -51,6 +53,43 @@ export default function AdminManualPaymentActions({ orderId, proofImageUrl, paym
       setRejecting(false);
     }
   };
+
+  const [confirmingCod, setConfirmingCod] = useState(false);
+
+  const confirmCod = async () => {
+    setConfirmingCod(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/confirm-cod`, { method: "PATCH" });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error || "Gagal konfirmasi COD"); return; }
+      toast.success("COD lunas — pesanan selesai");
+      router.refresh();
+    } finally {
+      setConfirmingCod(false);
+    }
+  };
+
+  // COD payment display
+  if (paymentMethod === "COD") {
+    const isPaid = paymentStatus === "SUCCESS";
+    const canConfirm = !isPaid && ["DELIVERED", "SHIPPED"].includes(orderStatus || "");
+    return (
+      <div className="flex flex-col gap-1">
+        <p className="text-[10px] text-amber-400 font-bold uppercase tracking-wider">COD</p>
+        {isPaid ? (
+          <p className="text-[10px] text-green-400">✓ Lunas diterima</p>
+        ) : canConfirm ? (
+          <button onClick={confirmCod} disabled={confirmingCod}
+                  className="flex items-center gap-1 text-[10px] bg-amber-900/40 text-amber-400 hover:bg-amber-900/60 border border-amber-800 px-2 py-1 transition-colors disabled:opacity-50">
+            {confirmingCod ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+            Konfirmasi COD Lunas
+          </button>
+        ) : (
+          <p className="text-[10px] text-brand-gray-600">Menunggu pengiriman…</p>
+        )}
+      </div>
+    );
+  }
 
   const hasProof = !!proofImageUrl;
 
