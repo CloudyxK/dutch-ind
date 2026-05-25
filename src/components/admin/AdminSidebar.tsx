@@ -15,6 +15,7 @@ import {
   Zap,
   Banknote,
   MessageCircle,
+  Crown,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -30,6 +31,7 @@ const navItems = [
   { href: "/admin/flashsale",         label: "Flash Sale",        icon: Zap      },
   { href: "/admin/payment-settings",  label: "Pembayaran Manual", icon: Banknote      },
   { href: "/admin/contact-settings",  label: "Kontak & CS",       icon: MessageCircle },
+  { href: "/admin/membership",        label: "Membership",         icon: Crown         },
 ];
 
 export default function AdminSidebar() {

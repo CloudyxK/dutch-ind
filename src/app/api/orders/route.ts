@@ -4,7 +4,8 @@ import prisma from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
 import { orderLimiter, getIp } from "@/lib/rateLimit";
 import { parseJsonSafe, verifySameOrigin, rateLimitResponse, sanitize } from "@/lib/security";
-import { RANK_MAP, isFreeShipping, type RankKey } from "@/lib/rank";
+import { type RankKey } from "@/lib/rank";
+import { getMembershipConfig, isFreeShippingFromConfig } from "@/lib/membershipConfig";
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,17 +72,17 @@ export async function POST(request: NextRequest) {
       validatedItems.push({ ...item, subtotal: itemSubtotal, productName: variant.product.name });
     }
 
-    // Ambil rank user untuk benefit
-    const userRecord = await prisma.user.findUnique({
-      where:  { id: session.user.id },
-      select: { rank: true },
-    });
-    const userRank    = (userRecord?.rank ?? "BRONZE") as RankKey;
-    const rankCfg     = RANK_MAP[userRank];
-    const rankDisPct  = rankCfg?.discountPct ?? 0;
+    // Ambil rank user + config membership dari DB
+    const [userRecord, memberConfig] = await Promise.all([
+      prisma.user.findUnique({ where: { id: session.user.id }, select: { rank: true } }),
+      getMembershipConfig(),
+    ]);
+    const userRank   = (userRecord?.rank ?? "BRONZE") as RankKey;
+    const rankCfg    = memberConfig.find((r) => r.key === userRank);
+    const rankDisPct = rankCfg?.discountPct ?? 0;
 
     // Gratis ongkir berdasarkan rank?
-    const shippingFree = isFreeShipping(userRank, shippingMethod ?? "");
+    const shippingFree  = isFreeShippingFromConfig(userRank, shippingMethod ?? "", memberConfig);
     const finalShipping = shippingFree ? 0 : (shippingCost || 0);
 
     // Validasi kupon
