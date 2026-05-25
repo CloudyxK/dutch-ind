@@ -42,13 +42,22 @@ const emptyForm = {
 
 // Parse Nominatim address fields → form fields
 function parseAddress(addr: Record<string, string>) {
-  return {
-    province:   addr.state       || addr.province      || "",
-    city:       addr.city        || addr.regency        || addr.county         || addr.city_district || "",
-    district:   addr.suburb      || addr.village        || addr.municipality   || addr.neighbourhood  || addr.district || "",
-    postalCode: addr.postcode    || "",
-    road:       addr.road        || addr.pedestrian     || addr.footway        || addr.path           || "",
-  };
+  const province   = addr.state            || addr.province       || "";
+  const city       = addr.city             || addr.regency        || addr.county        || addr.city_district || "";
+  const district   = addr.suburb           || addr.village        || addr.municipality  || addr.neighbourhood || addr.district || "";
+  const postalCode = addr.postcode         || "";
+
+  // Susun alamat lengkap: Nama Jalan No. XX, Kelurahan/RT/RW
+  const roadBase   = addr.road             || addr.pedestrian     || addr.footway       || addr.path          || "";
+  const roadFull   = roadBase && addr.house_number
+    ? `${roadBase} No. ${addr.house_number}`
+    : roadBase;
+
+  const kelurahan  = addr.quarter          || addr.hamlet         || addr.neighbourhood || "";
+  const streetParts = [roadFull, kelurahan].filter(Boolean);
+  const street     = streetParts.join(", ");
+
+  return { province, city, district, postalCode, street };
 }
 
 export default function AddressManager({ initialAddresses }: { initialAddresses: Address[] }) {
@@ -83,8 +92,7 @@ export default function AddressManager({ initialAddresses }: { initialAddresses:
             city:       parsed.city       || prev.city,
             district:   parsed.district   || prev.district,
             postalCode: parsed.postalCode || prev.postalCode,
-            // Hanya isi street jika masih kosong
-            street: prev.street || parsed.road || prev.street,
+            street:     parsed.street     || prev.street,
           }));
         }
       } catch {}
