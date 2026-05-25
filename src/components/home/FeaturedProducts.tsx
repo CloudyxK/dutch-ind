@@ -38,7 +38,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

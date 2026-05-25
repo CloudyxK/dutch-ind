@@ -189,21 +189,21 @@ export default function ProductCard({ product, className, rank }: Props) {
         </div>
 
         {/* Info */}
-        <div className="pt-3 pb-2 px-0">
-          <p className="text-[10px] uppercase tracking-[0.28em] text-white/30">
+        <div className="pt-2 pb-1 px-0">
+          <p className="text-[9px] uppercase tracking-[0.22em] text-white/30">
             {product.category?.name}
           </p>
-          <h3 className="text-sm font-semibold mt-0.5 truncate group-hover:text-white/80 transition-colors">
+          <h3 className="text-xs font-semibold mt-0.5 truncate group-hover:text-white/80 transition-colors">
             {product.name}
           </h3>
-          <div className="flex items-center gap-2 mt-1">
-            <span className="text-sm font-bold">{formatPrice(product.price)}</span>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span className="text-xs font-bold">{formatPrice(product.price)}</span>
             {product.comparePrice && (
-              <span className="text-xs text-white/30 line-through">{formatPrice(product.comparePrice)}</span>
+              <span className="text-[10px] text-white/30 line-through">{formatPrice(product.comparePrice)}</span>
             )}
           </div>
           {!isOutOfStock && product.totalStock <= 5 && (
-            <p className="text-[10px] text-red-400/80 mt-0.5">Sisa {product.totalStock} item</p>
+            <p className="text-[9px] text-red-400/80 mt-0.5">Sisa {product.totalStock}</p>
           )}
         </div>
       </Link>
