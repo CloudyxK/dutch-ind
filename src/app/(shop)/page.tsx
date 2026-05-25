@@ -6,6 +6,7 @@ import BestSellers from "@/components/home/BestSellers";
 import NewArrivals from "@/components/home/NewArrivals";
 import BrandFeatures from "@/components/home/BrandFeatures";
 import MarqueeTicker from "@/components/home/MarqueeTicker";
+import RevealSection from "@/components/ui/RevealSection";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
 
@@ -76,13 +77,13 @@ export default async function HomePage() {
     <>
       <HeroSection />
       <MarqueeTicker />
-      <CategorySection categories={categories as any} />
-      <FeaturedProducts products={featured as any} />
+      <RevealSection direction="up"><CategorySection categories={categories as any} /></RevealSection>
+      <RevealSection direction="up"><FeaturedProducts products={featured as any} /></RevealSection>
       <MarqueeTicker />
-      <PromoBanner flashSale={flashSale} />
-      <NewArrivals products={newArrivals as any} />
-      <BestSellers products={bestSellers as any} />
-      <BrandFeatures />
+      <RevealSection direction="none"><PromoBanner flashSale={flashSale} /></RevealSection>
+      <RevealSection direction="up"><NewArrivals products={newArrivals as any} /></RevealSection>
+      <RevealSection direction="up"><BestSellers products={bestSellers as any} /></RevealSection>
+      <RevealSection direction="up"><BrandFeatures /></RevealSection>
     </>
   );
 }

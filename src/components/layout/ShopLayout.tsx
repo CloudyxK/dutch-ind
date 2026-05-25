@@ -4,14 +4,22 @@ import CartSidebar from "@/components/cart/CartSidebar";
 import FloatingContact from "./FloatingContact";
 import SplashScreen from "./SplashScreen";
 import AnnouncementTicker from "./AnnouncementTicker";
+import CustomCursor from "@/components/ui/CustomCursor";
+import MusicToggle from "@/components/ui/MusicToggle";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* Entry splash — tampil setiap kunjungan */}
+      {/* Custom cursor (desktop only, handled inside component) */}
+      <CustomCursor />
+
+      {/* Ambient music toggle */}
+      <MusicToggle />
+
+      {/* Entry splash — every visit */}
       <SplashScreen />
 
-      {/* Watermark background — logo berulang di seluruh halaman */}
+      {/* Logo watermark — repeating background */}
       <div
         className="fixed inset-0 pointer-events-none select-none"
         style={{
@@ -19,15 +27,14 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
           backgroundImage: "url(/logo.png)",
           backgroundRepeat: "repeat",
           backgroundSize: "180px auto",
-          opacity: 0.04,
+          opacity: 0.035,
           mixBlendMode: "screen",
         }}
         aria-hidden
       />
 
-      {/* Konten utama */}
+      {/* Main content */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Ticker */}
         <AnnouncementTicker />
         <Navbar />
         <main className="flex-1">{children}</main>

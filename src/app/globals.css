@@ -25,6 +25,13 @@
     font-family: var(--font-inter);
   }
 
+  /* Hide default cursor on non-touch desktop */
+  @media (pointer: fine) {
+    *, *::before, *::after {
+      cursor: none !important;
+    }
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 6px;

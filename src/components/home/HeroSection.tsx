@@ -1,75 +1,119 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
+import {
+  motion,
+  useScroll,
+  useTransform,
+  useSpring,
+} from "framer-motion";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+/* Stagger container */
+const container = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.14, delayChildren: 0.15 } },
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 36 },
+  show:   { opacity: 1, y: 0, transition: { duration: 0.75, ease: EASE } },
+};
+
+const fadeLeft = {
+  hidden: { opacity: 0, x: -40 },
+  show:   { opacity: 1, x: 0,  transition: { duration: 0.85, ease: EASE } },
+};
+
+const fadePlain = {
+  hidden: { opacity: 0 },
+  show:   { opacity: 1, transition: { duration: 0.9, ease: "easeOut" } },
+};
 
 export default function HeroSection() {
-  const parallaxRef  = useRef<HTMLDivElement>(null);
-  const beamRef      = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
 
-  /* Parallax on scroll */
-  useEffect(() => {
-    setMounted(true);
-    const onScroll = () => {
-      const y = window.scrollY;
-      if (parallaxRef.current)
-        parallaxRef.current.style.transform = `translateY(${y * 0.18}px)`;
-      if (beamRef.current)
-        beamRef.current.style.transform = `translateY(${y * 0.08}px)`;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start start", "end start"],
+  });
+
+  const rawParallax = useTransform(scrollYProgress, [0, 1], [0, 140]);
+  const rawBeam     = useTransform(scrollYProgress, [0, 1], [0, 70]);
+  const parallaxY   = useSpring(rawParallax, { stiffness: 60, damping: 20 });
+  const beamY       = useSpring(rawBeam,     { stiffness: 60, damping: 20 });
+  const logoOpacity = useTransform(scrollYProgress, [0, 0.6], [0.06, 0]);
+  const logoScale   = useTransform(scrollYProgress, [0, 0.6], [1, 1.06]);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]">
-
-      {/* ── 1. Film grain (SVG feTurbulence) ─────────────────── */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none z-20"
-           style={{ opacity: 0.055, mixBlendMode: "overlay" }} aria-hidden>
+    <section
+      ref={sectionRef}
+      className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]"
+    >
+      {/* ── Film grain ────────────────────────────────────────── */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none z-20"
+        style={{ opacity: 0.055, mixBlendMode: "overlay" }}
+        aria-hidden
+      >
         <filter id="grain-filter">
-          <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch"/>
-          <feColorMatrix type="saturate" values="0"/>
+          <feTurbulence type="fractalNoise" baseFrequency="0.72" numOctaves="4" stitchTiles="stitch" />
+          <feColorMatrix type="saturate" values="0" />
         </filter>
-        <rect width="100%" height="100%" filter="url(#grain-filter)"/>
+        <rect width="100%" height="100%" filter="url(#grain-filter)" />
       </svg>
 
-      {/* ── 2. Vignette (cinematic dark edges) ───────────────── */}
-      <div aria-hidden className="absolute inset-0 z-10 pointer-events-none"
-           style={{
-             background: "radial-gradient(ellipse 85% 80% at 50% 50%, transparent 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.9) 100%)",
-           }}/>
+      {/* ── Vignette ─────────────────────────────────────────── */}
+      <div
+        aria-hidden
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse 85% 80% at 50% 50%, transparent 30%, rgba(0,0,0,0.55) 70%, rgba(0,0,0,0.9) 100%)",
+        }}
+      />
 
-      {/* ── 3. Diagonal light beam ────────────────────────────── */}
-      <div ref={beamRef}
-           aria-hidden
-           className="absolute pointer-events-none z-10 will-change-transform"
-           style={{
-             top: "-30%", right: "-10%",
-             width: "55vw", height: "130vh",
-             background: "linear-gradient(160deg, rgba(255,255,255,0.032) 0%, rgba(255,255,255,0.014) 30%, transparent 60%)",
-             transform: "rotate(-12deg)",
-             animation: "beam-drift 14s ease-in-out infinite alternate",
-           }}/>
+      {/* ── Diagonal light beam ──────────────────────────────── */}
+      <motion.div
+        aria-hidden
+        className="absolute pointer-events-none z-10 will-change-transform"
+        style={{
+          top: "-30%", right: "-10%",
+          width: "55vw", height: "130vh",
+          background:
+            "linear-gradient(160deg, rgba(255,255,255,0.032) 0%, rgba(255,255,255,0.014) 30%, transparent 60%)",
+          rotate: "-12deg",
+          y: beamY,
+          animation: "beam-drift 14s ease-in-out infinite alternate",
+        }}
+      />
 
-      {/* ── 4. Ambient glow (behind title) ───────────────────── */}
-      <div aria-hidden className="absolute pointer-events-none z-[5]"
-           style={{
-             left: "-5vw", top: "20%",
-             width: "60vw", height: "55vh",
-             background: "radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.03) 0%, transparent 65%)",
-           }}/>
+      {/* ── Ambient glow ─────────────────────────────────────── */}
+      <div
+        aria-hidden
+        className="absolute pointer-events-none z-[5]"
+        style={{
+          left: "-5vw", top: "20%",
+          width: "60vw", height: "55vh",
+          background:
+            "radial-gradient(ellipse at 30% 50%, rgba(255,255,255,0.03) 0%, transparent 65%)",
+        }}
+      />
 
-      {/* ── 5. Cinematic letterbox bars ──────────────────────── */}
-      <div aria-hidden className="absolute top-0 left-0 right-0 h-[3.5vh] bg-black z-30 pointer-events-none"/>
-      <div aria-hidden className="absolute bottom-0 left-0 right-0 h-[3.5vh] bg-black z-30 pointer-events-none"/>
+      {/* ── Cinematic letterbox bars ──────────────────────────── */}
+      <div aria-hidden className="absolute top-0 inset-x-0 h-[3.5vh] bg-black z-30 pointer-events-none" />
+      <div aria-hidden className="absolute bottom-0 inset-x-0 h-[3.5vh] bg-black z-30 pointer-events-none" />
 
-      {/* ── 6. Background super-size wordmark ────────────────── */}
-      <div ref={parallaxRef}
-           aria-hidden
-           className="absolute inset-0 flex items-center justify-end pointer-events-none select-none overflow-hidden will-change-transform z-[6]">
+      {/* ── Background wordmark + parallax ───────────────────── */}
+      <motion.div
+        aria-hidden
+        style={{ y: parallaxY }}
+        className="absolute inset-0 flex items-center justify-end pointer-events-none select-none overflow-hidden z-[6]"
+      >
         <span
           className="font-display tracking-tighter leading-none"
           style={{
@@ -77,124 +121,150 @@ export default function HeroSection() {
             color: "transparent",
             WebkitTextStroke: "1px rgba(255,255,255,0.04)",
             transform: "translateX(6vw)",
-            letterSpacing: "-0.02em",
-          }}>
+          }}
+        >
           IND
         </span>
-      </div>
+      </motion.div>
 
-      {/* ── 7. Main content ──────────────────────────────────── */}
-      <div className="container-main relative z-20 py-24">
+      {/* ── 3D Floating logo emblem (top-right) ─────────────── */}
+      <motion.div
+        aria-hidden
+        className="absolute pointer-events-none select-none hidden lg:block"
+        style={{
+          right: "7vw", top: "18%",
+          width: "22vw",
+          opacity: logoOpacity,
+          scale: logoScale,
+          animation: "emblem-float 8s ease-in-out infinite",
+          zIndex: 7,
+        }}
+      >
+        <div
+          style={{
+            transformStyle: "preserve-3d",
+            animation: "emblem-rotate 18s linear infinite",
+          }}
+        >
+          <Image
+            src="/logo.png"
+            alt=""
+            width={400}
+            height={200}
+            className="w-full h-auto object-contain"
+            style={{
+              filter: "brightness(2) contrast(0.7)",
+            }}
+          />
+        </div>
+      </motion.div>
+
+      {/* ── Main content ─────────────────────────────────────── */}
+      <motion.div
+        className="container-main relative z-20 py-24"
+        variants={container}
+        initial="hidden"
+        animate="show"
+      >
         <div className="max-w-4xl">
 
           {/* Eyebrow */}
-          <div className={`flex items-center gap-3 mb-10 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
-               style={{ transitionDelay: "100ms" }}>
-            <div className="w-8 h-px" style={{ background: "rgba(255,255,255,0.3)" }}/>
-            <span className="text-[10px] font-semibold uppercase tracking-[0.5em]"
-                  style={{ color: "rgba(255,255,255,0.4)", letterSpacing: "0.5em" }}>
+          <motion.div variants={fadePlain} className="flex items-center gap-3 mb-10">
+            <div className="w-8 h-px bg-white/30" />
+            <span className="text-[10px] font-semibold uppercase tracking-[0.5em] text-white/40">
               Koleksi Terbaru
             </span>
-          </div>
+          </motion.div>
 
-          {/* Main title */}
-          <h1 className="leading-[0.9] uppercase font-display"
+          {/* Title */}
+          <h1 className="leading-[0.9] uppercase font-display overflow-hidden"
               style={{ fontSize: "clamp(4rem,11.5vw,9rem)" }}>
-
-            {/* DUTCH — animate in from left */}
-            <span className={`block text-white transition-all duration-900 ${mounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-8"}`}
-                  style={{
-                    transitionDelay: "250ms",
-                    letterSpacing: "0.03em",
-                    textShadow: "0 0 120px rgba(255,255,255,0.06)",
-                  }}>
+            <motion.span
+              variants={fadeLeft}
+              className="block text-white"
+              style={{ letterSpacing: "0.03em", textShadow: "0 0 120px rgba(255,255,255,0.06)" }}
+            >
               DUTCH
-            </span>
-
-            {/* IND — outline, animate in from below */}
-            <span className={`block transition-all duration-900 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-                  style={{
-                    transitionDelay: "420ms",
-                    color: "transparent",
-                    WebkitTextStroke: "2px rgba(255,255,255,0.8)",
-                    letterSpacing: "0.03em",
-                  }}>
+            </motion.span>
+            <motion.span
+              variants={fadeUp}
+              className="block"
+              style={{
+                color: "transparent",
+                WebkitTextStroke: "2px rgba(255,255,255,0.8)",
+                letterSpacing: "0.03em",
+              }}
+            >
               IND
-            </span>
+            </motion.span>
           </h1>
 
           {/* Divider */}
-          <div className={`mt-8 flex items-center gap-4 transition-all duration-700 ${mounted ? "opacity-100" : "opacity-0"}`}
-               style={{ transitionDelay: "600ms" }}>
-            <div className="h-px flex-1 max-w-[60px]" style={{ background: "rgba(255,255,255,0.15)" }}/>
-            <span className="text-[9px] uppercase tracking-[0.4em]" style={{ color: "rgba(255,255,255,0.2)" }}>
-              Est. 2025
-            </span>
-          </div>
+          <motion.div variants={fadePlain} className="mt-8 flex items-center gap-4">
+            <div className="h-px flex-1 max-w-[60px] bg-white/15" />
+            <span className="text-[9px] uppercase tracking-[0.4em] text-white/20">Est. 2025</span>
+          </motion.div>
 
           {/* Description */}
-          <p className={`mt-6 text-sm max-w-[280px] leading-relaxed transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
-             style={{
-               transitionDelay: "700ms",
-               color: "rgba(255,255,255,0.38)",
-             }}>
+          <motion.p
+            variants={fadeUp}
+            className="mt-6 text-sm max-w-[280px] leading-relaxed text-white/38"
+            style={{ color: "rgba(255,255,255,0.38)" }}
+          >
             Seller brand lokal streetwear #1 termurah di Samarinda — kualitas premium, harga terjangkau.
-          </p>
+          </motion.p>
 
           {/* CTAs */}
-          <div className={`flex items-center gap-7 mt-10 transition-all duration-700 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"}`}
-               style={{ transitionDelay: "850ms" }}>
+          <motion.div variants={fadeUp} className="flex items-center gap-7 mt-10">
             <Link
               href="/products"
               className="group inline-flex items-center gap-2.5 bg-white text-black px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] hover:bg-brand-gray-100 transition-colors"
             >
               Belanja Sekarang
-              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5"/>
+              <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/products?isNewArrival=true"
-              className="text-[11px] font-semibold uppercase tracking-[0.18em] transition-colors hover:opacity-80"
+              className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45 hover:text-white transition-colors"
               style={{ color: "rgba(255,255,255,0.45)" }}
             >
               New Arrivals
             </Link>
-          </div>
+          </motion.div>
 
-          {/* Bottom metadata row */}
-          <div className={`mt-16 flex items-center gap-6 transition-all duration-700 ${mounted ? "opacity-100" : "opacity-0"}`}
-               style={{ transitionDelay: "1050ms" }}>
+          {/* Stats row */}
+          <motion.div variants={fadePlain} className="mt-16 flex items-center gap-6">
             {[
-              { n: "100+", label: "Produk" },
+              { n: "100+", label: "Produk"   },
               { n: "100%", label: "Original" },
-              { n: "Free", label: "Ongkir" },
+              { n: "Free", label: "Ongkir"   },
             ].map(({ n, label }) => (
               <div key={label} className="flex items-center gap-2.5">
                 <span className="text-xs font-bold text-white">{n}</span>
-                <span className="text-[10px] uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.25)" }}>
-                  {label}
-                </span>
-                <div className="w-px h-3 last:hidden" style={{ background: "rgba(255,255,255,0.12)" }}/>
+                <span className="text-[10px] uppercase tracking-widest text-white/25">{label}</span>
+                <div className="w-px h-3 last:hidden bg-white/12" />
               </div>
             ))}
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* ── 8. Scroll indicator ──────────────────────────────── */}
-      <div className={`absolute bottom-[5vh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20 transition-opacity duration-1000 ${mounted ? "opacity-30" : "opacity-0"}`}
-           style={{ transitionDelay: "1200ms" }}>
-        <div className="relative w-[1px] h-12 overflow-hidden" style={{ background: "rgba(255,255,255,0.15)" }}>
-          <div className="absolute top-0 left-0 w-full"
-               style={{
-                 height: "40%",
-                 background: "white",
-                 animation: "scroll-line 2s ease-in-out infinite",
-               }}/>
+      {/* ── Scroll indicator ─────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.3 }}
+        transition={{ delay: 2.2, duration: 1 }}
+        className="absolute bottom-[5vh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-20"
+      >
+        <div className="relative w-[1px] h-12 overflow-hidden bg-white/15">
+          <div
+            className="absolute top-0 left-0 w-full h-[40%] bg-white"
+            style={{ animation: "scroll-line 2s ease-in-out infinite" }}
+          />
         </div>
-        <span className="text-[8px] uppercase tracking-[0.4em]" style={{ color: "rgba(255,255,255,0.4)" }}>Scroll</span>
-      </div>
+        <span className="text-[8px] uppercase tracking-[0.4em] text-white/40">Scroll</span>
+      </motion.div>
 
-      {/* ── Keyframes ────────────────────────────────────────── */}
       <style>{`
         @keyframes beam-drift {
           0%   { opacity: 1; transform: rotate(-12deg) translateX(0); }
@@ -204,7 +274,14 @@ export default function HeroSection() {
           0%   { transform: translateY(-100%); opacity: 1; }
           100% { transform: translateY(280%);  opacity: 0; }
         }
-        .duration-900 { transition-duration: 900ms; }
+        @keyframes emblem-float {
+          0%, 100% { transform: translateY(0px); }
+          50%       { transform: translateY(-18px); }
+        }
+        @keyframes emblem-rotate {
+          0%   { transform: perspective(600px) rotateY(0deg); }
+          100% { transform: perspective(600px) rotateY(360deg); }
+        }
       `}</style>
     </section>
   );
