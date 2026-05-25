@@ -140,7 +140,7 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
     <div className="bg-brand-gray-900 border border-brand-gray-700 p-5 space-y-5">
       <div className="flex items-center justify-between">
         <h2 className="text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-          <Banknote className="w-4 h-4" /> Instruksi Pembayaran Manual
+          <Banknote className="w-4 h-4" /> Instruksi Pembayaran
         </h2>
         <span className="text-xs font-bold font-mono text-white bg-brand-gray-800 px-2 py-1">
           {formatPrice(amount)}
@@ -172,7 +172,7 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
           {hasBank && (
             <button onClick={() => setActiveTab("bank")}
                     className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${activeTab === "bank" ? "bg-white text-black" : "text-brand-gray-400 hover:text-white"}`}>
-              <Banknote className="w-3.5 h-3.5" /> Bank
+              <Banknote className="w-3.5 h-3.5" /> Virtual Account
             </button>
           )}
           {hasEWallet && (
@@ -200,7 +200,7 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
                 <p className="font-mono font-bold text-lg tracking-widest mt-0.5">{bank.number}</p>
                 <p className="text-xs text-brand-gray-400">{bank.holder}</p>
               </div>
-              <button onClick={() => copyToClipboard(bank.number, `No. rek ${bank.name}`)}
+              <button onClick={() => copyToClipboard(bank.number, `No. VA ${bank.name}`)}
                       className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
                 <Copy className="w-3 h-3" /> Salin
               </button>

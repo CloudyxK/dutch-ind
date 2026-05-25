@@ -65,25 +65,25 @@ export default function PaymentSettingsPage() {
           <Banknote className="w-6 h-6" /> Pengaturan Pembayaran Manual
         </h1>
         <p className="text-brand-gray-500 text-sm mt-1">
-          Info rekening bank, e-wallet &amp; QRIS yang ditampilkan ke pembeli
+          Info akun virtual bank, e-wallet &amp; QRIS yang ditampilkan ke pembeli
         </p>
       </div>
 
-      {/* Bank accounts */}
+      {/* Virtual Account */}
       <div className="bg-brand-gray-900 border border-brand-gray-700 p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-            <Banknote className="w-4 h-4" /> Rekening Bank
+            <Banknote className="w-4 h-4" /> Akun Virtual Bank
           </h2>
           <button onClick={addBank}
                   className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-brand-gray-600 hover:border-white transition-colors">
-            <Plus className="w-3 h-3" /> Tambah Rekening
+            <Plus className="w-3 h-3" /> Tambah Akun Virtual
           </button>
         </div>
 
         {config.banks.length === 0 && (
           <p className="text-sm text-brand-gray-500 py-4 text-center">
-            Belum ada rekening. Klik "Tambah Rekening" untuk menambahkan.
+            Belum ada akun virtual. Klik "Tambah Akun Virtual" untuk menambahkan.
           </p>
         )}
 
@@ -99,7 +99,7 @@ export default function PaymentSettingsPage() {
                      className="input-field" placeholder="BCA" />
             </div>
             <div>
-              <label className="input-label">No. Rekening</label>
+              <label className="input-label">No. Akun Virtual</label>
               <input value={bank.number} onChange={e => updateBank(i, "number", e.target.value)}
                      className="input-field font-mono" placeholder="1234567890" />
             </div>
