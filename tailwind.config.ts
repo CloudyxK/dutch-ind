@@ -41,11 +41,47 @@ const config: Config = {
         "scale-in": "scaleIn 0.3s ease-out",
         shimmer: "shimmer 2s infinite",
         marquee: "marquee 25s linear infinite",
+        "marquee-fast": "marquee 15s linear infinite",
+        "splash-enter": "splashEnter 0.01s ease-out forwards",
+        "splash-leave": "splashLeave 0.8s cubic-bezier(0.76,0,0.24,1) forwards",
+        "logo-enter": "logoEnter 1s cubic-bezier(0.22,1,0.36,1) 0.1s both",
+        "logo-leave": "logoLeave 0.5s ease-in forwards",
+        "enter-text": "enterText 0.8s ease-out 0.7s both",
+        "brand-fade": "brandFade 1.2s ease-out 1.2s both",
+        "ticker-scroll": "tickerScroll 30s linear infinite",
       },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
+        },
+        splashEnter: {
+          "0%":   { transform: "translateY(0)", opacity: "1" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
+        splashLeave: {
+          "0%":   { transform: "translateY(0)", opacity: "1" },
+          "100%": { transform: "translateY(-100%)", opacity: "1" },
+        },
+        logoEnter: {
+          "0%":   { transform: "translateY(-60px) scale(0.9)", opacity: "0" },
+          "100%": { transform: "translateY(0) scale(1)",       opacity: "1" },
+        },
+        logoLeave: {
+          "0%":   { transform: "scale(1)",    opacity: "1" },
+          "100%": { transform: "scale(1.1)",  opacity: "0" },
+        },
+        enterText: {
+          "0%":   { transform: "translateY(20px)", opacity: "0" },
+          "100%": { transform: "translateY(0)",    opacity: "1" },
+        },
+        brandFade: {
+          "0%":   { opacity: "0" },
+          "100%": { opacity: "1" },
+        },
+        tickerScroll: {
+          "0%":   { transform: "translateX(0%)" },
+          "100%": { transform: "translateX(-50%)" },
         },
         slideUp: {
           "0%": { transform: "translateY(20px)", opacity: "0" },

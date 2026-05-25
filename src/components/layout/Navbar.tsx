@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { ShoppingBag, Search, User, Menu, X, Heart } from "lucide-react";
@@ -23,7 +24,14 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [logoSpinning, setLogoSpinning] = useState(false);
   const totalItems = getTotalItems();
+
+  function handleLogoClick(e: React.MouseEvent) {
+    if (logoSpinning) return;
+    setLogoSpinning(true);
+    setTimeout(() => setLogoSpinning(false), 800);
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -33,12 +41,6 @@ export default function Navbar() {
 
   return (
     <>
-      {/* Announcement bar */}
-      <div className="bg-white text-black text-center py-2 text-xs tracking-widest uppercase font-semibold">
-        Gratis Ongkir untuk Pembelian di atas Rp500.000 &nbsp;|&nbsp; Gunakan kode{" "}
-        <span className="underline">WELCOME10</span> untuk diskon 10%
-      </div>
-
       <header
         className={cn(
           "sticky top-0 z-50 transition-all duration-300",
@@ -50,11 +52,27 @@ export default function Navbar() {
         <div className="container-main">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link
-              href="/"
-              className="text-xl font-display tracking-widest hover:opacity-80 transition-opacity"
-            >
-              DUTCH.IND
+            <Link href="/" className="flex-shrink-0" style={{ perspective: "600px" }}>
+              <div
+                onClick={handleLogoClick}
+                className="cursor-pointer logo-3d-wrap"
+                style={{
+                  transformStyle: "preserve-3d",
+                  animation: logoSpinning ? "logo3DSpin 0.8s cubic-bezier(0.22,1,0.36,1) forwards" : undefined,
+                }}
+              >
+                <Image
+                  src="/logo.png"
+                  alt="DUTCH.IND"
+                  width={90}
+                  height={45}
+                  className="h-9 w-auto object-contain"
+                  priority
+                  style={{
+                    filter: "drop-shadow(0 2px 8px rgba(255,255,255,0.18)) drop-shadow(0 1px 2px rgba(0,0,0,0.8))",
+                  }}
+                />
+              </div>
             </Link>
 
             {/* Desktop nav */}
