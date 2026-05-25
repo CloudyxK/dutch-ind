@@ -1,65 +1,241 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Image from "next/image";
-
-/* Number of extrusion depth layers behind the front face */
-const EXTRUSION = 14;
 
 export default function SplashScreen() {
-  const [visible,   setVisible]   = useState(true);
-  const [leaving,   setLeaving]   = useState(false);
-  const [mounted,   setMounted]   = useState(false);
-  const [hoverBtn,  setHoverBtn]  = useState(false);
+  const [visible,  setVisible]  = useState(true);
+  const [leaving,  setLeaving]  = useState(false);
+  const [mounted,  setMounted]  = useState(false);
+  const [hoverBtn, setHoverBtn] = useState(false);
 
-  const splashRef    = useRef<HTMLDivElement>(null);
-  const rafRef       = useRef<number>(0);
-  const autoT        = useRef(0);
-  const mouseTarget  = useRef({ x: 0, y: 0 });
-  const mouseCur     = useRef({ x: 0, y: 0 });
-  const rxRef        = useRef(0);
-  const ryRef        = useRef(0);
-  const wrapRef      = useRef<HTMLDivElement>(null);
+  /* ── canvas + coin state ── */
+  const canvasRef   = useRef<HTMLCanvasElement>(null);
+  const rafRef      = useRef<number>(0);
+  const angleY      = useRef(0.35);          // start slightly angled
+  const velY        = useRef(0.013);         // radians / frame
+  const isDragging  = useRef(false);
+  const lastX       = useRef(0);
+  const logoImg     = useRef<HTMLImageElement | null>(null);
+  const logoReady   = useRef(false);
+  const coinR       = useRef(140);           // updated on mount
+  const rimT        = useRef(22);
 
   useEffect(() => { setMounted(true); }, []);
 
-  /* Continuous auto-sway + mouse-tilt RAF loop — writes directly to DOM */
+  /* pre-load logo */
   useEffect(() => {
-    function loop() {
-      autoT.current += 0.006;
-      const autoY = Math.sin(autoT.current) * 18;
-      const autoX = Math.sin(autoT.current * 0.55) * 7;
+    const img = new window.Image();
+    img.src = "/logo.png";
+    img.onload = () => { logoImg.current = img; logoReady.current = true; };
+  }, []);
 
-      const LERP = 0.045;
-      mouseCur.current.x += (mouseTarget.current.x - mouseCur.current.x) * LERP;
-      mouseCur.current.y += (mouseTarget.current.y - mouseCur.current.y) * LERP;
+  /* size canvas once on mount */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const vw  = window.innerWidth;
+    const R   = Math.min(Math.round(vw * 0.22), 148);
+    const T   = 22;
+    coinR.current = R;
+    rimT.current  = T;
+    const S   = (R + T) * 2 + 60;     /* extra room for glow + shadow */
+    canvas.width  = S;
+    canvas.height = S + 24;            /* extra at bottom for drop shadow */
+  }, []);
 
-      rxRef.current = autoX + mouseCur.current.x;
-      ryRef.current = autoY + mouseCur.current.y;
+  /* ── main render loop ── */
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
 
-      if (wrapRef.current) {
-        wrapRef.current.style.transform =
-          `perspective(1100px) rotateX(${rxRef.current}deg) rotateY(${ryRef.current}deg)`;
+    function draw() {
+      const W  = canvas!.width;
+      const H  = canvas!.height;
+      const cx = W / 2;
+      const cy = H / 2 - 8;           /* slightly above centre so shadow fits */
+      const R  = coinR.current;
+      const T  = rimT.current;
+
+      ctx.clearRect(0, 0, W, H);
+
+      const a    = angleY.current;
+      const cosA = Math.cos(a);
+      const sinA = Math.sin(a);
+      const fW   = R * Math.abs(cosA); /* face half-width on screen */
+
+      /* ── ambient glow behind coin ── */
+      const glowGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, R * 1.6);
+      glowGrad.addColorStop(0,   "rgba(255,255,255,0.045)");
+      glowGrad.addColorStop(0.5, "rgba(255,255,255,0.01)");
+      glowGrad.addColorStop(1,   "rgba(255,255,255,0)");
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, W, H);
+
+      /* ── drop shadow (ellipse below coin) ── */
+      ctx.save();
+      ctx.filter = "blur(18px)";
+      ctx.beginPath();
+      const shadowW = (R + T) * Math.abs(cosA) * 0.85 + T * Math.abs(sinA);
+      ctx.ellipse(cx, cy + R + T + 6, Math.max(shadowW, 10), 11, 0, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(0,0,0,0.65)";
+      ctx.fill();
+      ctx.filter = "none";
+      ctx.restore();
+
+      /* ── RIM ──────────────────────────────────────────────── */
+      if (Math.abs(sinA) > 0.008) {
+        const rimOff = T * sinA;       /* back-face offset in screen X */
+
+        ctx.beginPath();
+        if (sinA > 0) {
+          /* right rim visible */
+          ctx.ellipse(cx, cy, fW || 0.5, R, 0, -Math.PI / 2, Math.PI / 2, false);
+          ctx.ellipse(cx + rimOff, cy, fW || 0.5, R, 0, Math.PI / 2, -Math.PI / 2, true);
+        } else {
+          /* left rim visible */
+          ctx.ellipse(cx, cy, fW || 0.5, R, 0, Math.PI / 2, -Math.PI / 2, false);
+          ctx.ellipse(cx + rimOff, cy, fW || 0.5, R, 0, -Math.PI / 2, Math.PI / 2, true);
+        }
+        ctx.closePath();
+
+        /* metallic chrome gradient along Y */
+        const rimGrad = ctx.createLinearGradient(cx, cy - R, cx, cy + R);
+        rimGrad.addColorStop(0,    "#111");
+        rimGrad.addColorStop(0.12, "#2e2e2e");
+        rimGrad.addColorStop(0.28, "#5a5a5a");
+        rimGrad.addColorStop(0.5,  "#6e6e6e");
+        rimGrad.addColorStop(0.72, "#5a5a5a");
+        rimGrad.addColorStop(0.88, "#2e2e2e");
+        rimGrad.addColorStop(1,    "#0a0a0a");
+        ctx.fillStyle = rimGrad;
+        ctx.fill();
+
+        /* highlight edge on the far face arc */
+        ctx.beginPath();
+        const rimEdgeX = cx + rimOff;
+        if (sinA > 0) {
+          ctx.ellipse(rimEdgeX, cy, fW || 0.5, R, 0, -Math.PI / 2, Math.PI / 2, false);
+        } else {
+          ctx.ellipse(rimEdgeX, cy, fW || 0.5, R, 0, Math.PI / 2, -Math.PI / 2, false);
+        }
+        ctx.strokeStyle = "rgba(255,255,255,0.08)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
       }
 
-      rafRef.current = requestAnimationFrame(loop);
+      /* ── COIN FACE ────────────────────────────────────────── */
+      if (fW > 0.5) {
+        ctx.save();
+
+        /* clip to ellipse */
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, fW, R, 0, 0, Math.PI * 2);
+        ctx.clip();
+
+        /* dark metallic face background */
+        const bgGrad = ctx.createRadialGradient(
+          cx - fW * 0.18, cy - R * 0.22, 0,
+          cx, cy, R * 1.15
+        );
+        bgGrad.addColorStop(0,   "#1e1e1e");
+        bgGrad.addColorStop(0.55,"#0e0e0e");
+        bgGrad.addColorStop(1,   "#060606");
+        ctx.fillStyle = bgGrad;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, fW, R, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        /* logo texture — screen blend */
+        if (logoReady.current && logoImg.current) {
+          const nat   = logoImg.current;
+          const lw    = fW * 1.72;
+          const lh    = lw * (nat.naturalHeight / nat.naturalWidth);
+          ctx.globalCompositeOperation = "screen";
+          ctx.filter = "brightness(2.2) contrast(3.5) saturate(0.15)";
+          ctx.drawImage(nat, cx - lw / 2, cy - lh / 2, lw, lh);
+          ctx.filter  = "none";
+          ctx.globalCompositeOperation = "source-over";
+        }
+
+        /* back-face darkening when coin flips */
+        if (cosA < 0) {
+          ctx.fillStyle = "rgba(0,0,0,0.78)";
+          ctx.beginPath();
+          ctx.ellipse(cx, cy, fW, R, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        /* top-left specular highlight */
+        const specGrad = ctx.createRadialGradient(
+          cx - fW * 0.28, cy - R * 0.32, 0,
+          cx,             cy,             R * 1.05
+        );
+        const sa = Math.abs(cosA) * 0.24;
+        specGrad.addColorStop(0,   `rgba(255,255,255,${sa})`);
+        specGrad.addColorStop(0.45,`rgba(255,255,255,${(sa * 0.28).toFixed(3)})`);
+        specGrad.addColorStop(1,   "rgba(255,255,255,0)");
+        ctx.fillStyle = specGrad;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, fW, R, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        /* chrome ring on face perimeter */
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, fW, R, 0, 0, Math.PI * 2);
+        const edgeGrad = ctx.createLinearGradient(cx - fW, cy, cx + fW, cy);
+        edgeGrad.addColorStop(0,   "rgba(255,255,255,0.55)");
+        edgeGrad.addColorStop(0.28,"rgba(255,255,255,0.12)");
+        edgeGrad.addColorStop(0.72,"rgba(255,255,255,0.12)");
+        edgeGrad.addColorStop(1,   "rgba(255,255,255,0.55)");
+        ctx.strokeStyle = edgeGrad;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
     }
-    rafRef.current = requestAnimationFrame(loop);
+
+    /* RAF tick */
+    function tick() {
+      /* smoothly approach target auto-spin speed */
+      velY.current += (0.013 - velY.current) * 0.018;
+      angleY.current += velY.current;
+      draw();
+      rafRef.current = requestAnimationFrame(tick);
+    }
+    rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const el = splashRef.current;
-    if (!el) return;
-    const r  = el.getBoundingClientRect();
-    const dx = (e.clientX - (r.left + r.width  / 2)) / (r.width  / 2);
-    const dy = (e.clientY - (r.top  + r.height / 2)) / (r.height / 2);
-    mouseTarget.current = { x: dy * -9, y: dx * 14 };
+  /* ── drag interaction ── */
+  const onMouseDown = useCallback((e: React.MouseEvent) => {
+    isDragging.current = true;
+    lastX.current = e.clientX;
   }, []);
 
-  const handleMouseLeave = useCallback(() => {
-    mouseTarget.current = { x: 0, y: 0 };
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.clientX - lastX.current;
+    velY.current = dx * 0.018;
+    lastX.current = e.clientX;
   }, []);
+
+  const onMouseUp = useCallback(() => { isDragging.current = false; }, []);
+
+  const onTouchStart = useCallback((e: React.TouchEvent) => {
+    isDragging.current = true;
+    lastX.current = e.touches[0].clientX;
+  }, []);
+
+  const onTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const dx = e.touches[0].clientX - lastX.current;
+    velY.current = dx * 0.018;
+    lastX.current = e.touches[0].clientX;
+  }, []);
+
+  const onTouchEnd = useCallback(() => { isDragging.current = false; }, []);
 
   function enter() {
     setLeaving(true);
@@ -70,14 +246,11 @@ export default function SplashScreen() {
 
   return (
     <div
-      ref={splashRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center select-none overflow-hidden
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center
+        select-none overflow-hidden
         ${leaving ? "animate-splash-leave" : "animate-splash-enter"}`}
       style={{ background: "#060608" }}
     >
-
       {/* ── Grain ── */}
       <div
         aria-hidden
@@ -95,148 +268,54 @@ export default function SplashScreen() {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 75% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.75) 100%)",
-        }}
-      />
-
-      {/* ── Cinematic ambient glow ── */}
-      <div
-        aria-hidden
-        className="absolute pointer-events-none"
-        style={{
-          top: "15%", left: "50%",
-          transform: "translateX(-50%)",
-          width: "700px", height: "500px",
-          background:
-            "radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.02) 45%, transparent 70%)",
-          filter: "blur(40px)",
+            "radial-gradient(ellipse 75% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.78) 100%)",
         }}
       />
 
       {/* ── Corner brackets ── */}
       {[
-        { top: "28px", left: "28px",  border: "border-t border-l" },
-        { top: "28px", right: "28px", border: "border-t border-r" },
+        { top: "28px",    left: "28px",  border: "border-t border-l" },
+        { top: "28px",    right: "28px", border: "border-t border-r" },
         { bottom: "28px", left: "28px",  border: "border-b border-l" },
         { bottom: "28px", right: "28px", border: "border-b border-r" },
       ].map((pos, i) => (
         <div
           key={i}
           aria-hidden
-          className={`absolute w-5 h-5 ${pos.border} border-white/[0.12] pointer-events-none`}
+          className={`absolute w-5 h-5 ${pos.border} border-white/[0.11] pointer-events-none`}
           style={{ top: pos.top, left: pos.left, bottom: pos.bottom, right: pos.right }}
         />
       ))}
 
-      {/* ── 3D Logo ── */}
+      {/* ── 3D Coin logo ── */}
       <div
-        className={`relative mb-16 ${leaving ? "animate-logo-leave" : "animate-logo-enter"}`}
-        style={{ perspective: "1100px" }}
+        className={`relative mb-14 ${leaving ? "animate-logo-leave" : "animate-logo-enter"}`}
+        style={{ cursor: isDragging.current ? "grabbing" : "grab" }}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
-        {/* Tight core glow */}
-        <div
-          aria-hidden
+        <canvas
+          ref={canvasRef}
           style={{
-            position: "absolute",
-            inset: "-80px",
-            background:
-              "radial-gradient(ellipse 50% 40% at 50% 50%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, transparent 72%)",
-            filter: "blur(24px)",
-            pointerEvents: "none",
+            display: "block",
+            /* scale canvas to responsive width without distortion */
+            width:  "clamp(240px, 44vw, 340px)",
+            height: "auto",
           }}
         />
 
-        {/* 3D transform wrapper — written via ref, no React re-render */}
-        <div
-          ref={wrapRef}
-          style={{
-            transformStyle: "preserve-3d",
-            willChange: "transform",
-            position: "relative",
-          }}
+        {/* Drag hint */}
+        <p
+          className="absolute -bottom-6 left-0 right-0 text-center text-[8px] uppercase tracking-[0.55em]"
+          style={{ color: "rgba(255,255,255,0.18)" }}
         >
-          {/* ── EXTRUSION layers — stacked behind, each 2.8px deeper ── */}
-          {Array.from({ length: EXTRUSION }, (_, i) => (
-            <div
-              key={i}
-              aria-hidden
-              style={{
-                position:  "absolute",
-                inset:     0,
-                display:   "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transform:  `translateZ(${-(i + 1) * 2.8}px)`,
-                pointerEvents: "none",
-              }}
-            >
-              <Image
-                src="/logo.png"
-                alt=""
-                width={0}
-                height={0}
-                sizes="60vw"
-                style={{
-                  width: "clamp(280px, 42vw, 460px)",
-                  height: "auto",
-                  display: "block",
-                  mixBlendMode: "screen",
-                  filter: `brightness(${Math.max(0.08, 0.35 - i * 0.022)}) contrast(4) saturate(0)`,
-                  opacity: Math.max(0.1, 0.9 - i * 0.055),
-                }}
-                draggable={false}
-              />
-            </div>
-          ))}
-
-          {/* ── FRONT FACE — brightest, sits at Z=0 ── */}
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <Image
-              src="/logo.png"
-              alt="DUTCH.IND"
-              width={0}
-              height={0}
-              sizes="60vw"
-              style={{
-                width: "clamp(280px, 42vw, 460px)",
-                height: "auto",
-                display: "block",
-                mixBlendMode: "screen",
-                filter: "brightness(1.6) contrast(3) saturate(0.25)",
-              }}
-              priority
-              draggable={false}
-            />
-
-            {/* Chrome specular highlight — fixed top-left, NOT cursor-tracking */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "radial-gradient(ellipse 60% 45% at 36% 28%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 45%, transparent 70%)",
-                mixBlendMode: "overlay",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* Bottom rim light */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                bottom: "-2px",
-                inset: "auto 0 -2px 0",
-                height: "35%",
-                background:
-                  "linear-gradient(to top, rgba(255,255,255,0.06) 0%, transparent 100%)",
-                mixBlendMode: "overlay",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-        </div>
+          Drag to spin
+        </p>
       </div>
 
       {/* ── MASUK button ── */}
@@ -244,7 +323,7 @@ export default function SplashScreen() {
         className={leaving ? "opacity-0 translate-y-6" : "animate-enter-text"}
         style={{ transition: leaving ? "all 0.35s ease-in" : "" }}
       >
-        {/* Eyebrow label */}
+        {/* Eyebrow */}
         <p
           className="text-center uppercase mb-4"
           style={{
@@ -282,12 +361,12 @@ export default function SplashScreen() {
               transition:      "transform 0.42s cubic-bezier(0.76,0,0.24,1)",
             }}
           />
-          {/* Scanline overlay on hover */}
+          {/* Scanline */}
           <span
             aria-hidden
             className="absolute inset-0 pointer-events-none"
             style={{
-              opacity:    hoverBtn ? 0.07 : 0,
+              opacity: hoverBtn ? 0.07 : 0,
               transition: "opacity 0.3s",
               backgroundImage:
                 "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,1) 2px, rgba(0,0,0,1) 4px)",
@@ -302,7 +381,7 @@ export default function SplashScreen() {
               color:         hoverBtn ? "#000" : "#fff",
               transition:    "color 0.28s",
               display:       "block",
-              paddingLeft:   "0.6em", /* compensate tracking shift */
+              paddingLeft:   "0.6em",
             }}
           >
             MASUK

@@ -19,23 +19,23 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       {/* Entry splash — every visit */}
       <SplashScreen />
 
-      {/* Logo watermark — repeating brand pattern */}
-      <div
-        className="fixed inset-0 pointer-events-none select-none"
-        style={{
-          zIndex: 0,
-          backgroundImage: "url(/logo.png)",
-          backgroundRepeat: "repeat",
-          backgroundSize: "180px auto",
-          opacity: 0.18,
-          mixBlendMode: "screen",
-          filter: "brightness(3) contrast(2) saturate(0)",
-        }}
-        aria-hidden
-      />
-
       {/* Main content */}
       <div className="relative z-10 flex flex-col min-h-screen">
+        {/* Logo watermark — overlaid above section backgrounds via mix-blend-mode */}
+        <div
+          className="fixed inset-0 pointer-events-none select-none"
+          style={{
+            zIndex: 2,
+            backgroundImage: "url(/logo.png)",
+            backgroundRepeat: "repeat",
+            backgroundSize: "175px auto",
+            opacity: 0.11,
+            mixBlendMode: "screen",
+            filter: "brightness(5) contrast(3) saturate(0)",
+          }}
+          aria-hidden
+        />
+
         <AnnouncementTicker />
         <Navbar />
         <main className="flex-1">{children}</main>
