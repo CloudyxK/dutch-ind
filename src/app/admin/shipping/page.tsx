@@ -24,9 +24,9 @@ type Cfg = {
 };
 
 const DEFAULTS: Cfg = {
-  "store.lat": "-6.2088",
-  "store.lng": "106.8456",
-  "store.address": "Jakarta",
+  "store.lat": "-0.5021",
+  "store.lng": "117.1536",
+  "store.address": "Samarinda",
   "shipping.reguler.base": "15000",
   "shipping.reguler.freeAbove": "500000",
   "shipping.ekspres.base": "25000",
@@ -79,10 +79,7 @@ export default function AdminShippingPage() {
     if (reverseTimer.current) clearTimeout(reverseTimer.current);
     reverseTimer.current = setTimeout(async () => {
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
-          { headers: { "User-Agent": "dutch-ind-store/1.0" } }
-        );
+        const res = await fetch(`/api/geocode?lat=${lat}&lng=${lng}`);
         const data = await res.json();
         if (data.display_name) {
           setResolvedAddr(data.display_name.split(",").slice(0, 4).join(", "));
@@ -95,12 +92,10 @@ export default function AdminShippingPage() {
     if (!cfg["store.address"]) return;
     setGeocoding(true);
     try {
-      const q = encodeURIComponent(cfg["store.address"] + " Indonesia");
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&limit=1&countrycodes=id`
-      );
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(cfg["store.address"] + " Indonesia")}`);
+      if (!res.ok) throw new Error("server error");
       const data = await res.json();
-      if (data.length) {
+      if (Array.isArray(data) && data.length > 0) {
         setCfg((prev) => ({
           ...prev,
           "store.lat": parseFloat(data[0].lat).toFixed(6),
