@@ -1,36 +1,39 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 export default function CustomCursor() {
-  const [mounted, setMounted] = useState(false);
   const dotRef    = useRef<HTMLDivElement>(null);
   const ringRef   = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    /* Skip on touch/mobile */
+    if (typeof window === "undefined") return;
     if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
 
-    setMounted(true);
+    const dot    = dotRef.current;
+    const ring   = ringRef.current;
+    const canvas = canvasRef.current;
+    if (!dot || !ring || !canvas) return;
 
-    /* Inject cursor:none globally via stylesheet — most reliable approach */
-    const style = document.createElement("style");
-    style.id = "custom-cursor-css";
-    style.textContent = "html, html *, html *::before, html *::after { cursor: none !important; }";
-    document.head.appendChild(style);
+    /* Inject cursor:none — most reliable approach */
+    let styleEl = document.getElementById("custom-cursor-css") as HTMLStyleElement | null;
+    if (!styleEl) {
+      styleEl = document.createElement("style");
+      styleEl.id = "custom-cursor-css";
+      document.head.appendChild(styleEl);
+    }
+    styleEl.textContent = "*, *::before, *::after { cursor: none !important; }";
 
-    const dot    = dotRef.current!;
-    const ring   = ringRef.current!;
-    const canvas = canvasRef.current!;
-    const ctx    = canvas.getContext("2d")!;
+    const ctx = canvas.getContext("2d")!;
 
-    let mx = -200, my = -200;   /* cursor pos */
-    let rx = -200, ry = -200;   /* ring pos (lerped) */
+    let mx = -300, my = -300;
+    let rx = -300, ry = -300;
     let pointer = false;
     let raf = 0;
+    let hasMoused = false;
 
-    /* canvas sizing */
+    /* Canvas sizing */
     const resize = () => {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -38,42 +41,49 @@ export default function CustomCursor() {
     resize();
     window.addEventListener("resize", resize);
 
-    /* Trail points */
+    /* Trail */
     const trail: { x: number; y: number; age: number }[] = [];
 
     const onMove = (e: MouseEvent) => {
       mx = e.clientX;
       my = e.clientY;
+      if (!hasMoused) {
+        rx = mx; ry = my; /* snap ring on first move so it doesn't lerp from off-screen */
+        hasMoused = true;
+        dot.style.opacity  = "1";
+        ring.style.opacity = "1";
+        canvas.style.opacity = "1";
+      }
       trail.push({ x: mx, y: my, age: 0 });
       if (trail.length > 22) trail.shift();
     };
 
     const onOver = (e: MouseEvent) => {
       const t = e.target as Element;
-      pointer = !!t.closest("a, button, [role='button'], label, input, select");
+      pointer = !!t.closest("a, button, [role='button'], label, input, select, textarea");
     };
 
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseover", onOver);
 
-    const LERP = 0.1;
+    const LERP = 0.12;
 
     const tick = () => {
-      /* --- dot: precise --- */
-      dot.style.transform  = `translate(${mx - 3}px, ${my - 3}px)`;
+      /* dot: precise */
+      dot.style.transform = `translate(${mx - 3}px,${my - 3}px)`;
 
-      /* --- ring: spring lerp --- */
+      /* ring: spring lerp */
       rx += (mx - rx) * LERP;
       ry += (my - ry) * LERP;
       const rs = pointer ? 22 : 14;
-      ring.style.width     = `${rs * 2}px`;
-      ring.style.height    = `${rs * 2}px`;
-      ring.style.transform = `translate(${rx - rs}px, ${ry - rs}px)`;
+      ring.style.width       = `${rs * 2}px`;
+      ring.style.height      = `${rs * 2}px`;
+      ring.style.transform   = `translate(${rx - rs}px,${ry - rs}px)`;
       ring.style.borderColor = pointer
         ? "rgba(255,255,255,0.85)"
         : "rgba(255,255,255,0.45)";
 
-      /* --- trail canvas --- */
+      /* trail canvas */
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       let i = trail.length;
       while (i--) {
@@ -88,39 +98,40 @@ export default function CustomCursor() {
         ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
         ctx.fill();
       }
-      /* prune dead points */
+      /* prune dead trail points */
       let k = 0;
       while (k < trail.length && trail[k].age > 18) k++;
       if (k > 0) trail.splice(0, k);
 
       raf = requestAnimationFrame(tick);
     };
-
     raf = requestAnimationFrame(tick);
 
     return () => {
-      style.remove();
+      cancelAnimationFrame(raf);
       window.removeEventListener("resize", resize);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", onOver);
-      cancelAnimationFrame(raf);
+      /* Keep the style tag so cursor:none stays during React Strict Mode double-invoke */
     };
   }, []);
 
-  if (!mounted) return null;
-
+  /* Always render — never return null. Elements are invisible until mouse moves. */
   return (
     <>
-      {/* Trail */}
+      {/* Trail canvas */}
       <canvas
         ref={canvasRef}
         style={{
           position: "fixed", inset: 0,
-          pointerEvents: "none", zIndex: 99994,
+          pointerEvents: "none",
+          zIndex: 99994,
+          opacity: 0,
+          transition: "opacity 0.15s",
         }}
       />
 
-      {/* Dot — precise */}
+      {/* Dot */}
       <div
         ref={dotRef}
         style={{
@@ -131,10 +142,12 @@ export default function CustomCursor() {
           pointerEvents: "none",
           zIndex: 99999,
           willChange: "transform",
+          opacity: 0,
+          transition: "opacity 0.15s",
         }}
       />
 
-      {/* Ring — spring lag */}
+      {/* Ring */}
       <div
         ref={ringRef}
         style={{
@@ -145,7 +158,8 @@ export default function CustomCursor() {
           pointerEvents: "none",
           zIndex: 99998,
           willChange: "transform",
-          transition: "width 0.18s ease, height 0.18s ease, border-color 0.18s ease",
+          opacity: 0,
+          transition: "width 0.18s ease, height 0.18s ease, border-color 0.18s ease, opacity 0.15s",
         }}
       />
     </>

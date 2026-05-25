@@ -50,7 +50,7 @@ export default function StoreHeader() {
         className="text-[10px] uppercase tracking-[0.55em] mb-8"
         style={{ color: "rgba(255,255,255,0.3)" }}
       >
-        Premium Streetwear &nbsp;·&nbsp; Est. 2025 &nbsp;·&nbsp; Samarinda, Indonesia
+        Streetwear Premium &nbsp;·&nbsp; Est. 2025 &nbsp;·&nbsp; Samarinda, Indonesia
       </motion.p>
 
       {/* CTAs */}
@@ -64,14 +64,14 @@ export default function StoreHeader() {
           href="/products"
           className="group inline-flex items-center gap-2 bg-white text-black px-7 py-3 text-[11px] font-bold uppercase tracking-[0.2em] hover:bg-white/90 transition-colors"
         >
-          Shop Now
+          Belanja Sekarang
           <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
         </Link>
         <Link
           href="/products?isNewArrival=true"
           className="inline-flex items-center gap-2 border border-white/20 px-7 py-3 text-[11px] font-bold uppercase tracking-[0.2em] text-white/50 hover:text-white hover:border-white/50 transition-colors"
         >
-          New Arrivals
+          Koleksi Baru
         </Link>
       </motion.div>
 

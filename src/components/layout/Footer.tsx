@@ -73,7 +73,7 @@ export default async function Footer() {
           <div className="marquee-track">
             {Array(8).fill(null).map((_, i) => (
               <span key={i} className="inline-block px-8 text-xs font-bold uppercase tracking-widest text-brand-gray-500">
-                DUTCH.IND &nbsp;/&nbsp; PREMIUM QUALITY &nbsp;/&nbsp; AUTHENTIC STYLE &nbsp;/&nbsp;
+                DUTCH.IND &nbsp;/&nbsp; KUALITAS PREMIUM &nbsp;/&nbsp; GAYA OTENTIK &nbsp;/&nbsp;
               </span>
             ))}
           </div>
@@ -158,7 +158,7 @@ export default async function Footer() {
 
             {/* CS box */}
             <div className="mt-6 p-3 border border-brand-gray-700 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500">Customer Service</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500">Layanan Pelanggan</p>
               <a href={waHref} target="_blank" rel="noopener noreferrer"
                  className="flex items-center gap-2 text-xs text-green-400 hover:text-green-300 transition-colors font-semibold">
                 <WhatsAppIcon className="w-3.5 h-3.5" />

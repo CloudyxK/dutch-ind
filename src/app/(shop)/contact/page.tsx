@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import RevealSection from "@/components/ui/RevealSection";
 
 export const metadata: Metadata = {
-  title: "Contact — DUTCH.IND",
+  title: "Kontak — DUTCH.IND",
 };
 
 async function getContact() {
@@ -65,7 +65,7 @@ export default async function ContactPage() {
       label: "TikTok",
       value: contact?.tiktok ? `@${contact.tiktok}` : "@dutch.ind",
       href: contact?.tiktok ? `https://tiktok.com/@${contact.tiktok}` : "#",
-      sub: "Behind the scenes & drop alerts",
+      sub: "Behind the scenes & info drop terbaru",
     },
   ];
 
@@ -89,10 +89,10 @@ export default async function ContactPage() {
               className="font-display uppercase leading-none"
               style={{ fontSize: "clamp(3rem,9vw,7.5rem)" }}
             >
-              <span className="text-white">GET IN</span>
+              <span className="text-white">HUBUNGI</span>
               <br />
               <span style={{ color: "transparent", WebkitTextStroke: "2px rgba(255,255,255,0.6)" }}>
-                TOUCH
+                KAMI
               </span>
             </h1>
             <p className="mt-6 text-sm text-white/30 max-w-xs leading-relaxed">

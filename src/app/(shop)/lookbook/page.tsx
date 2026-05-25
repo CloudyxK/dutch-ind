@@ -140,14 +140,14 @@ export default async function LookbookPage() {
             className="font-display uppercase text-white/10 mx-auto"
             style={{ fontSize: "clamp(2rem,6vw,5rem)", maxWidth: "900px" }}
           >
-            "Wear Your &nbsp;
+            "Kenakan &nbsp;
             <span
               style={{
                 color: "transparent",
                 WebkitTextStroke: "1px rgba(255,255,255,0.35)",
               }}
             >
-              Identity
+              Identitasmu
             </span>"
           </blockquote>
           <p className="mt-4 text-[10px] uppercase tracking-[0.5em] text-white/20">
@@ -206,7 +206,7 @@ export default async function LookbookPage() {
               href="/products"
               className="inline-flex items-center gap-3 border border-white/30 px-10 py-4 text-[11px] font-bold uppercase tracking-[0.35em] hover:bg-white hover:text-black transition-all duration-300"
             >
-              Shop All Collection
+              Lihat Semua Koleksi
             </Link>
           </div>
         </div>

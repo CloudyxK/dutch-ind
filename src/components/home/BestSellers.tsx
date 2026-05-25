@@ -23,7 +23,7 @@ export default function BestSellers({ products }: { products: Product[] }) {
               </span>
             </div>
             <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">
-              Best Sellers
+              Terlaris
             </h2>
           </div>
           <Link href="/products?isBestSeller=true"

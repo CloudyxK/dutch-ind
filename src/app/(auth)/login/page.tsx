@@ -98,14 +98,14 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="input-label">Password</label>
+              <label htmlFor="password" className="input-label">Kata Sandi</label>
               <div className="relative">
                 <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Masukkan password"
+                  placeholder="Masukkan kata sandi"
                   className="input-field pr-10"
                   required
                   autoComplete="current-password"

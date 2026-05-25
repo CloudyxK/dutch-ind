@@ -24,7 +24,7 @@ export default function CategorySection({ categories }: Props) {
             <div className="flex items-center gap-3 mb-3">
               <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }}/>
               <span className="text-[10px] uppercase tracking-[0.45em]" style={{ color: "rgba(255,255,255,0.3)" }}>
-                Shop by
+                Belanja Berdasarkan
               </span>
             </div>
             <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">

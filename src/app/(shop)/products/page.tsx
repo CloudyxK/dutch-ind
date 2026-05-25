@@ -184,8 +184,8 @@ export default async function ProductsPage({ searchParams }: PageProps) {
                 <h3 className="text-xs font-bold uppercase tracking-widest mb-3">Filter</h3>
                 <ul className="space-y-2">
                   {[
-                    { key: "isNewArrival", label: "New Arrivals" },
-                    { key: "isBestSeller", label: "Best Sellers" },
+                    { key: "isNewArrival", label: "Koleksi Baru" },
+                    { key: "isBestSeller", label: "Terlaris" },
                     { key: "isFeatured", label: "Pilihan Editor" },
                   ].map(({ key, label }) => (
                     <li key={key}>

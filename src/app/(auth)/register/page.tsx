@@ -129,7 +129,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="input-label">Password</label>
+              <label className="input-label">Kata Sandi</label>
               <div className="relative">
                 <input
                   name="password"
@@ -152,7 +152,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="input-label">Konfirmasi Password</label>
+              <label className="input-label">Konfirmasi Kata Sandi</label>
               <input
                 name="confirmPassword"
                 type="password"

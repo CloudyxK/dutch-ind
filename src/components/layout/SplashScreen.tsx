@@ -188,7 +188,7 @@ export default function SplashScreen() {
               transition:    "color 0.3s",
             }}
           >
-            ENTER
+            MASUK
           </span>
         </button>
 

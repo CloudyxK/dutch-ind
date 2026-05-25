@@ -19,9 +19,9 @@ const shopLinks = [
 ];
 
 const navLinks = [
-  { href: "/",          label: "Home"     },
+  { href: "/",          label: "Beranda"  },
   { href: "/lookbook",  label: "Lookbook" },
-  { href: "/contact",   label: "Contact"  },
+  { href: "/contact",   label: "Kontak"   },
 ];
 
 export default function Navbar() {
@@ -105,7 +105,7 @@ export default function Navbar() {
                 onMouseLeave={() => setShopOpen(false)}
               >
                 <button className={cn(linkClass, "flex items-center gap-1")}>
-                  Shop
+                  Toko
                   <ChevronDown
                     className={cn(
                       "w-3 h-3 transition-transform duration-200",
@@ -270,7 +270,7 @@ export default function Navbar() {
               className="lg:hidden overflow-hidden border-t border-white/[0.06] bg-brand-black"
             >
               <nav className="container-main py-6 flex flex-col gap-1">
-                {[...navLinks, { href: "/products", label: "Shop" }].map((link) => (
+                {[...navLinks, { href: "/products", label: "Toko" }].map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
