@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { MapPin, Save, RefreshCw, Info } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
@@ -37,9 +37,11 @@ const DEFAULTS: Cfg = {
 
 export default function AdminShippingPage() {
   const [cfg, setCfg] = useState<Cfg>({ ...DEFAULTS });
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [resolvedAddr, setResolvedAddr] = useState<string>("");
+  const reverseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/settings?keys=" + Object.keys(DEFAULTS).join(","))
@@ -65,6 +67,28 @@ export default function AdminShippingPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleMapChange(lat: number, lng: number) {
+    setCfg((prev) => ({
+      ...prev,
+      "store.lat": lat.toFixed(6),
+      "store.lng": lng.toFixed(6),
+    }));
+    // Reverse geocode dengan debounce 800ms
+    if (reverseTimer.current) clearTimeout(reverseTimer.current);
+    reverseTimer.current = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`,
+          { headers: { "User-Agent": "dutch-ind-store/1.0" } }
+        );
+        const data = await res.json();
+        if (data.display_name) {
+          setResolvedAddr(data.display_name.split(",").slice(0, 4).join(", "));
+        }
+      } catch {}
+    }, 800);
   }
 
   async function geocodeAddress() {
@@ -174,45 +198,49 @@ export default function AdminShippingPage() {
           </div>
         </div>
 
-        {/* Interactive map */}
-        <div className="space-y-2">
-          <p className="text-[10px] text-brand-gray-500 uppercase tracking-widest font-bold">
-            Klik peta atau drag marker untuk set lokasi
-          </p>
-          <AdminMapPicker
-            lat={parseFloat(cfg["store.lat"]) || -6.2088}
-            lng={parseFloat(cfg["store.lng"]) || 106.8456}
-            onChange={(lat, lng) =>
-              setCfg((prev) => ({
-                ...prev,
-                "store.lat": lat.toFixed(6),
-                "store.lng": lng.toFixed(6),
-              }))
-            }
-          />
-        </div>
+        {/* Peta interaktif — geser untuk pilih lokasi */}
+        <AdminMapPicker
+          lat={parseFloat(cfg["store.lat"]) || -0.5021}
+          lng={parseFloat(cfg["store.lng"]) || 117.1536}
+          onChange={handleMapChange}
+        />
 
-        {/* Koordinat manual */}
-        <div className="grid grid-cols-2 gap-4">
-          {field("store.lat", "Latitude", { type: "number", step: "0.000001" })}
-          {field("store.lng", "Longitude", { type: "number", step: "0.000001" })}
-        </div>
-
-        {cfg["store.lat"] && cfg["store.lng"] && (
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-brand-gray-500">
-              📍 {parseFloat(cfg["store.lat"]).toFixed(5)}, {parseFloat(cfg["store.lng"]).toFixed(5)}
-            </span>
+        {/* Card lokasi terpilih — mirip Gojek */}
+        <div className="flex items-start gap-3 p-4 bg-brand-gray-800 border border-brand-gray-600">
+          <MapPin className="w-4 h-4 text-white mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-[10px] text-brand-gray-500 uppercase tracking-widest mb-0.5">Lokasi Toko Dipilih</p>
+            <p className="text-sm font-semibold text-white leading-snug truncate">
+              {resolvedAddr || cfg["store.address"] || "Geser peta untuk memilih lokasi..."}
+            </p>
+            <p className="text-[10px] text-brand-gray-500 mt-0.5 font-mono">
+              {cfg["store.lat"] && cfg["store.lng"]
+                ? `${parseFloat(cfg["store.lat"]).toFixed(5)}, ${parseFloat(cfg["store.lng"]).toFixed(5)}`
+                : "—"}
+            </p>
+          </div>
+          {cfg["store.lat"] && cfg["store.lng"] && (
             <a
               href={`https://www.google.com/maps?q=${cfg["store.lat"]},${cfg["store.lng"]}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-blue-400 hover:text-blue-300 underline"
+              className="text-[10px] text-blue-400 hover:text-blue-300 flex-shrink-0 underline"
             >
-              Buka di Google Maps ↗
+              Google Maps ↗
             </a>
+          )}
+        </div>
+
+        {/* Koordinat manual (advanced) */}
+        <details className="group">
+          <summary className="text-[10px] text-brand-gray-500 cursor-pointer hover:text-white uppercase tracking-widest select-none">
+            ▸ Edit koordinat manual
+          </summary>
+          <div className="grid grid-cols-2 gap-4 mt-3">
+            {field("store.lat", "Latitude", { type: "number", step: "0.000001" })}
+            {field("store.lng", "Longitude", { type: "number", step: "0.000001" })}
           </div>
-        )}
+        </details>
       </div>
 
       {/* Reguler & Ekspres */}
