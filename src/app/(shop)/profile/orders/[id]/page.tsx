@@ -286,31 +286,40 @@ export default async function OrderDetailPage({ params }: Props) {
           )}
 
           {/* COD panel */}
-          {order.payment?.method === "COD" && (
-            <div className={`border p-5 space-y-2 ${
-              order.payment.status === "SUCCESS"
-                ? "bg-brand-gray-900 border-green-800"
-                : "bg-amber-900/10 border-amber-800/50"
-            }`}>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
-                  {order.payment.status === "SUCCESS" ? "✅ COD — Sudah Lunas" : "🤝 COD — Bayar di Tempat"}
-                </span>
-              </div>
-              {order.payment.status !== "SUCCESS" ? (
-                <div className="space-y-1">
-                  <p className="text-sm text-amber-300/80">
-                    Siapkan uang tunai sebesar{" "}
-                    <span className="font-bold text-white">{formatPrice(order.total)}</span>{" "}
-                    saat paket tiba.
-                  </p>
-                  <p className="text-xs text-brand-gray-500">Pesananmu sedang diproses dan akan segera dikirim.</p>
+          {order.payment?.method === "COD" && (() => {
+            const meetMatch = order.notes?.match(/\[COD\] Titik pertemuan: (.+?)(\n|$)/);
+            const meetingPoint = meetMatch ? meetMatch[1].trim() : null;
+            return (
+              <div className={`border p-5 space-y-3 ${
+                order.payment.status === "SUCCESS"
+                  ? "bg-brand-gray-900 border-green-800"
+                  : "bg-amber-900/10 border-amber-800/50"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-amber-400">
+                    {order.payment.status === "SUCCESS" ? "✅ COD — Sudah Lunas" : "📍 COD — Pertemuan Langsung"}
+                  </span>
                 </div>
-              ) : (
-                <p className="text-sm text-green-400/80">Pembayaran COD telah diterima. Terima kasih!</p>
-              )}
-            </div>
-          )}
+                {order.payment.status !== "SUCCESS" ? (
+                  <div className="space-y-2">
+                    {meetingPoint && (
+                      <div className="bg-amber-900/20 border border-amber-800/40 px-3 py-2">
+                        <p className="text-[10px] text-amber-400 uppercase tracking-widest font-bold mb-0.5">Titik Pertemuan</p>
+                        <p className="text-sm text-white font-semibold">{meetingPoint}</p>
+                      </div>
+                    )}
+                    <p className="text-sm text-amber-300/80">
+                      Siapkan uang tunai sebesar{" "}
+                      <span className="font-bold text-white">{formatPrice(order.total)}</span>.
+                    </p>
+                    <p className="text-xs text-brand-gray-500">Admin akan menghubungi kamu via WhatsApp untuk konfirmasi waktu pertemuan.</p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-green-400/80">Pembayaran COD telah diterima. Terima kasih!</p>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Tracking panel — shows whenever SHIPPED/DELIVERED, resi optional */}
           {showTracking && (

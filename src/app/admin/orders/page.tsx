@@ -9,6 +9,7 @@ export default async function AdminOrdersPage() {
       user: { select: { name: true, email: true } },
       items: true,
       payment: true,
+      address: { select: { phone: true } },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -35,6 +36,8 @@ export default async function AdminOrdersPage() {
               const isManualWaiting = order.payment?.method === "MANUAL" &&
                 order.payment?.status === "WAITING_CONFIRMATION";
               const isCod = order.payment?.method === "COD";
+              const meetMatch = isCod ? order.notes?.match(/\[COD\] Titik pertemuan: (.+?)(\n|$)/) : null;
+              const meetingPoint = meetMatch ? meetMatch[1].trim() : null;
 
               return (
                 <tr key={order.id} className={`hover:bg-brand-gray-800/50 transition-colors ${isManualWaiting ? "border-l-2 border-l-yellow-500" : isCod ? "border-l-2 border-l-amber-600" : ""}`}>
@@ -42,6 +45,15 @@ export default async function AdminOrdersPage() {
                   <td className="p-4">
                     <p className="text-sm">{order.user.name}</p>
                     <p className="text-xs text-brand-gray-500">{order.user.email}</p>
+                    {isCod && order.address?.phone && (
+                      <p className="text-xs text-amber-400 mt-0.5">📞 {order.address.phone}</p>
+                    )}
+                    {isCod && meetingPoint && (
+                      <div className="mt-1 bg-amber-900/20 border border-amber-800/40 px-2 py-1">
+                        <p className="text-[9px] text-amber-400 uppercase tracking-wider font-bold">Titik Pertemuan</p>
+                        <p className="text-xs text-white">{meetingPoint}</p>
+                      </div>
+                    )}
                   </td>
                   <td className="p-4 text-sm text-brand-gray-400">{order.items.length} item</td>
                   <td className="p-4 text-sm font-bold">{formatPrice(order.total)}</td>

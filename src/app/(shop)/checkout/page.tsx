@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins } from "lucide-react";
+import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck } from "lucide-react";
 
 type SavedAddress = {
   id: string;
@@ -45,7 +45,8 @@ export default function CheckoutPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
 
-  const [paymentMethod, setPaymentMethod] = useState<"MANUAL" | "COD">("MANUAL");
+  const [codMeetingPoint, setCodMeetingPoint] = useState("");
+  const [codPayment, setCodPayment] = useState<"COD" | "MANUAL">("COD");
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
@@ -75,18 +76,25 @@ export default function CheckoutPage() {
   const samedayCost = shippingEst?.samedayFare ?? 50000;
 
   const shippingCosts: Record<string, number> = {
-    reguler: regulerCost,
-    ekspres: ekspresCost,
-    sameday: samedayCost,
+    reguler:   regulerCost,
+    ekspres:   ekspresCost,
+    sameday:   samedayCost,
+    "cod-antar": 0,
   };
   const shippingCost = shippingCosts[form.shippingMethod] ?? 0;
 
-  // Same Day hanya tersedia di Samarinda
+  // Derived state
+  const isCodAntar    = form.shippingMethod === "cod-antar";
+  const paymentMethod = isCodAntar ? codPayment : "MANUAL";
+
+  // Same Day & COD Antar hanya tersedia di Samarinda
   const cityFilled     = form.city.trim().length > 0;
   const isSamarinda    = form.city.trim().toLowerCase().includes("samarinda");
   const samedayBlocked = cityFilled && !isSamarinda;
+  const codBlocked     = cityFilled && !isSamarinda;
   const discountAmount = couponData?.discountAmount || 0;
-  const total = subtotal + shippingCost - discountAmount;
+  const effectiveShippingCost = isCodAntar ? 0 : shippingCost;
+  const total = subtotal + effectiveShippingCost - discountAmount;
 
   useEffect(() => {
     if (!session) {
@@ -111,9 +119,9 @@ export default function CheckoutPage() {
     }
   }, [items, router]);
 
-  // Auto-switch away from sameday if city is not Samarinda
+  // Auto-switch away from sameday / cod-antar if city is not Samarinda
   useEffect(() => {
-    if (samedayBlocked && form.shippingMethod === "sameday") {
+    if (samedayBlocked && (form.shippingMethod === "sameday" || form.shippingMethod === "cod-antar")) {
       setForm((prev) => ({ ...prev, shippingMethod: "reguler", shippingCarrier: "JNE REG" }));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -213,6 +221,17 @@ export default function CheckoutPage() {
     e.preventDefault();
     setLoading(true);
 
+    if (isCodAntar && !codMeetingPoint.trim()) {
+      toast.error("Masukkan titik pertemuan untuk COD Antar");
+      setLoading(false);
+      return;
+    }
+    if (isCodAntar && codBlocked) {
+      toast.error("COD Antar hanya tersedia di Kota Samarinda");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
@@ -227,9 +246,13 @@ export default function CheckoutPage() {
           addressId: selectedAddressId ?? undefined,
           address: form,
           couponCode: couponData ? couponCode : undefined,
-          shippingMethod: `${form.shippingMethod} - ${form.shippingCarrier}`,
-          shippingCost,
-          notes: form.notes,
+          shippingMethod: isCodAntar
+            ? `COD - Antar Jemput (${codMeetingPoint || "Samarinda"})`
+            : `${form.shippingMethod} - ${form.shippingCarrier}`,
+          shippingCost: isCodAntar ? 0 : shippingCost,
+          notes: isCodAntar
+            ? `[COD] Titik pertemuan: ${codMeetingPoint}${form.notes ? `\n${form.notes}` : ""}`
+            : form.notes,
           paymentMethod,
         }),
       });
@@ -450,10 +473,10 @@ export default function CheckoutPage() {
                         desc: "3–5 hari kerja",
                         price: shippingCosts.reguler,
                         carriers: [
-                          { id: "J&T Express", name: "J&T Express", cod: true  },
-                          { id: "SiCepat HALU", name: "SiCepat HALU", cod: true },
-                          { id: "JNE REG", name: "JNE REG", cod: true },
-                          { id: "Pos Indonesia", name: "Pos Indonesia", cod: false },
+                          { id: "J&T Express",   name: "J&T Express"   },
+                          { id: "SiCepat HALU",  name: "SiCepat HALU"  },
+                          { id: "JNE REG",       name: "JNE REG"       },
+                          { id: "Pos Indonesia", name: "Pos Indonesia"  },
                         ],
                       },
                       {
@@ -462,9 +485,9 @@ export default function CheckoutPage() {
                         desc: "1–2 hari kerja",
                         price: shippingCosts.ekspres,
                         carriers: [
-                          { id: "J&T EZ", name: "J&T EZ", cod: true },
-                          { id: "SiCepat BEST", name: "SiCepat BEST", cod: true },
-                          { id: "JNE YES", name: "JNE YES", cod: false },
+                          { id: "J&T EZ",       name: "J&T EZ"       },
+                          { id: "SiCepat BEST", name: "SiCepat BEST" },
+                          { id: "JNE YES",      name: "JNE YES"      },
                         ],
                       },
                       {
@@ -473,24 +496,23 @@ export default function CheckoutPage() {
                         desc: "Hari ini — khusus Kota Samarinda",
                         price: shippingCosts.sameday,
                         carriers: [
-                          { id: "GoSend (Gojek)", name: "GoSend", logo: "🟢" },
-                          { id: "GrabExpress (Grab)", name: "GrabExpress", logo: "🟡" },
-                          { id: "Maxim", name: "Maxim", logo: "🔵" },
+                          { id: "GoSend (Gojek)",      name: "GoSend",      logo: "🟢" },
+                          { id: "GrabExpress (Grab)",  name: "GrabExpress", logo: "🟡" },
+                          { id: "Maxim",               name: "Maxim",       logo: "🔵" },
                         ],
                       },
                     ] as const).map((method) => {
                       const isSelected = form.shippingMethod === method.value;
-                      const isSamedayOutOfRange =
-                        method.value === "sameday" &&
+                      const isOutOfRange =
+                        (method.value === "sameday") &&
                         (samedayBlocked || !!shippingEst?.outOfRange);
                       return (
-                        <div key={method.value} className={`border transition-colors ${isSamedayOutOfRange ? "border-brand-gray-800 opacity-50" : isSelected ? "border-white" : "border-brand-gray-700"}`}>
-                          {/* Tier row */}
+                        <div key={method.value} className={`border transition-colors ${isOutOfRange ? "border-brand-gray-800 opacity-50" : isSelected ? "border-white" : "border-brand-gray-700"}`}>
                           <button
                             type="button"
-                            disabled={!!isSamedayOutOfRange}
+                            disabled={!!isOutOfRange}
                             onClick={() => {
-                              if (isSamedayOutOfRange) return;
+                              if (isOutOfRange) return;
                               const firstCarrier = method.carriers[0].id;
                               setForm((prev) => ({ ...prev, shippingMethod: method.value, shippingCarrier: firstCarrier }));
                             }}
@@ -503,56 +525,43 @@ export default function CheckoutPage() {
                               <div>
                                 <p className="text-sm font-semibold">{method.label}</p>
                                 <p className="text-xs text-brand-gray-400">
-                                  {isSamedayOutOfRange
-                                  ? (samedayBlocked ? "Hanya tersedia di Kota Samarinda" : "Di luar jangkauan pengiriman hari ini")
-                                  : method.desc}
+                                  {isOutOfRange
+                                    ? (samedayBlocked ? "Hanya tersedia di Kota Samarinda" : "Di luar jangkauan pengiriman hari ini")
+                                    : method.desc}
                                 </p>
                               </div>
                             </div>
                             <span className="text-sm font-bold flex-shrink-0">
-                              {isSamedayOutOfRange ? (
+                              {isOutOfRange ? (
                                 <span className="text-red-400 text-xs">Tidak tersedia</span>
                               ) : method.price === 0 ? (
                                 <span className="text-green-400">Gratis</span>
                               ) : (
-                                <>
-                                  {estimating && method.value === "sameday" ? (
-                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                  ) : (
-                                    formatPrice(method.price)
-                                  )}
-                                </>
+                                estimating && method.value === "sameday"
+                                  ? <Loader2 className="w-3 h-3 animate-spin" />
+                                  : formatPrice(method.price)
                               )}
                             </span>
                           </button>
 
-                          {/* Carrier sub-options — only shown when this tier is selected */}
+                          {/* Carrier sub-options */}
                           {isSelected && (
                             <div className="px-4 pb-4 border-t border-brand-gray-800 pt-3">
-                              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-2">
-                                Pilih Ekspedisi
-                              </p>
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-2">Pilih Ekspedisi</p>
                               <div className="flex flex-wrap gap-2">
                                 {method.carriers.map((carrier) => {
                                   const active = form.shippingCarrier === carrier.id;
-                                  const supportsCod = "cod" in carrier && carrier.cod;
-                                  const codSelected = paymentMethod === "COD";
                                   return (
                                     <button
                                       key={carrier.id}
                                       type="button"
                                       onClick={() => setForm((prev) => ({ ...prev, shippingCarrier: carrier.id }))}
                                       className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border transition-all ${
-                                        active
-                                          ? "border-white bg-white text-black"
-                                          : "border-brand-gray-600 hover:border-white text-brand-gray-300"
+                                        active ? "border-white bg-white text-black" : "border-brand-gray-600 hover:border-white text-brand-gray-300"
                                       }`}
                                     >
                                       {"logo" in carrier && <span>{(carrier as any).logo}</span>}
                                       {carrier.name}
-                                      {codSelected && supportsCod && (
-                                        <span className="text-[8px] bg-amber-600 text-white px-1 py-0.5 ml-0.5">COD</span>
-                                      )}
                                     </button>
                                   );
                                 })}
@@ -567,6 +576,62 @@ export default function CheckoutPage() {
                         </div>
                       );
                     })}
+
+                    {/* COD Antar — tier khusus Samarinda */}
+                    {(() => {
+                      const isSelected = form.shippingMethod === "cod-antar";
+                      const isBlocked  = codBlocked;
+                      return (
+                        <div className={`border transition-colors ${isBlocked ? "border-brand-gray-800 opacity-50" : isSelected ? "border-amber-500" : "border-brand-gray-700"}`}>
+                          <button
+                            type="button"
+                            disabled={isBlocked}
+                            onClick={() => {
+                              if (isBlocked) return;
+                              setForm((prev) => ({ ...prev, shippingMethod: "cod-antar", shippingCarrier: "" }));
+                            }}
+                            className="w-full flex items-center justify-between p-4 text-left hover:bg-brand-gray-800/40 transition-colors disabled:cursor-not-allowed"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? "border-amber-400" : "border-brand-gray-600"}`}>
+                                {isSelected && <div className="w-2 h-2 bg-amber-400 rounded-full" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold flex items-center gap-2">
+                                  COD — Antar Langsung
+                                  <span className="text-[9px] font-bold bg-amber-900/50 text-amber-400 border border-amber-800/50 px-1.5 py-0.5 uppercase tracking-wider">Samarinda</span>
+                                </p>
+                                <p className="text-xs text-brand-gray-400">
+                                  {isBlocked ? "Hanya tersedia di Kota Samarinda" : "Penjual antar langsung — bayar tunai saat bertemu"}
+                                </p>
+                              </div>
+                            </div>
+                            <span className="text-sm font-bold text-green-400 flex-shrink-0">
+                              {isBlocked ? <span className="text-red-400 text-xs">Tidak tersedia</span> : "Gratis"}
+                            </span>
+                          </button>
+
+                          {/* Titik pertemuan — muncul saat COD Antar dipilih */}
+                          {isSelected && (
+                            <div className="px-4 pb-4 border-t border-amber-800/30 pt-3 space-y-3">
+                              <div>
+                                <label className="input-label">Titik Pertemuan <span className="text-red-400">*</span></label>
+                                <input
+                                  value={codMeetingPoint}
+                                  onChange={(e) => setCodMeetingPoint(e.target.value)}
+                                  className="input-field border-amber-800/50 focus:border-amber-500"
+                                  placeholder="Contoh: Depan Hypermart Lembuswana, Samarinda"
+                                  required
+                                />
+                                <p className="text-[11px] text-brand-gray-500 mt-1">
+                                  Admin akan menghubungi kamu via <span className="text-amber-400">WhatsApp</span> untuk konfirmasi waktu pertemuan.
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -654,8 +719,8 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-brand-gray-400">Ongkir</span>
-                      <span className={shippingCost === 0 ? "text-green-400" : ""}>
-                        {shippingCost === 0 ? "Gratis" : formatPrice(shippingCost)}
+                      <span className={effectiveShippingCost === 0 ? "text-green-400" : ""}>
+                        {effectiveShippingCost === 0 ? (isCodAntar ? "Gratis (COD Antar)" : "Gratis") : formatPrice(effectiveShippingCost)}
                       </span>
                     </div>
                     {discountAmount > 0 && (
@@ -670,45 +735,52 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  {/* Payment method selector */}
+                  {/* Payment method */}
                   <div className="border-t border-brand-gray-700 pt-4 space-y-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-400">Metode Pembayaran</p>
-                    {[
-                      {
-                        value: "MANUAL",
-                        label: "Transfer / QRIS / E-Wallet",
-                        desc:  "Transfer Bank, QRIS, DANA, GoPay — upload bukti",
-                        icon:  Banknote,
-                      },
-                      {
-                        value: "COD",
-                        label: "COD — Bayar di Tempat",
-                        desc:  "Bayar tunai saat paket tiba",
-                        icon:  HandCoins,
-                      },
-                    ].map(({ value, label, desc, icon: Icon }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setPaymentMethod(value as any)}
-                        className={`w-full flex items-center gap-3 p-3 border text-left transition-colors ${paymentMethod === value ? "border-white" : "border-brand-gray-700 hover:border-brand-gray-500"}`}
-                      >
-                        <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${paymentMethod === value ? "border-white" : "border-brand-gray-600"}`}>
-                          {paymentMethod === value && <div className="w-2 h-2 bg-white rounded-full" />}
-                        </div>
-                        <Icon className="w-4 h-4 text-brand-gray-400 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold">{label}</p>
-                          <p className="text-[10px] text-brand-gray-500">{desc}</p>
-                        </div>
-                      </button>
-                    ))}
 
-                    {/* COD notice */}
-                    {paymentMethod === "COD" && (
-                      <div className="p-3 bg-amber-900/20 border border-amber-800/50 text-xs text-amber-300 space-y-0.5">
-                        <p className="font-bold">⚠ Perhatian — COD</p>
-                        <p className="text-amber-300/70">Siapkan uang <span className="text-white font-bold">{formatPrice(total)}</span> (tunai) saat paket tiba. Pesanan akan langsung diproses tanpa pembayaran di muka.</p>
+                    {isCodAntar ? (
+                      /* COD Antar — bisa pilih tunai atau transfer */
+                      <>
+                        {[
+                          { value: "COD",    label: "Bayar Tunai",             desc: "Bayar cash saat penjual tiba",                   Icon: HandCoins },
+                          { value: "MANUAL", label: "Transfer / QRIS / E-Wallet", desc: "Transfer Bank, QRIS, DANA, GoPay — upload bukti", Icon: Banknote  },
+                        ].map(({ value, label, desc, Icon }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setCodPayment(value as "COD" | "MANUAL")}
+                            className={`w-full flex items-center gap-3 p-3 border text-left transition-colors ${codPayment === value ? (value === "COD" ? "border-amber-500" : "border-white") : "border-brand-gray-700 hover:border-brand-gray-500"}`}
+                          >
+                            <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${codPayment === value ? (value === "COD" ? "border-amber-400" : "border-white") : "border-brand-gray-600"}`}>
+                              {codPayment === value && <div className={`w-2 h-2 rounded-full ${value === "COD" ? "bg-amber-400" : "bg-white"}`} />}
+                            </div>
+                            <Icon className="w-4 h-4 text-brand-gray-400 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold">{label}</p>
+                              <p className="text-[10px] text-brand-gray-500">{desc}</p>
+                            </div>
+                          </button>
+                        ))}
+                        <div className="p-3 bg-amber-900/20 border border-amber-800/50 text-xs text-amber-300 space-y-1">
+                          <p className="font-bold">📍 COD Antar Langsung</p>
+                          {codPayment === "COD" && (
+                            <p className="text-amber-300/70">Siapkan tunai <span className="text-white font-bold">{formatPrice(total)}</span> saat penjual tiba.</p>
+                          )}
+                          <p className="text-amber-300/70">Admin akan menghubungi via <span className="font-semibold text-amber-300">WhatsApp</span> untuk konfirmasi waktu &amp; lokasi.</p>
+                        </div>
+                      </>
+                    ) : (
+                      /* Ekspedisi — hanya Transfer/QRIS */
+                      <div className="flex items-center gap-3 p-3 border border-white bg-brand-gray-800/30">
+                        <div className="w-4 h-4 border-2 border-white rounded-full flex items-center justify-center flex-shrink-0">
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        </div>
+                        <Banknote className="w-4 h-4 text-brand-gray-400 flex-shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold">Transfer / QRIS / E-Wallet</p>
+                          <p className="text-[10px] text-brand-gray-500">Transfer Bank, QRIS, DANA, GoPay — upload bukti</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -720,16 +792,16 @@ export default function CheckoutPage() {
                   >
                     {loading ? (
                       <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
-                    ) : paymentMethod === "COD" ? (
-                      "Pesan Sekarang (COD)"
+                    ) : isCodAntar ? (
+                      <><Truck className="w-4 h-4" /> Pesan Sekarang (COD Antar)</>
                     ) : (
                       "Buat Pesanan"
                     )}
                   </button>
 
                   <p className="text-center text-[10px] text-brand-gray-500">
-                    {paymentMethod === "COD"
-                      ? "Pesanan langsung diproses — bayar tunai saat paket diterima"
+                    {isCodAntar
+                      ? "Pesanan langsung diproses — admin akan menghubungi via WhatsApp"
                       : "Kamu akan diarahkan ke halaman instruksi pembayaran"}
                   </p>
                 </div>
