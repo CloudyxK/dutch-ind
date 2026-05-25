@@ -85,7 +85,7 @@ export default function PromoBanner({ flashSale }: Props) {
       ];
 
   return (
-    <section className="relative overflow-hidden py-20" style={{ background: "#060608" }}>
+    <section className="relative overflow-hidden py-10" style={{ background: "#060608" }}>
       {/* Grain */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.04 }} aria-hidden>
         <filter id="pb-grain">
@@ -119,7 +119,7 @@ export default function PromoBanner({ flashSale }: Props) {
                 Penawaran Terbatas
               </p>
             </div>
-            <h2 className="font-display uppercase leading-[0.9]" style={{ fontSize: "clamp(2.8rem,5vw,4rem)" }}>
+            <h2 className="font-display uppercase leading-[0.9]" style={{ fontSize: "clamp(1.8rem,3vw,2.6rem)" }}>
               <span className="text-white block">{flashSale.title}</span>
               <span className="block" style={{ color: "transparent", WebkitTextStroke: "1.5px rgba(255,255,255,0.7)" }}>
                 {discountLabel}
@@ -144,7 +144,7 @@ export default function PromoBanner({ flashSale }: Props) {
                 <div key={l} className="flex items-start gap-1.5">
                   <div className="text-center">
                     <div
-                      className="w-[72px] h-[72px] flex items-center justify-center font-display text-3xl text-white"
+                      className="w-[54px] h-[54px] flex items-center justify-center font-display text-2xl text-white"
                       style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)" }}
                     >
                       {mounted ? v : "--"}

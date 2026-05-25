@@ -16,7 +16,7 @@ export default function CategorySection({ categories }: Props) {
 
   return (
     <section
-      className="relative overflow-hidden py-20"
+      className="relative overflow-hidden py-10"
       style={{ background: "#080808" }}
     >
       {/* Grain */}
@@ -39,7 +39,7 @@ export default function CategorySection({ categories }: Props) {
 
       <div className="container-main relative z-10">
         {/* Header */}
-        <div className="flex items-end justify-between mb-10">
+        <div className="flex items-end justify-between mb-5">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div
@@ -53,7 +53,7 @@ export default function CategorySection({ categories }: Props) {
                 Belanja Berdasarkan
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">
+            <h2 className="text-xl md:text-2xl font-display uppercase tracking-wider text-white">
               Kategori
             </h2>
           </div>

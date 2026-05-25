@@ -52,9 +52,9 @@ export default function BrandFeatures() {
         <rect width="100%" height="100%" filter="url(#bf-grain)" />
       </svg>
 
-      <div className="container-main relative z-10 py-16">
+      <div className="container-main relative z-10 py-8">
         {/* Section label */}
-        <div className="flex items-center gap-4 mb-14">
+        <div className="flex items-center gap-4 mb-8">
           <div
             className="h-px flex-1"
             style={{ background: "rgba(255,255,255,0.07)" }}
@@ -75,7 +75,7 @@ export default function BrandFeatures() {
           {features.map(({ num, title, desc, symbol }, i) => (
             <div
               key={title}
-              className="group relative p-6 lg:p-8 transition-all duration-500"
+              className="group relative p-4 lg:p-5 transition-all duration-500"
               style={{
                 borderRight:
                   i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
@@ -94,7 +94,7 @@ export default function BrandFeatures() {
 
               {/* Number */}
               <p
-                className="text-[9px] font-mono mb-6 transition-colors duration-300"
+                className="text-[9px] font-mono mb-3 transition-colors duration-300"
                 style={{ color: "rgba(255,255,255,0.15)" }}
               >
                 {num}
@@ -102,7 +102,7 @@ export default function BrandFeatures() {
 
               {/* Symbol — replaces generic icon */}
               <div
-                className="mb-6 transition-transform duration-300 group-hover:-translate-y-0.5 select-none"
+                className="mb-3 transition-transform duration-300 group-hover:-translate-y-0.5 select-none"
                 aria-hidden
               >
                 <span

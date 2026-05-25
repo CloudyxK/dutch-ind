@@ -6,7 +6,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
   if (products.length === 0) return null;
 
   return (
-    <section className="relative overflow-hidden py-20" style={{ background: "#0a0a0c" }}>
+    <section className="relative overflow-hidden py-10" style={{ background: "#0a0a0c" }}>
       {/* Grain */}
       <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.04 }} aria-hidden>
         <filter id="fp-grain"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter>
@@ -19,7 +19,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
 
       <div className="container-main relative z-10">
         {/* Header */}
-        <div className="flex items-end justify-between mb-12">
+        <div className="flex items-end justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }}/>
@@ -27,7 +27,7 @@ export default function FeaturedProducts({ products }: { products: Product[] }) 
                 Pilihan Editor
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">
+            <h2 className="text-xl md:text-2xl font-display uppercase tracking-wider text-white">
               Produk Pilihan
             </h2>
           </div>

@@ -9,7 +9,7 @@ export default function StoreHeader() {
   return (
     <section
       className="relative overflow-hidden"
-      style={{ background: "#060608", minHeight: "420px" }}
+      style={{ background: "#060608", minHeight: "300px" }}
     >
       {/* Top rule */}
       <div className="absolute top-0 inset-x-0 h-px bg-white/[0.06]" />
@@ -49,9 +49,9 @@ export default function StoreHeader() {
       {/* Main content — centered */}
       <div
         className="container-main relative z-10 flex items-center justify-center"
-        style={{ minHeight: "420px" }}
+        style={{ minHeight: "300px" }}
       >
-        <div className="flex flex-col items-center text-center py-16 md:py-20">
+        <div className="flex flex-col items-center text-center py-10 md:py-12">
 
           {/* Eyebrow */}
           <motion.div
@@ -84,7 +84,7 @@ export default function StoreHeader() {
               height={180}
               className="w-auto object-contain mx-auto"
               style={{
-                height: "clamp(72px, 12vw, 108px)",
+                height: "clamp(48px, 8vw, 76px)",
                 mixBlendMode: "screen",
                 filter:
                   "brightness(2) contrast(2.8) drop-shadow(0 0 48px rgba(255,255,255,0.16))",

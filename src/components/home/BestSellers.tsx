@@ -7,7 +7,7 @@ export default function BestSellers({ products }: { products: Product[] }) {
 
   return (
     <section
-      className="relative overflow-hidden py-20"
+      className="relative overflow-hidden py-10"
       style={{ background: "#0a0a0c" }}
     >
       {/* Grain */}
@@ -43,7 +43,7 @@ export default function BestSellers({ products }: { products: Product[] }) {
       />
 
       <div className="container-main relative z-10">
-        <div className="flex items-end justify-between mb-12">
+        <div className="flex items-end justify-between mb-6">
           <div>
             <div className="flex items-center gap-3 mb-3">
               <div
@@ -57,7 +57,7 @@ export default function BestSellers({ products }: { products: Product[] }) {
                 Paling Diminati
               </span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-display uppercase tracking-wider text-white">
+            <h2 className="text-xl md:text-2xl font-display uppercase tracking-wider text-white">
               Terlaris
             </h2>
           </div>
