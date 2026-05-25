@@ -3,11 +3,12 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Upload, CheckCircle2, XCircle, Clock, Copy, QrCode, Banknote, Loader2, ImageIcon } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, Copy, QrCode, Banknote, Loader2, ImageIcon, Wallet } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
-type Bank = { name: string; number: string; holder: string };
-type PaymentConfig = { banks: Bank[]; qrisImageUrl: string; instructions: string } | null;
+type Bank    = { name: string; number: string; holder: string };
+type EWallet = { name: string; number: string; holder: string };
+type PaymentConfig = { banks: Bank[]; ewallets?: EWallet[]; qrisImageUrl: string; instructions: string } | null;
 
 type Props = {
   orderId:    string;
@@ -23,13 +24,21 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"bank" | "qris">("bank");
+  const [activeTab, setActiveTab] = useState<"bank" | "ewallet" | "qris">("bank");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetch("/api/admin/payment-settings")
       .then(r => r.json())
-      .then(({ data }) => setConfig(data))
+      .then(({ data }) => {
+        setConfig(data);
+        // Set default tab berdasarkan apa yang tersedia
+        if (data) {
+          if (data.banks?.length > 0) setActiveTab("bank");
+          else if (data.ewallets?.length > 0) setActiveTab("ewallet");
+          else if (data.qrisImageUrl) setActiveTab("qris");
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -123,8 +132,9 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
     );
   }
 
-  const hasBank = config?.banks && config.banks.length > 0;
-  const hasQris = !!config?.qrisImageUrl;
+  const hasBank    = config?.banks && config.banks.length > 0;
+  const hasEWallet = config?.ewallets && config.ewallets.length > 0;
+  const hasQris    = !!config?.qrisImageUrl;
 
   return (
     <div className="bg-brand-gray-900 border border-brand-gray-700 p-5 space-y-5">
@@ -156,22 +166,32 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
         </p>
       )}
 
-      {/* Tab switcher */}
-      {hasBank && hasQris && (
+      {/* Tab switcher — hanya tampil jika ada lebih dari 1 kategori */}
+      {[hasBank, hasEWallet, hasQris].filter(Boolean).length > 1 && (
         <div className="flex border border-brand-gray-700">
-          <button onClick={() => setActiveTab("bank")}
-                  className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${activeTab === "bank" ? "bg-white text-black" : "text-brand-gray-400 hover:text-white"}`}>
-            <Banknote className="w-3.5 h-3.5" /> Transfer Bank
-          </button>
-          <button onClick={() => setActiveTab("qris")}
-                  className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${activeTab === "qris" ? "bg-white text-black" : "text-brand-gray-400 hover:text-white"}`}>
-            <QrCode className="w-3.5 h-3.5" /> QRIS
-          </button>
+          {hasBank && (
+            <button onClick={() => setActiveTab("bank")}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${activeTab === "bank" ? "bg-white text-black" : "text-brand-gray-400 hover:text-white"}`}>
+              <Banknote className="w-3.5 h-3.5" /> Bank
+            </button>
+          )}
+          {hasEWallet && (
+            <button onClick={() => setActiveTab("ewallet")}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${activeTab === "ewallet" ? "bg-white text-black" : "text-brand-gray-400 hover:text-white"}`}>
+              <Wallet className="w-3.5 h-3.5" /> E-Wallet
+            </button>
+          )}
+          {hasQris && (
+            <button onClick={() => setActiveTab("qris")}
+                    className={`flex-1 py-2 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors ${activeTab === "qris" ? "bg-white text-black" : "text-brand-gray-400 hover:text-white"}`}>
+              <QrCode className="w-3.5 h-3.5" /> QRIS
+            </button>
+          )}
         </div>
       )}
 
       {/* Bank accounts */}
-      {(activeTab === "bank" || !hasQris) && hasBank && (
+      {activeTab === "bank" && hasBank && (
         <div className="space-y-3">
           {config!.banks.map((bank, i) => (
             <div key={i} className="flex items-center justify-between p-3 bg-brand-gray-800">
@@ -189,8 +209,30 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
         </div>
       )}
 
+      {/* E-Wallet */}
+      {activeTab === "ewallet" && hasEWallet && (
+        <div className="space-y-3">
+          {config!.ewallets!.map((ew, i) => (
+            <div key={i} className="flex items-center justify-between p-3 bg-brand-gray-800">
+              <div>
+                <p className="text-xs text-brand-gray-500 uppercase tracking-widest font-bold">{ew.name}</p>
+                <p className="font-mono font-bold text-lg tracking-widest mt-0.5">{ew.number}</p>
+                <p className="text-xs text-brand-gray-400">{ew.holder}</p>
+              </div>
+              <button onClick={() => copyToClipboard(ew.number, `No. ${ew.name}`)}
+                      className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
+                <Copy className="w-3 h-3" /> Salin
+              </button>
+            </div>
+          ))}
+          <p className="text-[10px] text-brand-gray-600 text-center">
+            Buka aplikasi e-wallet → kirim ke nomor di atas → upload bukti pembayaran
+          </p>
+        </div>
+      )}
+
       {/* QRIS */}
-      {(activeTab === "qris" || !hasBank) && hasQris && (
+      {activeTab === "qris" && hasQris && (
         <div className="flex flex-col items-center gap-3 py-2">
           <p className="text-xs text-brand-gray-400">Scan QR dengan aplikasi e-wallet / m-banking apapun</p>
           <div className="p-4 bg-white">
@@ -201,11 +243,13 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
         </div>
       )}
 
-      {!hasBank && !hasQris && (
+      {/* Fallback jika hanya 1 kategori — auto-show tanpa tab */}
+      {!hasBank && !hasEWallet && !hasQris && (
         <p className="text-sm text-brand-gray-500 text-center py-4">
           Info rekening/QRIS belum diisi admin. Hubungi penjual via WhatsApp.
         </p>
       )}
+
 
       {/* Upload proof */}
       <div className="border-t border-brand-gray-700 pt-4 space-y-3">
