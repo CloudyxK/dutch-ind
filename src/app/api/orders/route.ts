@@ -4,6 +4,7 @@ import prisma from "@/lib/prisma";
 import { generateOrderNumber } from "@/lib/utils";
 import { orderLimiter, getIp } from "@/lib/rateLimit";
 import { parseJsonSafe, verifySameOrigin, rateLimitResponse, sanitize } from "@/lib/security";
+import { RANK_MAP, isFreeShipping, type RankKey } from "@/lib/rank";
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,6 +71,19 @@ export async function POST(request: NextRequest) {
       validatedItems.push({ ...item, subtotal: itemSubtotal, productName: variant.product.name });
     }
 
+    // Ambil rank user untuk benefit
+    const userRecord = await prisma.user.findUnique({
+      where:  { id: session.user.id },
+      select: { rank: true },
+    });
+    const userRank    = (userRecord?.rank ?? "BRONZE") as RankKey;
+    const rankCfg     = RANK_MAP[userRank];
+    const rankDisPct  = rankCfg?.discountPct ?? 0;
+
+    // Gratis ongkir berdasarkan rank?
+    const shippingFree = isFreeShipping(userRank, shippingMethod ?? "");
+    const finalShipping = shippingFree ? 0 : (shippingCost || 0);
+
     // Validasi kupon
     let discountAmount = 0;
     let couponId: string | undefined;
@@ -98,7 +112,12 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const total = subtotal + (shippingCost || 0) - discountAmount;
+    // Diskon rank (diterapkan setelah kupon)
+    const afterCoupon = subtotal - discountAmount;
+    const rankDiscount = rankDisPct > 0 ? Math.round((afterCoupon * rankDisPct) / 100) : 0;
+    const totalDiscount = discountAmount + rankDiscount;
+
+    const total = subtotal + finalShipping - totalDiscount;
 
     // Use existing saved address or create a new one
     let savedAddress;
@@ -122,8 +141,8 @@ export async function POST(request: NextRequest) {
           addressId: savedAddress.id,
           couponId,
           subtotal,
-          discountAmount,
-          shippingCost: shippingCost || 0,
+          discountAmount: totalDiscount,
+          shippingCost: finalShipping,
           total,
           notes: cleanNotes,
           shippingMethod,
@@ -212,7 +231,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: { orderId: order.id, orderNumber: order.orderNumber, snapToken },
+      data: {
+        orderId:       order.id,
+        orderNumber:   order.orderNumber,
+        snapToken,
+        rankDiscount:  rankDiscount,
+        shippingFree,
+      },
     });
   } catch (error) {
     console.error("Order error:", error);

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
+import { updateUserRankAfterOrder } from "@/lib/updateUserRank";
 
 export async function POST(request: NextRequest) {
   try {
@@ -71,6 +72,11 @@ export async function POST(request: NextRequest) {
         data: { status: orderStatus },
       }),
     ]);
+
+    // Update rank member jika pembayaran berhasil
+    if (paymentStatus === "SUCCESS") {
+      await updateUserRankAfterOrder(order.id);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { updateUserRankAfterOrder } from "@/lib/updateUserRank";
 
 async function requireAdmin() {
   const session = await auth();
@@ -42,6 +43,9 @@ export async function PATCH(
       data: { status: "COMPLETED" },
     }),
   ]);
+
+  // Update rank member
+  await updateUserRankAfterOrder(id);
 
   return NextResponse.json({ success: true });
 }
