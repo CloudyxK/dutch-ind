@@ -1,9 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { MapPin, Save, RefreshCw, Info } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
+
+const AdminMapPicker = dynamic(() => import("@/components/admin/AdminMapPicker"), {
+  ssr: false,
+  loading: () => <div className="w-full h-72 border border-brand-gray-700 bg-brand-gray-800 flex items-center justify-center text-brand-gray-500 text-sm">Memuat peta...</div>,
+});
 
 type Cfg = {
   "store.lat": string;
@@ -141,18 +147,20 @@ export default function AdminShippingPage() {
         </h2>
         <p className="text-xs text-brand-gray-500">
           Koordinat toko digunakan untuk menghitung jarak ke alamat pembeli.
-          Isi alamat → klik <strong>Cari Koordinat</strong>.
+          Cari alamat lalu klik <strong>Cari di Peta</strong>, atau langsung klik/drag marker di peta.
         </p>
 
+        {/* Search box */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider mb-1">Alamat / Nama Area Toko</label>
+          <label className="block text-xs font-bold uppercase tracking-wider mb-1">Cari Alamat / Area</label>
           <div className="flex gap-2">
             <input
               type="text"
               value={cfg["store.address"]}
               onChange={(e) => setCfg((prev) => ({ ...prev, "store.address": e.target.value }))}
+              onKeyDown={(e) => e.key === "Enter" && geocodeAddress()}
               className="input-field flex-1 py-2"
-              placeholder="Cth: Jl. Kebon Jeruk No.10, Jakarta Barat"
+              placeholder="Contoh: Jl. Kebon Jeruk No.10, Jakarta Barat"
             />
             <button
               type="button"
@@ -161,25 +169,49 @@ export default function AdminShippingPage() {
               className="btn-secondary px-4 py-2 text-xs flex items-center gap-1.5 flex-shrink-0"
             >
               <RefreshCw className={`w-3 h-3 ${geocoding ? "animate-spin" : ""}`} />
-              {geocoding ? "Mencari..." : "Cari Koordinat"}
+              {geocoding ? "Mencari..." : "Cari di Peta"}
             </button>
           </div>
         </div>
 
+        {/* Interactive map */}
+        <div className="space-y-2">
+          <p className="text-[10px] text-brand-gray-500 uppercase tracking-widest font-bold">
+            Klik peta atau drag marker untuk set lokasi
+          </p>
+          <AdminMapPicker
+            lat={parseFloat(cfg["store.lat"]) || -6.2088}
+            lng={parseFloat(cfg["store.lng"]) || 106.8456}
+            onChange={(lat, lng) =>
+              setCfg((prev) => ({
+                ...prev,
+                "store.lat": lat.toFixed(6),
+                "store.lng": lng.toFixed(6),
+              }))
+            }
+          />
+        </div>
+
+        {/* Koordinat manual */}
         <div className="grid grid-cols-2 gap-4">
-          {field("store.lat", "Latitude", { type: "number", step: "0.000001", hint: "Contoh: -6.208800" })}
-          {field("store.lng", "Longitude", { type: "number", step: "0.000001", hint: "Contoh: 106.845600" })}
+          {field("store.lat", "Latitude", { type: "number", step: "0.000001" })}
+          {field("store.lng", "Longitude", { type: "number", step: "0.000001" })}
         </div>
 
         {cfg["store.lat"] && cfg["store.lng"] && (
-          <a
-            href={`https://www.google.com/maps?q=${cfg["store.lat"]},${cfg["store.lng"]}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs text-brand-gray-400 hover:text-white underline"
-          >
-            <MapPin className="w-3 h-3" /> Cek di Google Maps
-          </a>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-brand-gray-500">
+              📍 {parseFloat(cfg["store.lat"]).toFixed(5)}, {parseFloat(cfg["store.lng"]).toFixed(5)}
+            </span>
+            <a
+              href={`https://www.google.com/maps?q=${cfg["store.lat"]},${cfg["store.lng"]}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-blue-400 hover:text-blue-300 underline"
+            >
+              Buka di Google Maps ↗
+            </a>
+          </div>
         )}
       </div>
 
