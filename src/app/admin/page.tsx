@@ -3,6 +3,7 @@ import { formatPrice, formatDate } from "@/lib/utils";
 import { ShoppingCart, Users, Package, TrendingUp, AlertCircle, Crown } from "lucide-react";
 import RecentOrdersWidget from "@/components/admin/RecentOrdersWidget";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
+import RankIcon from "@/components/profile/RankIcon";
 import type { RankKey } from "@/lib/rank";
 
 async function getDashboardStats() {

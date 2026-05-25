@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Save, Loader2, Crown, Info, RotateCcw } from "lucide-react";
 import { RANKS, type RankKey } from "@/lib/rank";
+import RankIcon from "@/components/profile/RankIcon";
 import { formatPrice } from "@/lib/utils";
 
 type RankRow = {
@@ -135,7 +136,7 @@ export default function MembershipSettingsPage() {
             <div key={row.key} className={`bg-brand-gray-900 border ${style.border} overflow-hidden`}>
               {/* Rank header */}
               <div className={`bg-gradient-to-r ${style.bg} px-5 py-3 flex items-center gap-3`}>
-                <span className="text-3xl">{row.icon}</span>
+                <RankIcon rank={row.key} size={44} />
                 <div>
                   <p className="text-white font-display text-lg tracking-widest uppercase font-bold">{row.label}</p>
                   <p className="text-white/60 text-[10px] uppercase tracking-wider">Level {idx + 1}</p>
@@ -229,7 +230,9 @@ export default function MembershipSettingsPage() {
 
               {/* Summary bar */}
               <div className={`px-5 py-2.5 border-t border-brand-gray-800 bg-brand-gray-950 flex flex-wrap gap-4 text-[11px]`}>
-                <span className={`font-bold ${style.text}`}>{row.icon} {row.label}</span>
+                <span className={`font-bold flex items-center gap-1.5 ${style.text}`}>
+                  <RankIcon rank={row.key} size={16} /> {row.label}
+                </span>
                 <span className="text-brand-gray-500">
                   Threshold: <strong className="text-white">{formatPrice(row.minSpend)}</strong>
                 </span>
@@ -269,7 +272,10 @@ export default function MembershipSettingsPage() {
                 return (
                   <tr key={row.key}>
                     <td className="py-2.5 pr-4">
-                      <span className={`font-bold ${style.text}`}>{row.icon} {row.label}</span>
+                      <span className={`font-bold flex items-center gap-2 ${style.text}`}>
+                        <RankIcon rank={row.key} size={20} />
+                        {row.label}
+                      </span>
                     </td>
                     <td className="py-2.5 pr-4 font-mono text-xs">{formatPrice(row.minSpend)}</td>
                     <td className="py-2.5 pr-4">

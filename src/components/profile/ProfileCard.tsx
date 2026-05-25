@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Camera, Loader2, User, X } from "lucide-react";
 import { RankBadge, LoyaltyBadge } from "./RankBadge";
+import RankIcon from "./RankIcon";
 import { RANK_MAP, nextRank, rankProgress, type RankKey } from "@/lib/rank";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -93,7 +94,7 @@ export default function ProfileCard(props: Props) {
           <p className="text-white/70 text-[10px] uppercase tracking-widest font-bold">Level Member</p>
           <p className="text-white text-2xl font-display tracking-widest uppercase font-bold">{cfg.label}</p>
         </div>
-        <span className="text-5xl">{cfg.icon}</span>
+        <RankIcon rank={rank} size={56} />
       </div>
 
       {/* Body */}
@@ -159,10 +160,11 @@ export default function ProfileCard(props: Props) {
                   style={{ width: `${prog}%` }}
                 />
               </div>
-              <div className="flex justify-between text-[10px] text-brand-gray-500">
-                <span>{cfg.icon} {cfg.label}</span>
-                <span>
-                  {formatPrice(next.minSpend - props.totalSpend)} lagi → {next.icon} {next.label}
+              <div className="flex justify-between text-[10px] text-brand-gray-500 items-center">
+                <span className="flex items-center gap-1"><RankIcon rank={rank} size={12} /> {cfg.label}</span>
+                <span className="flex items-center gap-1">
+                  {formatPrice(next.minSpend - props.totalSpend)} lagi →
+                  <RankIcon rank={next.key} size={12} /> {next.label}
                 </span>
               </div>
             </>

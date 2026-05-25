@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/utils";
 import { Package, Heart, MapPin } from "lucide-react";
 import ProfileCard from "@/components/profile/ProfileCard";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
+import RankIcon from "@/components/profile/RankIcon";
 import { RANKS, RANK_MAP, type RankKey } from "@/lib/rank";
 import { formatPrice } from "@/lib/utils";
 
@@ -83,7 +84,7 @@ export default async function ProfilePage() {
                       : "border-brand-gray-800"
                   }`}
                 >
-                  <span className="text-2xl">{r.icon}</span>
+                  <RankIcon rank={r.key} size={36} className={!isUnlocked ? "opacity-30 grayscale" : ""} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className={`text-sm font-bold ${isCurrent ? r.textClass : isUnlocked ? "text-white" : "text-brand-gray-600"}`}>
