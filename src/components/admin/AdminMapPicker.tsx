@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { Crosshair, Loader2 } from "lucide-react";
 import "leaflet/dist/leaflet.css";
 
 type Props = {
@@ -14,6 +15,34 @@ export default function AdminMapPicker({ lat, lng, onChange }: Props) {
   const mapRef       = useRef<any>(null);
   const initialised  = useRef(false);
   const stableChange = useCallback(onChange, []); // eslint-disable-line
+  const [locating, setLocating] = useState(false);
+  const [locError, setLocError] = useState<string | null>(null);
+
+  function locateMe() {
+    if (!navigator.geolocation) {
+      setLocError("Browser tidak mendukung GPS");
+      return;
+    }
+    setLocating(true);
+    setLocError(null);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        stableChange(latitude, longitude);
+        if (mapRef.current) {
+          mapRef.current.setView([latitude, longitude], 17, { animate: true });
+        }
+        setLocating(false);
+      },
+      (err) => {
+        setLocating(false);
+        if (err.code === 1) setLocError("Akses lokasi ditolak. Izinkan browser mengakses GPS.");
+        else if (err.code === 2) setLocError("Posisi tidak ditemukan. Coba lagi.");
+        else setLocError("Gagal mendapatkan lokasi.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
 
   useEffect(() => {
     if (initialised.current || !containerRef.current) return;
@@ -106,6 +135,37 @@ export default function AdminMapPicker({ lat, lng, onChange }: Props) {
           }} />
         </div>
       </div>
+
+      {/* Tombol lokasi GPS — kanan atas */}
+      <div className="absolute top-3 right-3" style={{ zIndex: 800 }}>
+        <button
+          type="button"
+          onClick={locateMe}
+          disabled={locating}
+          title="Gunakan lokasi saya"
+          className="flex items-center gap-1.5 bg-white text-black text-[11px] font-bold px-3 py-1.5 shadow-md hover:bg-gray-100 active:scale-95 transition-all disabled:opacity-60 disabled:cursor-wait"
+          style={{ borderRadius: 4 }}
+        >
+          {locating
+            ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            : <Crosshair className="w-3.5 h-3.5" />}
+          {locating ? "Mencari..." : "Lokasi Saya"}
+        </button>
+      </div>
+
+      {/* Error GPS */}
+      {locError && (
+        <div
+          className="absolute top-12 right-3 max-w-[220px] bg-red-900/90 text-red-200 text-[10px] px-3 py-2 leading-snug shadow"
+          style={{ zIndex: 800, borderRadius: 4 }}
+        >
+          {locError}
+          <button
+            onClick={() => setLocError(null)}
+            className="ml-2 text-red-300 hover:text-white font-bold"
+          >✕</button>
+        </div>
+      )}
 
       {/* Label bawah */}
       <div
