@@ -4,7 +4,7 @@ import Image from "next/image";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { formatPrice, formatDate, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
-import { ChevronLeft, MapPin, CreditCard, Package } from "lucide-react";
+import { ChevronLeft, MapPin, CreditCard, Package, MessageCircle, Instagram } from "lucide-react";
 import TrackingPanel from "@/components/order/TrackingPanel";
 import OrderReviewSection from "@/components/order/OrderReviewSection";
 import ManualPaymentPanel from "@/components/order/ManualPaymentPanel";
@@ -55,6 +55,20 @@ export default async function OrderDetailPage({ params }: Props) {
   });
 
   if (!order) notFound();
+
+  /* ── Contact config (untuk tombol WA/IG di panel COD) ── */
+  let waNumber = "";
+  let igHandle = "";
+  if (order.payment?.method === "COD") {
+    const contactRow = await prisma.setting.findUnique({ where: { key: "contact.config" } });
+    if (contactRow) {
+      try {
+        const cfg = JSON.parse(contactRow.value);
+        waNumber = cfg.whatsapp || "";
+        igHandle = cfg.instagram || "";
+      } catch {}
+    }
+  }
 
   /* ── Tracking data ── */
   let cachedTracking:    any            = null;
@@ -289,6 +303,17 @@ export default async function OrderDetailPage({ params }: Props) {
           {order.payment?.method === "COD" && (() => {
             const meetMatch = order.notes?.match(/\[COD\] Titik pertemuan: (.+?)(\n|$)/);
             const meetingPoint = meetMatch ? meetMatch[1].trim() : null;
+
+            const waMsg = encodeURIComponent(
+              `Halo admin DUTCH.IND! Saya ingin konfirmasi pesanan COD saya:\n` +
+              `📦 No. Pesanan: #${order.orderNumber}\n` +
+              `💰 Total: ${formatPrice(order.total)}\n` +
+              (meetingPoint ? `📍 Titik Pertemuan: ${meetingPoint}\n` : "") +
+              `\nMohon konfirmasi waktu pertemuannya. Terima kasih!`
+            );
+            const waLink = waNumber ? `https://wa.me/${waNumber.replace(/\D/g, "")}?text=${waMsg}` : null;
+            const igLink = igHandle ? `https://instagram.com/${igHandle.replace("@", "")}` : null;
+
             return (
               <div className={`border p-5 space-y-3 ${
                 order.payment.status === "SUCCESS"
@@ -300,8 +325,9 @@ export default async function OrderDetailPage({ params }: Props) {
                     {order.payment.status === "SUCCESS" ? "✅ COD — Sudah Lunas" : "📍 COD — Pertemuan Langsung"}
                   </span>
                 </div>
+
                 {order.payment.status !== "SUCCESS" ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {meetingPoint && (
                       <div className="bg-amber-900/20 border border-amber-800/40 px-3 py-2">
                         <p className="text-[10px] text-amber-400 uppercase tracking-widest font-bold mb-0.5">Titik Pertemuan</p>
@@ -309,10 +335,45 @@ export default async function OrderDetailPage({ params }: Props) {
                       </div>
                     )}
                     <p className="text-sm text-amber-300/80">
-                      Siapkan uang tunai sebesar{" "}
-                      <span className="font-bold text-white">{formatPrice(order.total)}</span>.
+                      {order.payment.status === "COD_PENDING"
+                        ? <>Siapkan <span className="font-bold text-white">{formatPrice(order.total)}</span> (tunai) saat penjual tiba.</>
+                        : <>Pembayaran via Transfer/QRIS — silakan selesaikan pembayaran.</>
+                      }
                     </p>
-                    <p className="text-xs text-brand-gray-500">Admin akan menghubungi kamu via WhatsApp untuk konfirmasi waktu pertemuan.</p>
+                    <p className="text-xs text-brand-gray-500">
+                      Admin akan menghubungi kamu via WhatsApp untuk konfirmasi waktu &amp; lokasi pertemuan.
+                    </p>
+
+                    {/* Tombol hubungi admin */}
+                    {(waLink || igLink) && (
+                      <div className="pt-1 space-y-2">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-400">Hubungi Admin</p>
+                        <div className="flex flex-wrap gap-2">
+                          {waLink && (
+                            <a
+                              href={waLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-4 py-2 bg-green-900/40 border border-green-700 text-green-400 hover:bg-green-900/60 transition-colors text-xs font-bold"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              Chat WhatsApp
+                            </a>
+                          )}
+                          {igLink && (
+                            <a
+                              href={igLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-2 px-4 py-2 bg-pink-900/30 border border-pink-700/50 text-pink-400 hover:bg-pink-900/50 transition-colors text-xs font-bold"
+                            >
+                              <Instagram className="w-3.5 h-3.5" />
+                              Instagram
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <p className="text-sm text-green-400/80">Pembayaran COD telah diterima. Terima kasih!</p>
