@@ -25,12 +25,7 @@
     font-family: var(--font-inter);
   }
 
-  /* Hide default cursor on non-touch desktop */
-  @media (pointer: fine) {
-    *, *::before, *::after {
-      cursor: none !important;
-    }
-  }
+  /* Custom cursor hides native via JS in CustomCursor.tsx */
 
   /* Custom scrollbar */
   ::-webkit-scrollbar {

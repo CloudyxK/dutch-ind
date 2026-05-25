@@ -15,16 +15,19 @@ export default function CustomCursor() {
   const ringX = useSpring(mouseX, springCfg);
   const ringY = useSpring(mouseY, springCfg);
 
-  /* Canvas-based trail */
-  const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const trailRef   = useRef<{ x: number; y: number; age: number }[]>([]);
-  const rafRef     = useRef<number>(0);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const trailRef  = useRef<{ x: number; y: number; age: number }[]>([]);
+  const rafRef    = useRef<number>(0);
 
   useEffect(() => {
+    /* Skip on touch/mobile devices */
+    if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
+
     setMounted(true);
 
-    /* Skip on touch devices */
-    if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
+    /* Hide native cursor via JS — only when component is running */
+    document.body.style.cursor = "none";
+    document.documentElement.style.cursor = "none";
 
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -49,22 +52,22 @@ export default function CustomCursor() {
       setIsPointer(!!t.closest("a, button, [role='button'], label, input, select"));
     };
 
-    const onLeave = () => setIsHidden(true);
-    const onEnter = () => setIsHidden(false);
+    const onLeaveDoc = () => setIsHidden(true);
+    const onEnterDoc = () => setIsHidden(false);
 
-    document.addEventListener("mouseout",  onLeave);
-    document.addEventListener("mouseover", onEnter);
+    document.addEventListener("mouseout",  onLeaveDoc);
+    document.addEventListener("mouseover", onEnterDoc);
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseover", onOver);
 
-    /* Draw trail */
+    /* Trail draw loop */
     const draw = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       trailRef.current.forEach((pt, i) => {
         pt.age += 1;
         const progress = i / trailRef.current.length;
-        const alpha    = Math.max(0, progress * 0.22 - pt.age * 0.014);
-        const radius   = progress * 3.5;
+        const alpha    = Math.max(0, progress * 0.2 - pt.age * 0.013);
+        const radius   = progress * 3;
         if (alpha <= 0) return;
         ctx.beginPath();
         ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
@@ -77,18 +80,21 @@ export default function CustomCursor() {
     rafRef.current = requestAnimationFrame(draw);
 
     return () => {
+      /* Restore native cursor on unmount */
+      document.body.style.cursor = "";
+      document.documentElement.style.cursor = "";
       window.removeEventListener("resize", resize);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", onOver);
-      document.removeEventListener("mouseout",  onLeave);
-      document.removeEventListener("mouseover", onEnter);
+      document.removeEventListener("mouseout",  onLeaveDoc);
+      document.removeEventListener("mouseover", onEnterDoc);
       cancelAnimationFrame(rafRef.current);
     };
   }, []);
 
   if (!mounted) return null;
 
-  const hidden = isHidden ? 0 : 1;
+  const opacity = isHidden ? 0 : 1;
 
   return (
     <>
@@ -108,7 +114,7 @@ export default function CustomCursor() {
           translateX: "-50%",
           translateY: "-50%",
           zIndex: 99999,
-          opacity: hidden,
+          opacity,
         }}
         animate={{ width: isPointer ? 8 : 5, height: isPointer ? 8 : 5 }}
         transition={{ duration: 0.15 }}
@@ -123,17 +129,19 @@ export default function CustomCursor() {
           translateX: "-50%",
           translateY: "-50%",
           zIndex: 99998,
-          border: "1px solid rgba(255,255,255,0.5)",
-          opacity: hidden,
+          opacity,
         }}
         animate={{
-          width:  isPointer ? 48 : 30,
-          height: isPointer ? 48 : 30,
-          borderColor: isPointer
-            ? "rgba(255,255,255,0.85)"
-            : "rgba(255,255,255,0.4)",
+          width:       isPointer ? 48 : 30,
+          height:      isPointer ? 48 : 30,
+          borderColor: isPointer ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)",
         }}
         transition={{ duration: 0.2 }}
+        initial={{
+          width: 30,
+          height: 30,
+          border: "1px solid rgba(255,255,255,0.4)",
+        }}
       />
     </>
   );
