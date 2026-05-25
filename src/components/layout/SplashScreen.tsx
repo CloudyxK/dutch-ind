@@ -29,24 +29,21 @@ export default function SplashScreen() {
     img.onload = () => { logoImg.current = img; logoReady.current = true; };
   }, []);
 
-  /* size canvas once on mount */
+  /* ── size + render loop — single effect after mounted so canvasRef is live ── */
   useEffect(() => {
+    if (!mounted) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const vw  = window.innerWidth;
-    const R   = Math.min(Math.round(vw * 0.22), 148);
-    const T   = 22;
+
+    /* size canvas first */
+    const vw = window.innerWidth;
+    const R  = Math.min(Math.round(vw * 0.22), 148);
+    const T  = 22;
     coinR.current = R;
     rimT.current  = T;
-    const S   = (R + T) * 2 + 60;     /* extra room for glow + shadow */
+    const S  = (R + T) * 2 + 60;
     canvas.width  = S;
-    canvas.height = S + 24;            /* extra at bottom for drop shadow */
-  }, []);
-
-  /* ── main render loop ── */
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    canvas.height = S + 24;
     const ctx = canvas.getContext("2d")!;
 
     function draw() {
@@ -206,7 +203,7 @@ export default function SplashScreen() {
     }
     rafRef.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafRef.current);
-  }, []);
+  }, [mounted]);
 
   /* ── drag interaction ── */
   const onMouseDown = useCallback((e: React.MouseEvent) => {
