@@ -64,69 +64,152 @@ async function getDashboardStats() {
   };
 }
 
-// Sort rank untuk display order
 const RANK_ORDER: Record<string, number> = { DIAMOND: 5, PLATINUM: 4, GOLD: 3, SILVER: 2, BRONZE: 1 };
+
+/* ── shared styles ───────────────────────────────────── */
+const card = {
+  background: "#0a0a0c",
+  border: "1px solid rgba(255,255,255,0.07)",
+} as const;
+
+const labelStyle = {
+  color: "rgba(255,255,255,0.25)",
+  fontSize: "9px",
+  letterSpacing: "0.45em",
+} as const;
 
 export default async function AdminDashboard() {
   const stats = await getDashboardStats();
 
-  // Sort topMembers by rank weight then spend
   const topMembers = [...stats.topMembers].sort((a, b) => {
     const rDiff = (RANK_ORDER[b.rank] ?? 0) - (RANK_ORDER[a.rank] ?? 0);
     return rDiff !== 0 ? rDiff : b.totalSpend - a.totalSpend;
   });
 
   const cards = [
-    { title: "Total Pendapatan",    value: formatPrice(stats.totalRevenue),              icon: TrendingUp, desc: "Semua waktu"        },
-    { title: "Pendapatan Bulan Ini",value: formatPrice(stats.monthRevenue),              icon: TrendingUp, desc: "Bulan berjalan"     },
-    { title: "Total Pesanan",       value: stats.totalOrders.toLocaleString("id-ID"),    icon: ShoppingCart,desc: "Semua pesanan"     },
-    { title: "Total Pelanggan",     value: stats.totalUsers.toLocaleString("id-ID"),     icon: Users,       desc: "Pelanggan terdaftar"},
-    { title: "Produk Aktif",        value: stats.totalProducts.toLocaleString("id-ID"),  icon: Package,     desc: "Produk tersedia"   },
+    { num: "01", title: "Total Pendapatan",     value: formatPrice(stats.totalRevenue),              desc: "Semua waktu"         },
+    { num: "02", title: "Pendapatan Bulan Ini", value: formatPrice(stats.monthRevenue),              desc: "Bulan berjalan"      },
+    { num: "03", title: "Total Pesanan",        value: stats.totalOrders.toLocaleString("id-ID"),    desc: "Semua pesanan"       },
+    { num: "04", title: "Total Pelanggan",      value: stats.totalUsers.toLocaleString("id-ID"),     desc: "Terdaftar"           },
+    { num: "05", title: "Produk Aktif",         value: stats.totalProducts.toLocaleString("id-ID"),  desc: "Tersedia di toko"    },
   ];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-display tracking-widest uppercase">Dashboard</h1>
-        <p className="text-brand-gray-400 text-sm mt-1">Selamat datang kembali di panel admin DUTCH.IND</p>
+      {/* Page header */}
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "1.5rem" }}>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
+          <span className="text-[9px] uppercase tracking-[0.5em]" style={{ color: "rgba(255,255,255,0.28)" }}>
+            Admin Panel
+          </span>
+        </div>
+        <h1 className="font-display text-3xl uppercase tracking-widest text-white">
+          Dashboard
+        </h1>
+        <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+          Selamat datang kembali, DUTCH.IND
+        </p>
       </div>
 
-      {/* Stats cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {cards.map(({ title, value, icon: Icon, desc }) => (
-          <div key={title} className="bg-brand-gray-900 border border-brand-gray-700 p-5 hover:border-brand-gray-500 transition-colors">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-xs text-brand-gray-500 uppercase tracking-wider">{title}</p>
-                <p className="text-xl font-bold mt-2">{value}</p>
-                <p className="text-xs text-brand-gray-600 mt-1">{desc}</p>
-              </div>
-              <Icon className="w-5 h-5 text-brand-gray-600" />
-            </div>
+      {/* ── Stats cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+        {cards.map(({ num, title, value, desc }) => (
+          <div
+            key={num}
+            className="group relative p-5 transition-all duration-300 overflow-hidden"
+            style={card}
+          >
+            {/* Hover glow */}
+            <div
+              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 80% at 50% 0%, rgba(255,255,255,0.04) 0%, transparent 70%)",
+              }}
+            />
+
+            {/* Number */}
+            <p className="font-mono text-[9px] mb-3" style={{ color: "rgba(255,255,255,0.18)" }}>
+              {num}
+            </p>
+
+            {/* Value */}
+            <p className="text-xl font-black text-white mb-1 tabular-nums leading-none">
+              {value}
+            </p>
+
+            {/* Title */}
+            <p className="text-[10px] uppercase tracking-[0.3em] mb-1" style={{ color: "rgba(255,255,255,0.5)" }}>
+              {title}
+            </p>
+
+            {/* Desc */}
+            <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.2)" }}>
+              {desc}
+            </p>
+
+            {/* Bottom accent on hover */}
+            <div
+              className="absolute bottom-0 left-4 right-4 h-px scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left"
+              style={{ background: "rgba(255,255,255,0.15)" }}
+            />
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      {/* ── Orders + Low Stock ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
         {/* Recent orders */}
         <div className="xl:col-span-2">
           <RecentOrdersWidget orders={stats.recentOrders as any} />
         </div>
 
         {/* Low stock */}
-        <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <AlertCircle className="w-4 h-4 text-yellow-400" />
-            <h2 className="text-sm font-bold uppercase tracking-widest">Stok Menipis</h2>
+        <div className="p-5" style={card}>
+          <div
+            className="flex items-center gap-2.5 mb-5 pb-4"
+            style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+          >
+            <AlertCircle className="w-3.5 h-3.5 text-yellow-400/80" />
+            <h2 className="text-[10px] font-bold uppercase tracking-[0.4em] text-white">
+              Stok Menipis
+            </h2>
           </div>
+
           {stats.lowStockProducts.length === 0 ? (
-            <p className="text-sm text-brand-gray-500">Semua produk stok aman</p>
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+              Semua produk stok aman
+            </p>
           ) : (
-            <div className="space-y-3">
-              {stats.lowStockProducts.map((product) => (
-                <div key={product.id} className="flex items-center justify-between py-2 border-b border-brand-gray-800 last:border-0">
-                  <p className="text-sm">{product.name}</p>
-                  <span className={`text-xs font-bold px-2 py-0.5 ${product.totalStock === 0 ? "bg-red-900/40 text-red-400" : "bg-yellow-900/40 text-yellow-400"}`}>
+            <div className="space-y-0">
+              {stats.lowStockProducts.map((product, i) => (
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between py-3"
+                  style={{
+                    borderBottom:
+                      i < stats.lowStockProducts.length - 1
+                        ? "1px solid rgba(255,255,255,0.05)"
+                        : "none",
+                  }}
+                >
+                  <p className="text-xs text-white truncate max-w-[140px]">
+                    {product.name}
+                  </p>
+                  <span
+                    className="text-[10px] font-bold px-2 py-0.5 flex-shrink-0"
+                    style={{
+                      background:
+                        product.totalStock === 0
+                          ? "rgba(239,68,68,0.12)"
+                          : "rgba(234,179,8,0.12)",
+                      color:
+                        product.totalStock === 0
+                          ? "rgba(248,113,113,0.9)"
+                          : "rgba(234,179,8,0.9)",
+                    }}
+                  >
                     {product.totalStock === 0 ? "Habis" : `${product.totalStock} sisa`}
                   </span>
                 </div>
@@ -136,47 +219,92 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* Top Members */}
-      <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-        <div className="flex items-center gap-2 mb-5">
-          <Crown className="w-4 h-4 text-yellow-400" />
-          <h2 className="text-sm font-bold uppercase tracking-widest">Member Teratas</h2>
-          <span className="text-xs text-brand-gray-500 ml-auto">Silver ke atas · diurutkan berdasarkan rank & spend</span>
+      {/* ── Top Members ── */}
+      <div className="p-5" style={card}>
+        <div
+          className="flex items-center gap-2.5 mb-5 pb-4"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}
+        >
+          <Crown className="w-3.5 h-3.5 text-yellow-400/80" />
+          <h2 className="text-[10px] font-bold uppercase tracking-[0.4em] text-white">
+            Member Teratas
+          </h2>
+          <span
+            className="text-[9px] ml-auto uppercase tracking-[0.3em]"
+            style={{ color: "rgba(255,255,255,0.22)" }}
+          >
+            Silver ke atas
+          </span>
         </div>
 
         {topMembers.length === 0 ? (
-          <p className="text-sm text-brand-gray-500">Belum ada member dengan rank Silver ke atas</p>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.3)" }}>
+            Belum ada member dengan rank Silver ke atas
+          </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-brand-gray-700 text-[11px] text-brand-gray-500 uppercase tracking-wider">
-                  <th className="text-left py-2 pr-4">#</th>
-                  <th className="text-left py-2 pr-4">Member</th>
-                  <th className="text-left py-2 pr-4">Rank</th>
-                  <th className="text-left py-2 pr-4">Badge</th>
-                  <th className="text-right py-2 pr-4">Total Belanja</th>
-                  <th className="text-right py-2 pr-4">Pesanan</th>
-                  <th className="text-left py-2">Bergabung</th>
+                <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                  {["#", "Member", "Rank", "Badge", "Total Belanja", "Pesanan", "Bergabung"].map(
+                    (h, i) => (
+                      <th
+                        key={h}
+                        className={`py-2 pr-4 font-medium ${
+                          i >= 4 ? "text-right" : "text-left"
+                        }`}
+                        style={{ ...labelStyle }}
+                      >
+                        {h}
+                      </th>
+                    )
+                  )}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-brand-gray-800">
+              <tbody>
                 {topMembers.map((member, idx) => {
                   const isLoyal = (member.orderCount ?? 0) >= 2;
                   return (
-                    <tr key={member.id} className="hover:bg-brand-gray-800 transition-colors">
-                      <td className="py-3 pr-4 text-brand-gray-500 font-mono text-xs">{idx + 1}</td>
+                    <tr
+                      key={member.id}
+                      className="group transition-colors"
+                      style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                    >
+                      <td
+                        className="py-3 pr-4 font-mono"
+                        style={{ color: "rgba(255,255,255,0.2)" }}
+                      >
+                        {idx + 1}
+                      </td>
                       <td className="py-3 pr-4">
-                        <div className="flex items-center gap-3">
-                          {/* Avatar */}
-                          <div className="w-8 h-8 rounded-full bg-brand-gray-700 overflow-hidden flex-shrink-0 flex items-center justify-center text-xs font-bold text-brand-gray-400">
-                            {member.avatar
-                              ? <img src={member.avatar} alt={member.name} className="w-full h-full object-cover" />
-                              : member.name.charAt(0).toUpperCase()}
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className="w-7 h-7 flex-shrink-0 flex items-center justify-center text-xs font-bold overflow-hidden"
+                            style={{
+                              background: "rgba(255,255,255,0.06)",
+                              color: "rgba(255,255,255,0.5)",
+                            }}
+                          >
+                            {member.avatar ? (
+                              <img
+                                src={member.avatar}
+                                alt={member.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              member.name.charAt(0).toUpperCase()
+                            )}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold truncate max-w-[150px]">{member.name}</p>
-                            <p className="text-xs text-brand-gray-500 truncate max-w-[150px]">{member.email}</p>
+                            <p className="font-semibold text-white truncate max-w-[140px]">
+                              {member.name}
+                            </p>
+                            <p
+                              className="text-[10px] truncate max-w-[140px]"
+                              style={{ color: "rgba(255,255,255,0.3)" }}
+                            >
+                              {member.email}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -186,13 +314,21 @@ export default async function AdminDashboard() {
                       <td className="py-3 pr-4">
                         {isLoyal && <LoyaltyBadge size="sm" />}
                       </td>
-                      <td className="py-3 pr-4 text-right font-semibold font-mono">
+                      <td
+                        className="py-3 pr-4 text-right font-bold tabular-nums text-white"
+                      >
                         {formatPrice(member.totalSpend ?? 0)}
                       </td>
-                      <td className="py-3 pr-4 text-right text-brand-gray-400">
-                        {member.orderCount ?? 0}x
+                      <td
+                        className="py-3 pr-4 text-right"
+                        style={{ color: "rgba(255,255,255,0.35)" }}
+                      >
+                        {member.orderCount ?? 0}×
                       </td>
-                      <td className="py-3 text-brand-gray-500 text-xs">
+                      <td
+                        className="py-3"
+                        style={{ color: "rgba(255,255,255,0.25)" }}
+                      >
                         {formatDate(member.createdAt)}
                       </td>
                     </tr>

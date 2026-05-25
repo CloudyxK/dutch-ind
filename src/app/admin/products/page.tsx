@@ -18,7 +18,13 @@ export default async function AdminProductsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-display tracking-widest uppercase">Produk</h1>
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
+            <span className="text-[9px] uppercase tracking-[0.5em]" style={{ color: "rgba(255,255,255,0.28)" }}>Admin</span>
+          </div>
+          <h1 className="text-3xl font-display tracking-widest uppercase text-white">Produk</h1>
+        </div>
         <Link href="/admin/products/new" className="btn-primary text-sm gap-2 flex items-center">
           <Plus className="w-4 h-4" />
           Tambah Produk

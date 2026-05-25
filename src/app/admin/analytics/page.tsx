@@ -103,7 +103,7 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-display tracking-widest uppercase">Analitik</h1>
+      <h1 className="text-3xl font-display tracking-widest uppercase text-white">Analitik</h1>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -10,7 +10,7 @@ export default async function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-display tracking-widest uppercase">Pengguna</h1>
+      <h1 className="text-3xl font-display tracking-widest uppercase text-white">Pengguna</h1>
 
       <div className="bg-brand-gray-900 border border-brand-gray-700 overflow-x-auto">
         <table className="w-full min-w-[700px]">

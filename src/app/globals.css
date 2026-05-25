@@ -210,6 +210,42 @@
   70% { transform: none; }
 }
 
+/* ── Admin dark theme overrides ──────────────────────
+   Restyle Tailwind tokens inside .admin-main so all
+   admin sub-pages automatically match the homepage palette
+   without rewriting every page component.
+───────────────────────────────────────────────────── */
+.admin-main .bg-brand-gray-900 {
+  background: #0a0a0c !important;
+}
+.admin-main .bg-brand-gray-800,
+.admin-main .bg-brand-gray-800\/50 {
+  background: rgba(255,255,255,0.025) !important;
+}
+.admin-main .border-brand-gray-700 {
+  border-color: rgba(255,255,255,0.07) !important;
+}
+.admin-main .border-brand-gray-800 {
+  border-color: rgba(255,255,255,0.05) !important;
+}
+.admin-main .divide-brand-gray-800 > * + * {
+  border-color: rgba(255,255,255,0.05) !important;
+}
+.admin-main .text-brand-gray-400 {
+  color: rgba(255,255,255,0.42) !important;
+}
+.admin-main .text-brand-gray-500 {
+  color: rgba(255,255,255,0.25) !important;
+}
+.admin-main .text-brand-gray-600 {
+  color: rgba(255,255,255,0.18) !important;
+}
+.admin-main .hover\:bg-brand-gray-800:hover,
+.admin-main .hover\:bg-brand-gray-800\/50:hover,
+.admin-main .hover\:bg-brand-gray-800\/30:hover {
+  background: rgba(255,255,255,0.03) !important;
+}
+
 /* ── Logo 3D interactive ──────────────────────────── */
 @keyframes logo3DSpin {
   0%   { transform: perspective(600px) rotateY(0deg) rotateX(0deg); }
