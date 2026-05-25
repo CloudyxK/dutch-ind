@@ -4,33 +4,29 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 
 export default function SplashScreen() {
-  const [visible, setVisible]   = useState(true);
-  const [leaving, setLeaving]   = useState(false);
-  const [mounted, setMounted]   = useState(false);
+  const [visible,  setVisible]  = useState(true);
+  const [leaving,  setLeaving]  = useState(false);
+  const [mounted,  setMounted]  = useState(false);
   const [transform, setTransform] = useState("perspective(900px) rotateX(0deg) rotateY(0deg)");
-  const [glare, setGlare]       = useState({ x: 50, y: 50 });
   const [hoverBtn, setHoverBtn] = useState(false);
 
   const splashRef   = useRef<HTMLDivElement>(null);
   const rafRef      = useRef<number>(0);
-  /* auto-sway target (runs always) */
-  const autoRef     = useRef({ t: 0 });
-  /* mouse offset, lerps to mouse input */
+  const autoT       = useRef(0);
   const mouseTarget = useRef({ x: 0, y: 0 });
   const mouseCur    = useRef({ x: 0, y: 0 });
 
   useEffect(() => { setMounted(true); }, []);
 
-  /* Combined auto-sway + mouse-reactive 3D loop */
+  /* Auto-sway 3D loop — runs always, no mouse dependency */
   useEffect(() => {
     function loop() {
-      /* Auto-sway oscillation */
-      autoRef.current.t += 0.007;
-      const autoY = Math.sin(autoRef.current.t) * 22;
-      const autoX = Math.sin(autoRef.current.t * 0.65) * 9;
+      autoT.current += 0.007;
+      const autoY = Math.sin(autoT.current) * 20;
+      const autoX = Math.sin(autoT.current * 0.6) * 8;
 
-      /* Lerp mouse toward target */
-      const LERP = 0.06;
+      /* Soft mouse influence (tilt only, no lighting) */
+      const LERP = 0.05;
       mouseCur.current.x += (mouseTarget.current.x - mouseCur.current.x) * LERP;
       mouseCur.current.y += (mouseTarget.current.y - mouseCur.current.y) * LERP;
 
@@ -38,26 +34,24 @@ export default function SplashScreen() {
       const ry = autoY + mouseCur.current.y;
 
       setTransform(`perspective(900px) rotateX(${rx}deg) rotateY(${ry}deg)`);
-
       rafRef.current = requestAnimationFrame(loop);
     }
     rafRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
+  /* Mouse → 3D tilt only (NO lighting tracking) */
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const el = splashRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
     const dx = (e.clientX - (rect.left + rect.width  / 2)) / (rect.width  / 2);
     const dy = (e.clientY - (rect.top  + rect.height / 2)) / (rect.height / 2);
-    mouseTarget.current = { x: dy * -10, y: dx * 14 };
-    setGlare({ x: 50 + dx * 40, y: 50 + dy * 40 });
+    mouseTarget.current = { x: dy * -8, y: dx * 12 };
   }, []);
 
   const handleMouseLeave = useCallback(() => {
     mouseTarget.current = { x: 0, y: 0 };
-    setGlare({ x: 50, y: 50 });
   }, []);
 
   function enter() {
@@ -66,10 +60,6 @@ export default function SplashScreen() {
   }
 
   if (!mounted || !visible) return null;
-
-  /* Derive dynamic shadow offset from transform angles */
-  const ry = mouseCur.current.y;
-  const rx = mouseCur.current.x;
 
   return (
     <div
@@ -89,45 +79,59 @@ export default function SplashScreen() {
         }}
       />
 
-      {/* ── 3D Logo ───────────────────────────────────────── */}
+      {/* ── 3D Logo ── */}
       <div
         className={`relative mb-14 ${leaving ? "animate-logo-leave" : "animate-logo-enter"}`}
         style={{ perspective: "900px" }}
       >
+        {/* Static ambient glow — behind the logo, centered, NOT cursor-tracking */}
+        <div
+          aria-hidden
+          style={{
+            position: "absolute",
+            inset: "-60px",
+            background:
+              "radial-gradient(ellipse 55% 45% at 50% 52%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.06) 45%, transparent 70%)",
+            filter: "blur(18px)",
+            pointerEvents: "none",
+            zIndex: 0,
+          }}
+        />
+
+        {/* 3D transform wrapper */}
         <div
           style={{
             transform,
             transformStyle: "preserve-3d",
             position: "relative",
+            zIndex: 1,
             willChange: "transform",
           }}
         >
-          {/* Main logo — screen blend mode removes dark background */}
+          {/* Logo — high contrast filter removes PNG background box */}
           <Image
             src="/logo.png"
             alt="DUTCH.IND"
             width={320}
             height={160}
-            className="relative select-none block"
+            className="block select-none"
             style={{
               mixBlendMode: "screen",
-              filter: `
-                drop-shadow(${-ry * 2.5}px ${rx * 2.5}px 1px rgba(255,255,255,0.7))
-                drop-shadow(${-ry * 1}px ${rx * 1}px 20px rgba(255,255,255,0.25))
-                brightness(1.15) contrast(1.1)
-              `,
+              filter: "brightness(0.75) contrast(3.5) saturate(0.8)",
+              display: "block",
             }}
             priority
             draggable={false}
           />
 
-          {/* Specular glare that moves with tilt */}
+          {/* Subtle fixed specular sheen — top-left, NOT mouse-tracking */}
           <div
             aria-hidden
             style={{
               position: "absolute",
               inset: 0,
-              background: `radial-gradient(ellipse 60% 50% at ${glare.x}% ${glare.y}%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 45%, transparent 70%)`,
+              background:
+                "radial-gradient(ellipse 55% 40% at 38% 32%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 50%, transparent 70%)",
               mixBlendMode: "overlay",
               pointerEvents: "none",
             }}
@@ -135,7 +139,7 @@ export default function SplashScreen() {
         </div>
       </div>
 
-      {/* ── ENTER button ─────────────────────────────────── */}
+      {/* ── ENTER button ── */}
       <div
         className={leaving ? "opacity-0 translate-y-8" : "animate-enter-text"}
         style={{ transition: leaving ? "all 0.4s ease-in" : "" }}
@@ -160,16 +164,16 @@ export default function SplashScreen() {
           <span
             className="absolute inset-0 bg-white"
             style={{
-              transform: hoverBtn ? "scaleY(1)" : "scaleY(0)",
+              transform:       hoverBtn ? "scaleY(1)" : "scaleY(0)",
               transformOrigin: "bottom",
-              transition: "transform 0.45s cubic-bezier(0.76,0,0.24,1)",
+              transition:      "transform 0.45s cubic-bezier(0.76,0,0.24,1)",
             }}
           />
           <span
             className="absolute inset-0 pointer-events-none"
             aria-hidden
             style={{
-              opacity: hoverBtn ? 0.06 : 0,
+              opacity:    hoverBtn ? 0.06 : 0,
               transition: "opacity 0.3s",
               backgroundImage:
                 "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,1) 2px, rgba(0,0,0,1) 4px)",
@@ -178,10 +182,10 @@ export default function SplashScreen() {
           <span
             className="relative z-10 font-black uppercase"
             style={{
-              fontSize: "11px",
+              fontSize:      "11px",
               letterSpacing: "0.55em",
-              color: hoverBtn ? "#000" : "#fff",
-              transition: "color 0.3s",
+              color:         hoverBtn ? "#000" : "#fff",
+              transition:    "color 0.3s",
             }}
           >
             ENTER

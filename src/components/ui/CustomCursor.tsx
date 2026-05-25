@@ -1,38 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useMotionValue, useSpring } from "framer-motion";
 
 export default function CustomCursor() {
-  const [mounted, setMounted]     = useState(false);
-  const [isPointer, setIsPointer] = useState(false);
-  const [isHidden, setIsHidden]   = useState(false);
-
-  const mouseX = useMotionValue(-200);
-  const mouseY = useMotionValue(-200);
-
-  const springCfg = { stiffness: 90, damping: 22, mass: 0.55 };
-  const ringX = useSpring(mouseX, springCfg);
-  const ringY = useSpring(mouseY, springCfg);
-
+  const [mounted, setMounted] = useState(false);
+  const dotRef    = useRef<HTMLDivElement>(null);
+  const ringRef   = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const trailRef  = useRef<{ x: number; y: number; age: number }[]>([]);
-  const rafRef    = useRef<number>(0);
 
   useEffect(() => {
-    /* Skip on touch/mobile devices */
+    /* Skip on touch/mobile */
     if ("ontouchstart" in window || navigator.maxTouchPoints > 0) return;
 
     setMounted(true);
 
-    /* Hide native cursor via JS — only when component is running */
-    document.body.style.cursor = "none";
-    document.documentElement.style.cursor = "none";
+    /* Inject cursor:none globally via stylesheet — most reliable approach */
+    const style = document.createElement("style");
+    style.id = "custom-cursor-css";
+    style.textContent = "html, html *, html *::before, html *::after { cursor: none !important; }";
+    document.head.appendChild(style);
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
+    const dot    = dotRef.current!;
+    const ring   = ringRef.current!;
+    const canvas = canvasRef.current!;
+    const ctx    = canvas.getContext("2d")!;
 
+    let mx = -200, my = -200;   /* cursor pos */
+    let rx = -200, ry = -200;   /* ring pos (lerped) */
+    let pointer = false;
+    let raf = 0;
+
+    /* canvas sizing */
     const resize = () => {
       canvas.width  = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -40,107 +38,114 @@ export default function CustomCursor() {
     resize();
     window.addEventListener("resize", resize);
 
+    /* Trail points */
+    const trail: { x: number; y: number; age: number }[] = [];
+
     const onMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-      trailRef.current.push({ x: e.clientX, y: e.clientY, age: 0 });
-      if (trailRef.current.length > 18) trailRef.current.shift();
+      mx = e.clientX;
+      my = e.clientY;
+      trail.push({ x: mx, y: my, age: 0 });
+      if (trail.length > 22) trail.shift();
     };
 
     const onOver = (e: MouseEvent) => {
       const t = e.target as Element;
-      setIsPointer(!!t.closest("a, button, [role='button'], label, input, select"));
+      pointer = !!t.closest("a, button, [role='button'], label, input, select");
     };
 
-    const onLeaveDoc = () => setIsHidden(true);
-    const onEnterDoc = () => setIsHidden(false);
-
-    document.addEventListener("mouseout",  onLeaveDoc);
-    document.addEventListener("mouseover", onEnterDoc);
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseover", onOver);
 
-    /* Trail draw loop */
-    const draw = () => {
+    const LERP = 0.1;
+
+    const tick = () => {
+      /* --- dot: precise --- */
+      dot.style.transform  = `translate(${mx - 3}px, ${my - 3}px)`;
+
+      /* --- ring: spring lerp --- */
+      rx += (mx - rx) * LERP;
+      ry += (my - ry) * LERP;
+      const rs = pointer ? 22 : 14;
+      ring.style.width     = `${rs * 2}px`;
+      ring.style.height    = `${rs * 2}px`;
+      ring.style.transform = `translate(${rx - rs}px, ${ry - rs}px)`;
+      ring.style.borderColor = pointer
+        ? "rgba(255,255,255,0.85)"
+        : "rgba(255,255,255,0.45)";
+
+      /* --- trail canvas --- */
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      trailRef.current.forEach((pt, i) => {
-        pt.age += 1;
-        const progress = i / trailRef.current.length;
-        const alpha    = Math.max(0, progress * 0.2 - pt.age * 0.013);
-        const radius   = progress * 3;
-        if (alpha <= 0) return;
+      let i = trail.length;
+      while (i--) {
+        const pt = trail[i];
+        pt.age++;
+        const progress = i / trail.length;
+        const alpha    = Math.max(0, progress * 0.22 - pt.age * 0.015);
+        const radius   = progress * 3.5;
+        if (alpha <= 0) continue;
         ctx.beginPath();
         ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillStyle = `rgba(255,255,255,${alpha.toFixed(3)})`;
         ctx.fill();
-      });
-      trailRef.current = trailRef.current.filter((p) => p.age < 16);
-      rafRef.current = requestAnimationFrame(draw);
+      }
+      /* prune dead points */
+      let k = 0;
+      while (k < trail.length && trail[k].age > 18) k++;
+      if (k > 0) trail.splice(0, k);
+
+      raf = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(draw);
+
+    raf = requestAnimationFrame(tick);
 
     return () => {
-      /* Restore native cursor on unmount */
-      document.body.style.cursor = "";
-      document.documentElement.style.cursor = "";
+      style.remove();
       window.removeEventListener("resize", resize);
       document.removeEventListener("mousemove", onMove);
       document.removeEventListener("mouseover", onOver);
-      document.removeEventListener("mouseout",  onLeaveDoc);
-      document.removeEventListener("mouseover", onEnterDoc);
-      cancelAnimationFrame(rafRef.current);
+      cancelAnimationFrame(raf);
     };
   }, []);
 
   if (!mounted) return null;
 
-  const opacity = isHidden ? 0 : 1;
-
   return (
     <>
-      {/* Trail canvas */}
+      {/* Trail */}
       <canvas
         ref={canvasRef}
-        className="fixed inset-0 pointer-events-none"
-        style={{ zIndex: 99995 }}
+        style={{
+          position: "fixed", inset: 0,
+          pointerEvents: "none", zIndex: 99994,
+        }}
       />
 
-      {/* Precise dot */}
-      <motion.div
-        className="fixed pointer-events-none rounded-full bg-white"
+      {/* Dot — precise */}
+      <div
+        ref={dotRef}
         style={{
-          x: mouseX,
-          y: mouseY,
-          translateX: "-50%",
-          translateY: "-50%",
+          position: "fixed", top: 0, left: 0,
+          width: 6, height: 6,
+          borderRadius: "50%",
+          background: "white",
+          pointerEvents: "none",
           zIndex: 99999,
-          opacity,
+          willChange: "transform",
         }}
-        animate={{ width: isPointer ? 8 : 5, height: isPointer ? 8 : 5 }}
-        transition={{ duration: 0.15 }}
       />
 
-      {/* Lagging ring */}
-      <motion.div
-        className="fixed pointer-events-none rounded-full"
+      {/* Ring — spring lag */}
+      <div
+        ref={ringRef}
         style={{
-          x: ringX,
-          y: ringY,
-          translateX: "-50%",
-          translateY: "-50%",
+          position: "fixed", top: 0, left: 0,
+          width: 28, height: 28,
+          borderRadius: "50%",
+          border: "1px solid rgba(255,255,255,0.45)",
+          pointerEvents: "none",
           zIndex: 99998,
-          opacity,
-        }}
-        animate={{
-          width:       isPointer ? 48 : 30,
-          height:      isPointer ? 48 : 30,
-          borderColor: isPointer ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.4)",
-        }}
-        transition={{ duration: 0.2 }}
-        initial={{
-          width: 30,
-          height: 30,
-          border: "1px solid rgba(255,255,255,0.4)",
+          willChange: "transform",
+          transition: "width 0.18s ease, height 0.18s ease, border-color 0.18s ease",
         }}
       />
     </>
