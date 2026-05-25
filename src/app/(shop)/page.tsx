@@ -1,9 +1,9 @@
-import HeroSection from "@/components/home/HeroSection";
+import StoreHeader from "@/components/home/StoreHeader";
+import AllProductsShowcase from "@/components/home/AllProductsShowcase";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import CategorySection from "@/components/home/CategorySection";
 import PromoBanner from "@/components/home/PromoBanner";
 import BestSellers from "@/components/home/BestSellers";
-import NewArrivals from "@/components/home/NewArrivals";
 import BrandFeatures from "@/components/home/BrandFeatures";
 import MarqueeTicker from "@/components/home/MarqueeTicker";
 import RevealSection from "@/components/ui/RevealSection";
@@ -15,11 +15,22 @@ export const metadata: Metadata = {
 };
 
 async function getHomeData() {
-  const [featured, newArrivals, bestSellers, categories, flashSaleRow] = await Promise.all([
+  const [allProducts, featured, bestSellers, categories, flashSaleRow] = await Promise.all([
+    /* Show all latest products directly — Hellstar style */
+    prisma.product.findMany({
+      where: { isActive: true },
+      include: {
+        images:   { orderBy: { sortOrder: "asc" } },
+        variants: true,
+        category: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 20,
+    }),
     prisma.product.findMany({
       where: { isActive: true, isFeatured: true },
       include: {
-        images: { orderBy: { sortOrder: "asc" } },
+        images:   { orderBy: { sortOrder: "asc" } },
         variants: true,
         category: true,
       },
@@ -27,19 +38,9 @@ async function getHomeData() {
       orderBy: { createdAt: "desc" },
     }),
     prisma.product.findMany({
-      where: { isActive: true, isNewArrival: true },
-      include: {
-        images: { orderBy: { sortOrder: "asc" } },
-        variants: true,
-        category: true,
-      },
-      take: 8,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.product.findMany({
       where: { isActive: true, isBestSeller: true },
       include: {
-        images: { orderBy: { sortOrder: "asc" } },
+        images:   { orderBy: { sortOrder: "asc" } },
         variants: true,
         category: true,
       },
@@ -58,32 +59,59 @@ async function getHomeData() {
   if (flashSaleRow?.value) {
     try {
       const cfg = JSON.parse(flashSaleRow.value);
-      // Only expose if active and not expired
-      if (cfg.active && cfg.endAt && new Date(cfg.endAt) > new Date()) {
-        flashSale = cfg;
-      }
-    } catch {
-      // ignore malformed config
-    }
+      if (cfg.active && cfg.endAt && new Date(cfg.endAt) > new Date()) flashSale = cfg;
+    } catch { /* ignore */ }
   }
 
-  return { featured, newArrivals, bestSellers, categories, flashSale };
+  return { allProducts, featured, bestSellers, categories, flashSale };
 }
 
 export default async function HomePage() {
-  const { featured, newArrivals, bestSellers, categories, flashSale } = await getHomeData();
+  const { allProducts, featured, bestSellers, categories, flashSale } = await getHomeData();
 
   return (
     <>
-      <HeroSection />
+      {/* Compact brand header — not full screen */}
+      <StoreHeader />
+
+      {/* Scrolling ticker */}
       <MarqueeTicker />
-      <RevealSection direction="up"><CategorySection categories={categories as any} /></RevealSection>
-      <RevealSection direction="up"><FeaturedProducts products={featured as any} /></RevealSection>
+
+      {/* ── Products directly — Hellstar style ── */}
+      <AllProductsShowcase
+        products={allProducts as any}
+        title="Semua Koleksi"
+        label="Latest Drop"
+        viewAllHref="/products"
+      />
+
+      {/* Divider ticker */}
       <MarqueeTicker />
-      <RevealSection direction="none"><PromoBanner flashSale={flashSale} /></RevealSection>
-      <RevealSection direction="up"><NewArrivals products={newArrivals as any} /></RevealSection>
-      <RevealSection direction="up"><BestSellers products={bestSellers as any} /></RevealSection>
-      <RevealSection direction="up"><BrandFeatures /></RevealSection>
+
+      {/* Flash sale if active */}
+      <RevealSection direction="none">
+        <PromoBanner flashSale={flashSale} />
+      </RevealSection>
+
+      {/* Featured picks */}
+      <RevealSection direction="up">
+        <FeaturedProducts products={featured as any} />
+      </RevealSection>
+
+      {/* Categories */}
+      <RevealSection direction="up">
+        <CategorySection categories={categories as any} />
+      </RevealSection>
+
+      {/* Best sellers */}
+      <RevealSection direction="up">
+        <BestSellers products={bestSellers as any} />
+      </RevealSection>
+
+      {/* Brand features */}
+      <RevealSection direction="up">
+        <BrandFeatures />
+      </RevealSection>
     </>
   );
 }

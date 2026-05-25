@@ -56,16 +56,16 @@ export default function ProductCard({ product, className, rank }: Props) {
 
   return (
     <motion.div
-      className={cn("product-card group block", className)}
-      initial={{ opacity: 0, y: 24 }}
+      className={cn("group block", className)}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+      viewport={{ once: true, margin: "-30px" }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
       <Link href={`/products/${product.slug}`} className="block">
         {/* Image */}
         <div
-          className="relative aspect-[3/4] overflow-hidden bg-brand-gray-900"
+          className="relative aspect-[3/4] overflow-hidden bg-[#111]"
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => { setHovered(false); setShowSizes(false); }}
         >
