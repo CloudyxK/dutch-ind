@@ -116,12 +116,12 @@ export default function SplashScreen() {
         aria-hidden
         className="absolute pointer-events-none"
         style={{
-          top: "10%", left: "50%",
+          top: "15%", left: "50%",
           transform: "translateX(-50%)",
-          width: "700px", height: "500px",
+          width: "500px", height: "400px",
           background:
-            "radial-gradient(ellipse 60% 55% at 50% 45%, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 45%, transparent 70%)",
-          filter: "blur(40px)",
+            "radial-gradient(ellipse 55% 50% at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 70%)",
+          filter: "blur(60px)",
         }}
       />
 
@@ -155,18 +155,6 @@ export default function SplashScreen() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        {/* Core glow behind logo */}
-        <div
-          aria-hidden
-          style={{
-            position: "absolute",
-            inset: "-80px",
-            background:
-              "radial-gradient(ellipse 50% 40% at 50% 50%, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.04) 50%, transparent 72%)",
-            filter: "blur(24px)",
-            pointerEvents: "none",
-          }}
-        />
 
         {/* 3D transform wrapper — written via ref (no React re-render) */}
         <div
@@ -199,7 +187,7 @@ export default function SplashScreen() {
                 height={0}
                 sizes="60vw"
                 style={{
-                  width: "clamp(280px, 42vw, 460px)",
+                  width: "clamp(200px, 28vw, 340px)",
                   height: "auto",
                   display: "block",
                   mixBlendMode: "screen",
@@ -220,7 +208,7 @@ export default function SplashScreen() {
               height={0}
               sizes="60vw"
               style={{
-                width: "clamp(280px, 42vw, 460px)",
+                width: "clamp(200px, 28vw, 340px)",
                 height: "auto",
                 display: "block",
                 mixBlendMode: "screen",
