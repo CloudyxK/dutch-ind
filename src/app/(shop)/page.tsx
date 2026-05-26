@@ -1,6 +1,5 @@
 import StoreHeader from "@/components/home/StoreHeader";
 import AllProductsShowcase from "@/components/home/AllProductsShowcase";
-import FeaturedProducts from "@/components/home/FeaturedProducts";
 import CategorySection from "@/components/home/CategorySection";
 import PromoBanner from "@/components/home/PromoBanner";
 import BestSellers from "@/components/home/BestSellers";
@@ -91,11 +90,6 @@ export default async function HomePage() {
       {/* Flash sale if active */}
       <RevealSection direction="none">
         <PromoBanner flashSale={flashSale} />
-      </RevealSection>
-
-      {/* Featured picks */}
-      <RevealSection direction="up">
-        <FeaturedProducts products={featured as any} />
       </RevealSection>
 
       {/* Categories */}
