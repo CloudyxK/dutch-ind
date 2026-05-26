@@ -165,39 +165,50 @@ export default function SplashScreen() {
             position: "relative",
           }}
         >
-          {/* ── EXTRUSION LAYERS — stacked behind, each 2.8 px deeper ── */}
+          {/* ── EXTRUSION LAYERS — transform applied directly to Image, no box wrapper ── */}
           {Array.from({ length: DEPTH }, (_, i) => (
-            <div
+            <Image
               key={i}
+              src="/logo.png"
+              alt=""
+              width={0}
+              height={0}
+              sizes="50vw"
               aria-hidden
               style={{
                 position: "absolute",
-                inset: 0,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transform: `translateZ(${-(i + 1) * 2.8}px)`,
+                top: "50%",
+                left: "50%",
+                width: "clamp(200px, 28vw, 340px)",
+                height: "auto",
+                display: "block",
+                transform: `translate(-50%, -50%) translateZ(${-(i + 1) * 2.8}px)`,
+                mixBlendMode: "screen",
+                filter: `brightness(${Math.max(0.1, 0.4 - i * 0.022)}) contrast(4) saturate(0)`,
+                opacity: Math.max(0.12, 0.95 - i * 0.055),
                 pointerEvents: "none",
               }}
-            >
-              <Image
-                src="/logo.png"
-                alt=""
-                width={0}
-                height={0}
-                sizes="60vw"
-                style={{
-                  width: "clamp(200px, 28vw, 340px)",
-                  height: "auto",
-                  display: "block",
-                  mixBlendMode: "screen",
-                  filter: `brightness(${Math.max(0.08, 0.35 - i * 0.022)}) contrast(4) saturate(0)`,
-                  opacity: Math.max(0.1, 0.9 - i * 0.055),
-                }}
-                draggable={false}
-              />
-            </div>
+              draggable={false}
+            />
           ))}
+
+          {/* ── Circular glow — centred on logo, no rectangular shape ── */}
+          <div
+            aria-hidden
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              width: "480px",
+              height: "280px",
+              background:
+                "radial-gradient(ellipse 55% 55% at 50% 50%, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.05) 50%, transparent 75%)",
+              filter: "blur(28px)",
+              pointerEvents: "none",
+              zIndex: 0,
+            }}
+          />
 
           {/* ── FRONT FACE — brightest, sits at Z=0 ── */}
           <div style={{ position: "relative", zIndex: 1 }}>
@@ -212,7 +223,7 @@ export default function SplashScreen() {
                 height: "auto",
                 display: "block",
                 mixBlendMode: "screen",
-                filter: "brightness(1.7) contrast(3) saturate(0.25)",
+                filter: "brightness(2.2) contrast(3) saturate(0.2)",
               }}
               priority
               draggable={false}
