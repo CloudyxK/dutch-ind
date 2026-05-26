@@ -1,10 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import Image from "next/image";
-
-/* Number of extrusion layers */
-const DEPTH = 14;
+import * as THREE from "three";
 
 export default function SplashScreen() {
   const [visible,  setVisible]  = useState(true);
@@ -12,52 +9,233 @@ export default function SplashScreen() {
   const [mounted,  setMounted]  = useState(false);
   const [hoverBtn, setHoverBtn] = useState(false);
 
-  const splashRef   = useRef<HTMLDivElement>(null);
-  const wrapRef     = useRef<HTMLDivElement>(null);  // receives rotateY via RAF
+  const canvasRef   = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
-  const angleY      = useRef(0.25);    // current rotation angle (radians)
-  const angleX      = useRef(0);       // gentle nod
-  const timeRef     = useRef(0);       // auto-nod timer
-  const velY        = useRef(0.013);   // radians / frame
   const isDragging  = useRef(false);
   const lastX       = useRef(0);
+  const lastY       = useRef(0);
+  const velX        = useRef(0);
+  const velY        = useRef(0.008);
+  const rotX        = useRef(0.15);
+  const rotY        = useRef(0.3);
+  const timeRef     = useRef(0);
 
   useEffect(() => { setMounted(true); }, []);
 
-  /* ── RAF loop — writes directly to DOM, no React re-render ── */
+  /* ── Three.js scene ── */
   useEffect(() => {
+    if (!mounted || !canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+    const W = canvas.clientWidth  || 480;
+    const H = canvas.clientHeight || 320;
+
+    /* Renderer */
+    const renderer = new THREE.WebGLRenderer({
+      canvas,
+      antialias: true,
+      alpha: true,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(W, H, false);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.4;
+
+    /* Scene + camera */
+    const scene  = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 100);
+    camera.position.set(0, 0, 4.5);
+
+    /* Environment map (fake chrome reflection) */
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envTexture = (() => {
+      const size = 256;
+      const data = new Uint8Array(size * size * 4);
+      for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+          const idx = (y * size + x) * 4;
+          // Gradient from dark bottom to bright top-center
+          const cx = Math.abs(x / size - 0.5) * 2;
+          const cy = 1 - y / size;
+          const bright = Math.pow(Math.max(0, 1 - cx * 1.6) * cy, 1.2);
+          const v = Math.floor(bright * 255);
+          data[idx]     = v;
+          data[idx + 1] = v;
+          data[idx + 2] = v;
+          data[idx + 3] = 255;
+        }
+      }
+      const tex = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+      tex.needsUpdate = true;
+      return tex;
+    })();
+    const envMap = pmrem.fromEquirectangular(envTexture).texture;
+    scene.environment = envMap;
+
+    /* Lights */
+    const keyLight = new THREE.DirectionalLight(0xffffff, 3.5);
+    keyLight.position.set(2, 3, 4);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xaaaacc, 1.2);
+    fillLight.position.set(-3, -1, 2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xffffff, 2);
+    rimLight.position.set(0, -3, -2);
+    scene.add(rimLight);
+
+    const pointLight = new THREE.PointLight(0xffffff, 1.5, 12);
+    pointLight.position.set(0, 2, 3);
+    scene.add(pointLight);
+
+    scene.add(new THREE.AmbientLight(0x111111, 1));
+
+    /* Logo group */
+    const group = new THREE.Group();
+    scene.add(group);
+
+    /* Load logo texture → create extruded mesh stack */
+    const loader = new THREE.TextureLoader();
+    loader.load(
+      "/logo.png",
+      (logoTex) => {
+        logoTex.colorSpace = THREE.SRGBColorSpace;
+        logoTex.minFilter  = THREE.LinearMipmapLinearFilter;
+        logoTex.generateMipmaps = true;
+
+        const aspect = logoTex.image.width / logoTex.image.height;
+        const pw = 3.2;
+        const ph = pw / aspect;
+
+        /* ── DEPTH SLABS — extruded layers ── */
+        const SLABS = 18;
+        const SLAB_DEPTH = 0.055;
+
+        for (let i = 0; i < SLABS; i++) {
+          const geo = new THREE.PlaneGeometry(pw, ph);
+          const depthFade = 1 - i / SLABS;
+
+          const mat = new THREE.MeshStandardMaterial({
+            map:              logoTex,
+            alphaMap:         logoTex,
+            transparent:      true,
+            metalness:        0.95,
+            roughness:        0.08 + i * 0.018,
+            envMap,
+            envMapIntensity:  2.5 * depthFade,
+            color:            new THREE.Color(depthFade * 0.6 + 0.2, depthFade * 0.6 + 0.2, depthFade * 0.6 + 0.2),
+            side:             THREE.FrontSide,
+            depthWrite:       false,
+            alphaTest:        0.05,
+          });
+
+          const mesh = new THREE.Mesh(geo, mat);
+          mesh.position.z = -(i * SLAB_DEPTH);
+          mesh.renderOrder = SLABS - i;
+          group.add(mesh);
+        }
+
+        /* ── FRONT FACE — chrome ── */
+        const frontGeo = new THREE.PlaneGeometry(pw, ph);
+        const frontMat = new THREE.MeshStandardMaterial({
+          map:             logoTex,
+          alphaMap:        logoTex,
+          transparent:     true,
+          metalness:       1.0,
+          roughness:       0.04,
+          envMap,
+          envMapIntensity: 3.5,
+          color:           new THREE.Color(1.0, 1.0, 1.05),
+          side:            THREE.FrontSide,
+          alphaTest:       0.05,
+        });
+        const frontMesh = new THREE.Mesh(frontGeo, frontMat);
+        frontMesh.position.z = 0.01;
+        frontMesh.renderOrder = SLABS + 1;
+        group.add(frontMesh);
+
+        /* ── BACK FACE ── */
+        const backMat = new THREE.MeshStandardMaterial({
+          map:         logoTex,
+          alphaMap:    logoTex,
+          transparent: true,
+          metalness:   0.9,
+          roughness:   0.3,
+          color:       new THREE.Color(0.15, 0.15, 0.15),
+          side:        THREE.BackSide,
+          alphaTest:   0.05,
+        });
+        const backMesh = new THREE.Mesh(frontGeo.clone(), backMat);
+        backMesh.position.z = -(SLABS * SLAB_DEPTH);
+        group.add(backMesh);
+      },
+      undefined,
+      (err) => console.warn("Logo load error:", err)
+    );
+
+    /* ── RAF render loop ── */
     function tick() {
       timeRef.current += 0.008;
 
-      /* smooth velocity toward auto-spin target */
-      velY.current += (0.013 - velY.current) * 0.022;
-      angleY.current += velY.current;
-
-      /* gentle oscillating tilt on X so depth layers are visible */
-      angleX.current = Math.sin(timeRef.current) * 10;
-
-      if (wrapRef.current) {
-        wrapRef.current.style.transform =
-          `rotateX(${angleX.current}deg) rotateY(${angleY.current * (180 / Math.PI)}deg)`;
+      if (!isDragging.current) {
+        velY.current  += (0.008 - velY.current)  * 0.025;
+        velX.current  += (0      - velX.current)  * 0.04;
       }
 
+      rotY.current += velY.current;
+      rotX.current += velX.current;
+
+      // gentle oscillating nod
+      const nod = Math.sin(timeRef.current * 0.7) * 0.06;
+      group.rotation.x = rotX.current + nod;
+      group.rotation.y = rotY.current;
+
+      // subtle light orbit
+      pointLight.position.x = Math.cos(timeRef.current * 0.5) * 2.5;
+      pointLight.position.y = Math.sin(timeRef.current * 0.4) * 1.5;
+
+      renderer.render(scene, camera);
       rafRef.current = requestAnimationFrame(tick);
     }
     rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
 
-  /* ── drag interaction ── */
+    /* Resize */
+    function onResize() {
+      if (!canvasRef.current) return;
+      const w = canvasRef.current.clientWidth;
+      const h = canvasRef.current.clientHeight;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    window.addEventListener("resize", onResize);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+      window.removeEventListener("resize", onResize);
+      renderer.dispose();
+      pmrem.dispose();
+      envTexture.dispose();
+      envMap.dispose();
+    };
+  }, [mounted]);
+
+  /* ── Drag / touch ── */
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
     lastX.current = e.clientX;
+    lastY.current = e.clientY;
   }, []);
 
   const onMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging.current) return;
     const dx = e.clientX - lastX.current;
-    velY.current = dx * 0.016;
+    const dy = e.clientY - lastY.current;
+    velY.current = dx * 0.012;
+    velX.current = dy * 0.008;
     lastX.current = e.clientX;
+    lastY.current = e.clientY;
   }, []);
 
   const onMouseUp = useCallback(() => { isDragging.current = false; }, []);
@@ -65,13 +243,17 @@ export default function SplashScreen() {
   const onTouchStart = useCallback((e: React.TouchEvent) => {
     isDragging.current = true;
     lastX.current = e.touches[0].clientX;
+    lastY.current = e.touches[0].clientY;
   }, []);
 
   const onTouchMove = useCallback((e: React.TouchEvent) => {
     if (!isDragging.current) return;
     const dx = e.touches[0].clientX - lastX.current;
-    velY.current = dx * 0.016;
+    const dy = e.touches[0].clientY - lastY.current;
+    velY.current = dx * 0.012;
+    velX.current = dy * 0.008;
     lastX.current = e.touches[0].clientX;
+    lastY.current = e.touches[0].clientY;
   }, []);
 
   const onTouchEnd = useCallback(() => { isDragging.current = false; }, []);
@@ -90,7 +272,7 @@ export default function SplashScreen() {
         ${leaving ? "animate-splash-leave" : "animate-splash-enter"}`}
       style={{ background: "#060608" }}
     >
-      {/* ── Grain ── */}
+      {/* Grain */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
@@ -101,31 +283,17 @@ export default function SplashScreen() {
         }}
       />
 
-      {/* ── Vignette ── */}
+      {/* Vignette */}
       <div
         aria-hidden
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 75% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.78) 100%)",
+            "radial-gradient(ellipse 75% 70% at 50% 50%, transparent 30%, rgba(0,0,0,0.82) 100%)",
         }}
       />
 
-      {/* ── Cinematic ambient glow ── */}
-      <div
-        aria-hidden
-        className="absolute pointer-events-none"
-        style={{
-          top: "15%", left: "50%",
-          transform: "translateX(-50%)",
-          width: "500px", height: "400px",
-          background:
-            "radial-gradient(ellipse 55% 50% at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 70%)",
-          filter: "blur(60px)",
-        }}
-      />
-
-      {/* ── Corner brackets ── */}
+      {/* Corner brackets */}
       {[
         { top: "28px",    left: "28px",  border: "border-t border-l" },
         { top: "28px",    right: "28px", border: "border-t border-r" },
@@ -140,13 +308,10 @@ export default function SplashScreen() {
         />
       ))}
 
-      {/* ── 3D Logo — shape preserved as PNG, spins on Y axis ── */}
+      {/* ── Three.js Canvas ── */}
       <div
-        className={`relative mb-16 ${leaving ? "animate-logo-leave" : "animate-logo-enter"}`}
-        style={{
-          perspective: "1100px",
-          cursor: isDragging.current ? "grabbing" : "grab",
-        }}
+        className={`relative mb-14 ${leaving ? "animate-logo-leave" : "animate-logo-enter"}`}
+        style={{ cursor: isDragging.current ? "grabbing" : "grab" }}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
@@ -155,109 +320,14 @@ export default function SplashScreen() {
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-
-        {/* 3D transform wrapper — written via ref (no React re-render) */}
-        <div
-          ref={wrapRef}
+        <canvas
+          ref={canvasRef}
           style={{
-            transformStyle: "preserve-3d",
-            willChange: "transform",
-            position: "relative",
+            width:  "clamp(280px, 44vw, 520px)",
+            height: "clamp(160px, 26vw, 300px)",
+            display: "block",
           }}
-        >
-          {/* ── EXTRUSION LAYERS — transform applied directly to Image, no box wrapper ── */}
-          {Array.from({ length: DEPTH }, (_, i) => (
-            <Image
-              key={i}
-              src="/logo.png"
-              alt=""
-              width={0}
-              height={0}
-              sizes="50vw"
-              aria-hidden
-              style={{
-                position: "absolute",
-                top: "50%",
-                left: "50%",
-                width: "clamp(200px, 28vw, 340px)",
-                height: "auto",
-                display: "block",
-                transform: `translate(-50%, -50%) translateZ(${-(i + 1) * 2.8}px)`,
-                mixBlendMode: "screen",
-                filter: `brightness(${Math.max(0.1, 0.4 - i * 0.022)}) contrast(4) saturate(0)`,
-                opacity: Math.max(0.12, 0.95 - i * 0.055),
-                pointerEvents: "none",
-              }}
-              draggable={false}
-            />
-          ))}
-
-          {/* ── Circular glow — centred on logo, no rectangular shape ── */}
-          <div
-            aria-hidden
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              width: "480px",
-              height: "280px",
-              background:
-                "radial-gradient(ellipse 55% 55% at 50% 50%, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.05) 50%, transparent 75%)",
-              filter: "blur(28px)",
-              pointerEvents: "none",
-              zIndex: 0,
-            }}
-          />
-
-          {/* ── FRONT FACE — brightest, sits at Z=0 ── */}
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <Image
-              src="/logo.png"
-              alt="DUTCH.IND"
-              width={0}
-              height={0}
-              sizes="60vw"
-              style={{
-                width: "clamp(200px, 28vw, 340px)",
-                height: "auto",
-                display: "block",
-                mixBlendMode: "screen",
-                filter: "brightness(2.2) contrast(3) saturate(0.2)",
-              }}
-              priority
-              draggable={false}
-            />
-
-            {/* Chrome specular highlight */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                inset: 0,
-                background:
-                  "radial-gradient(ellipse 60% 45% at 36% 28%, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 45%, transparent 70%)",
-                mixBlendMode: "overlay",
-                pointerEvents: "none",
-              }}
-            />
-
-            {/* Bottom rim light */}
-            <div
-              aria-hidden
-              style={{
-                position: "absolute",
-                bottom: "-2px",
-                inset: "auto 0 -2px 0",
-                height: "35%",
-                background:
-                  "linear-gradient(to top, rgba(255,255,255,0.06) 0%, transparent 100%)",
-                mixBlendMode: "overlay",
-                pointerEvents: "none",
-              }}
-            />
-          </div>
-        </div>
+        />
 
         {/* Drag hint */}
         <p
@@ -309,16 +379,6 @@ export default function SplashScreen() {
             }}
           />
           <span
-            aria-hidden
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              opacity:    hoverBtn ? 0.07 : 0,
-              transition: "opacity 0.3s",
-              backgroundImage:
-                "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,1) 2px, rgba(0,0,0,1) 4px)",
-            }}
-          />
-          <span
             className="relative z-10 font-black uppercase"
             style={{
               fontSize:      "11px",
@@ -341,11 +401,11 @@ export default function SplashScreen() {
             color: "rgba(255,255,255,0.15)",
           }}
         >
-          EST. 2024
+          EST. 2025
         </p>
       </div>
 
-      {/* ── Bottom stamp ── */}
+      {/* Bottom stamp */}
       <p
         className={`absolute bottom-7 uppercase ${leaving ? "opacity-0" : "animate-brand-fade"}`}
         style={{

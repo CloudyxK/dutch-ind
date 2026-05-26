@@ -61,7 +61,7 @@ export default function Navbar() {
         )}
       >
         <div className="container-main">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-12">
 
             {/* Logo */}
             <Link href="/" className="flex-shrink-0" style={{ perspective: "600px" }}>
@@ -80,7 +80,7 @@ export default function Navbar() {
                   alt="DUTCH.IND"
                   width={90}
                   height={45}
-                  className="h-9 w-auto object-contain"
+                  className="h-7 w-auto object-contain"
                   priority
                   style={{
                     filter:
