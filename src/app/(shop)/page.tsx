@@ -79,7 +79,7 @@ export default async function HomePage() {
       {/* ── Products directly — Hellstar style ── */}
       <AllProductsShowcase
         products={allProducts as any}
-        title="Semua Koleksi"
+        title="Limited Edition"
         label="Latest Drop"
         viewAllHref="/products"
       />
