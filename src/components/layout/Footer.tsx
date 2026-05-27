@@ -2,6 +2,14 @@ import Link from "next/link";
 import { Instagram } from "lucide-react";
 import prisma from "@/lib/prisma";
 
+function TikTokIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.32 6.32 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.79 1.53V6.77a4.85 4.85 0 01-1.02-.08z"/>
+    </svg>
+  );
+}
+
 type ContactConfig = {
   whatsapp:         string;
   whatsappMessage:  string;
@@ -64,6 +72,10 @@ export default async function Footer() {
     ? contact.whatsapp.replace(/^62/, "0").replace(/(\d{4})(\d{4})(\d+)/, "$1-$2-$3")
     : "0852-1773-3737";
   const igDisplay = contact?.instagram ? `@${contact.instagram}` : "@dutch.ind";
+  const tiktokHref = contact?.tiktok
+    ? `https://www.tiktok.com/@${contact.tiktok}`
+    : "https://www.tiktok.com/@dutch.ind";
+  const tiktokDisplay = contact?.tiktok ? `@${contact.tiktok}` : "@dutch.ind";
 
   return (
     <footer className="bg-brand-gray-900 border-t border-brand-gray-800">
@@ -103,6 +115,11 @@ export default async function Footer() {
                  aria-label="WhatsApp">
                 <WhatsAppIcon className="w-4 h-4" />
               </a>
+              <a href={tiktokHref} target="_blank" rel="noopener noreferrer"
+                 className="p-2 bg-brand-gray-800 hover:bg-white hover:text-black transition-colors"
+                 aria-label="TikTok">
+                <TikTokIcon className="w-4 h-4" />
+              </a>
             </div>
 
             {/* Contact info */}
@@ -116,6 +133,11 @@ export default async function Footer() {
                  className="flex items-center gap-2 text-xs text-brand-gray-400 hover:text-white transition-colors">
                 <Instagram className="w-3 h-3" />
                 <span>{igDisplay}</span>
+              </a>
+              <a href={tiktokHref} target="_blank" rel="noopener noreferrer"
+                 className="flex items-center gap-2 text-xs text-brand-gray-400 hover:text-white transition-colors">
+                <TikTokIcon className="w-3 h-3" />
+                <span>{tiktokDisplay}</span>
               </a>
               {contact?.email && (
                 <a href={`mailto:${contact.email}`}

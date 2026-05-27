@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { fetchTracking, mapToOrderStatus, carrierCodeFromMethod, CarrierCode } from "@/lib/tracking";
+import { sendShippingEmail } from "@/lib/email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -67,6 +68,24 @@ export async function PATCH(
     }
 
     const order = await prisma.order.update({ where: { id }, data: updateData });
+
+    // Kirim email notifikasi jika status berubah ke SHIPPED
+    if (updateData.status === "SHIPPED" || (trackingNumber && order.status === "SHIPPED")) {
+      try {
+        const fullOrder = await prisma.order.findUnique({
+          where: { id },
+          include: { user: { select: { email: true, name: true } } },
+        });
+        if (fullOrder?.user?.email && fullOrder.trackingNumber) {
+          await sendShippingEmail(fullOrder.user.email, {
+            recipientName:  fullOrder.user.name ?? "Pelanggan",
+            orderNumber:    fullOrder.orderNumber,
+            trackingNumber: fullOrder.trackingNumber,
+            shippingMethod: fullOrder.shippingMethod ?? "Kurir",
+          });
+        }
+      } catch { /* email gagal tidak boleh block response */ }
+    }
 
     return NextResponse.json({ success: true, data: order });
   } catch (error) {

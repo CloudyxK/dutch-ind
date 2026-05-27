@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { updateUserRankAfterOrder } from "@/lib/updateUserRank";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -45,6 +46,31 @@ export async function PATCH(
 
   // Update rank member
   await updateUserRankAfterOrder(id);
+
+  // Kirim email konfirmasi pembayaran
+  try {
+    const fullOrder = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        user:  { select: { email: true, name: true } },
+        items: { select: { productName: true, variantSize: true, quantity: true, price: true } },
+      },
+    });
+    if (fullOrder?.user?.email) {
+      await sendOrderConfirmationEmail(fullOrder.user.email, {
+        recipientName: fullOrder.user.name ?? "Pelanggan",
+        orderNumber:   fullOrder.orderNumber,
+        total:         fullOrder.total,
+        createdAt:     fullOrder.createdAt,
+        items: fullOrder.items.map((i) => ({
+          name:     i.productName,
+          size:     i.variantSize,
+          quantity: i.quantity,
+          price:    i.price,
+        })),
+      });
+    }
+  } catch { /* email gagal tidak boleh block response */ }
 
   return NextResponse.json({ success: true });
 }
