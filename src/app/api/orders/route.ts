@@ -6,6 +6,7 @@ import { orderLimiter, getIp } from "@/lib/rateLimit";
 import { parseJsonSafe, verifySameOrigin, rateLimitResponse, sanitize } from "@/lib/security";
 import { type RankKey } from "@/lib/rank";
 import { getMembershipConfig, isFreeShippingFromConfig } from "@/lib/membershipConfig";
+import { sendPushToAdmins } from "@/lib/webpush";
 
 export async function POST(request: NextRequest) {
   try {
@@ -229,6 +230,14 @@ export async function POST(request: NextRequest) {
         console.error("Midtrans error:", midtransError);
       }
     }
+
+    // Kirim push notification ke admin
+    sendPushToAdmins({
+      title: "🛍️ Pesanan Baru!",
+      body:  `#${order.orderNumber} — ${session.user.name ?? "Pelanggan"}`,
+      url:   "/admin/orders",
+      tag:   `order-${order.id}`,
+    }).catch(() => {});
 
     return NextResponse.json({
       success: true,

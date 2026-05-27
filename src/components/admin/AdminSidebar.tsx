@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import PushNotificationSetup from "./PushNotificationSetup";
 import {
   LayoutDashboard,
   Package,
@@ -139,6 +140,9 @@ export default function AdminSidebar() {
           </div>
         ))}
       </nav>
+
+      {/* Push notification toggle */}
+      <PushNotificationSetup />
 
       {/* Bottom actions */}
       <div
