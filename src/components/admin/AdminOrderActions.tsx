@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Truck, Check, RefreshCw, ChevronDown, X } from "lucide-react";
+import { Truck, Check, RefreshCw, ChevronDown, X, Trash2 } from "lucide-react";
 import { CARRIER_OPTIONS } from "@/lib/tracking";
 
 const STATUS_OPTIONS = [
@@ -30,7 +30,9 @@ export default function AdminOrderActions({
   currentTrackingCarrier,
 }: Props) {
   const router = useRouter();
-  const [updating, setUpdating] = useState(false);
+  const [updating, setUpdating]   = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const [confirmDel, setConfirmDel] = useState(false);
   const [showResi, setShowResi] = useState(false);
   const [resi, setResi]         = useState(currentTrackingNumber ?? "");
   const [carrier, setCarrier]   = useState(currentTrackingCarrier ?? "");
@@ -108,6 +110,21 @@ export default function AdminOrderActions({
       toast.error("Gagal cek tracking");
     } finally {
       setChecking(false);
+    }
+  };
+
+  const deleteOrder = async () => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast.success("Pesanan dihapus");
+      router.refresh();
+    } catch {
+      toast.error("Gagal menghapus pesanan");
+    } finally {
+      setDeleting(false);
+      setConfirmDel(false);
     }
   };
 
@@ -206,6 +223,34 @@ export default function AdminOrderActions({
         <p className="text-[9px] text-brand-gray-600 truncate uppercase tracking-wider">
           via {CARRIER_OPTIONS.find(c => c.code === currentTrackingCarrier)?.label ?? currentTrackingCarrier}
         </p>
+      )}
+
+      {/* Delete order */}
+      {!confirmDel ? (
+        <button
+          onClick={() => setConfirmDel(true)}
+          className="flex items-center gap-1 text-[10px] text-red-500/60 hover:text-red-400 transition-colors mt-1"
+        >
+          <Trash2 className="w-3 h-3" />
+          <span>Hapus Pesanan</span>
+        </button>
+      ) : (
+        <div className="flex items-center gap-1 mt-1">
+          <span className="text-[10px] text-red-400">Yakin?</span>
+          <button
+            onClick={deleteOrder}
+            disabled={deleting}
+            className="text-[10px] font-bold bg-red-600 hover:bg-red-500 text-white px-2 py-0.5 transition-colors disabled:opacity-50"
+          >
+            {deleting ? "..." : "Ya"}
+          </button>
+          <button
+            onClick={() => setConfirmDel(false)}
+            className="text-[10px] text-brand-gray-500 hover:text-white px-1 transition-colors"
+          >
+            Batal
+          </button>
+        </div>
       )}
     </div>
   );

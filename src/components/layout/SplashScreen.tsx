@@ -38,6 +38,7 @@ export default function SplashScreen() {
     });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H, false);
+    renderer.setClearColor(0x000000, 0); // fully transparent background
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.4;
 
@@ -127,7 +128,8 @@ export default function SplashScreen() {
             color:            new THREE.Color(depthFade * 0.6 + 0.2, depthFade * 0.6 + 0.2, depthFade * 0.6 + 0.2),
             side:             THREE.FrontSide,
             depthWrite:       false,
-            alphaTest:        0.05,
+            depthTest:        false,
+            alphaTest:        0.12,
           });
 
           const mesh = new THREE.Mesh(geo, mat);
@@ -148,7 +150,8 @@ export default function SplashScreen() {
           envMapIntensity: 3.5,
           color:           new THREE.Color(1.0, 1.0, 1.05),
           side:            THREE.FrontSide,
-          alphaTest:       0.05,
+          depthWrite:      false,
+          alphaTest:       0.12,
         });
         const frontMesh = new THREE.Mesh(frontGeo, frontMat);
         frontMesh.position.z = 0.01;
@@ -164,7 +167,8 @@ export default function SplashScreen() {
           roughness:   0.3,
           color:       new THREE.Color(0.15, 0.15, 0.15),
           side:        THREE.BackSide,
-          alphaTest:   0.05,
+          depthWrite:  false,
+          alphaTest:   0.12,
         });
         const backMesh = new THREE.Mesh(frontGeo.clone(), backMat);
         backMesh.position.z = -(SLABS * SLAB_DEPTH);
@@ -323,9 +327,10 @@ export default function SplashScreen() {
         <canvas
           ref={canvasRef}
           style={{
-            width:  "clamp(280px, 44vw, 520px)",
-            height: "clamp(160px, 26vw, 300px)",
-            display: "block",
+            width:      "clamp(280px, 44vw, 520px)",
+            height:     "clamp(160px, 26vw, 300px)",
+            display:    "block",
+            background: "transparent",
           }}
         />
 

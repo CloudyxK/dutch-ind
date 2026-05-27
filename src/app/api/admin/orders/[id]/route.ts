@@ -74,6 +74,28 @@ export async function PATCH(
   }
 }
 
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    if (!(await requireAdmin())) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+    }
+
+    const { id } = await params;
+
+    // Delete related records first (cascade manually)
+    await prisma.orderItem.deleteMany({ where: { orderId: id } });
+    await prisma.payment.deleteMany({ where: { orderId: id } });
+    await prisma.order.delete({ where: { id } });
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json({ error: "Gagal menghapus pesanan" }, { status: 500 });
+  }
+}
+
 /** Manual tracking refresh — called from admin or order detail page */
 export async function POST(
   request: NextRequest,
