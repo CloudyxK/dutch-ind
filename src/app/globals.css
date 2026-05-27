@@ -213,7 +213,7 @@
 
 @media (max-width: 768px) {
   .logo-watermark {
-    opacity: 0.035 !important;
+    display: none !important;
   }
 }
 
