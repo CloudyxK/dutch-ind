@@ -221,7 +221,7 @@ export default function ProductFilters({ categories }: Props) {
         {showMobileFilter && (
           <div className="fixed inset-0 z-50 flex">
             <div className="flex-1 bg-black/60" onClick={() => setShowMobileFilter(false)} />
-            <div className="w-72 bg-brand-gray-900 border-l border-brand-gray-700 overflow-y-auto p-5">
+            <div className="w-[85vw] max-w-[288px] bg-brand-gray-900 border-l border-brand-gray-700 overflow-y-auto p-5">
               <div className="flex items-center justify-between mb-5">
                 <span className="text-xs font-bold uppercase tracking-widest">Filter</span>
                 <button onClick={() => setShowMobileFilter(false)} className="text-brand-gray-500 hover:text-white">

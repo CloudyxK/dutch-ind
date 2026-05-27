@@ -215,24 +215,22 @@ export default async function Footer() {
                 Daftarkan email kamu untuk mendapatkan info drop terbaru dan promo eksklusif.
               </p>
             </div>
-            <form className="flex gap-0 w-full md:w-auto min-w-[320px]">
-              <input type="email" placeholder="Email kamu" className="input-field flex-1 py-2" />
-              <button type="submit" className="btn-primary px-5 py-2 whitespace-nowrap">Daftar</button>
+            <form className="flex gap-0 w-full md:w-80">
+              <input type="email" placeholder="Email kamu" className="input-field flex-1 py-2 min-w-0" />
+              <button type="submit" className="btn-primary px-4 py-2 whitespace-nowrap flex-shrink-0">Daftar</button>
             </form>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-brand-gray-800 flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="mt-10 pt-6 border-t border-brand-gray-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-brand-gray-600">© {new Date().getFullYear()} DUTCH.IND. Hak Cipta Dilindungi.</p>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="text-xs text-brand-gray-600">Metode Pembayaran:</span>
-            <div className="flex gap-2 text-xs text-brand-gray-500 font-mono">
-              <span className="px-2 py-0.5 border border-brand-gray-700">VISA</span>
-              <span className="px-2 py-0.5 border border-brand-gray-700">MASTERCARD</span>
-              <span className="px-2 py-0.5 border border-brand-gray-700">BCA</span>
-              <span className="px-2 py-0.5 border border-brand-gray-700">QRIS</span>
-              <span className="px-2 py-0.5 border border-brand-gray-700">TRANSFER</span>
+            <div className="flex flex-wrap gap-1.5 text-xs text-brand-gray-500 font-mono">
+              {["VISA","MASTERCARD","BCA","QRIS","TRANSFER"].map((m) => (
+                <span key={m} className="px-2 py-0.5 border border-brand-gray-700">{m}</span>
+              ))}
             </div>
           </div>
         </div>

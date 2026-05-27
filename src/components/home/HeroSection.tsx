@@ -215,7 +215,7 @@ export default function HeroSection() {
           </motion.p>
 
           {/* CTAs */}
-          <motion.div variants={fadeUp} className="flex items-center gap-7 mt-10">
+          <motion.div variants={fadeUp} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-7 mt-10">
             <Link
               href="/products"
               className="group inline-flex items-center gap-2.5 bg-white text-black px-7 py-3.5 text-[11px] font-bold uppercase tracking-[0.18em] hover:bg-brand-gray-100 transition-colors"

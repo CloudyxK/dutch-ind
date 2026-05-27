@@ -109,7 +109,7 @@ export default function StoreHeader() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-center gap-6"
+            className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6"
           >
             <Link
               href="/products"

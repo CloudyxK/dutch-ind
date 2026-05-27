@@ -131,60 +131,103 @@ export default function ProductCard({ product, className, rank }: Props) {
             />
           </motion.button>
 
-          {/* Add to cart — slides up */}
+          {/* Add to cart — slides up on desktop hover, always visible on mobile */}
           {!isOutOfStock && (
-            <AnimatePresence>
-              {hovered && (
-                <motion.div
-                  key="cart-bar"
-                  initial={{ y: "100%" }}
-                  animate={{ y: 0 }}
-                  exit={{ y: "100%" }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                  className="absolute bottom-0 inset-x-0 z-10"
-                  onClick={(e) => e.preventDefault()}
-                >
-                  {showSizes ? (
-                    <div className="bg-black/95 p-3">
-                      <p className="text-[9px] uppercase tracking-[0.35em] text-white/40 mb-2 text-center">Pilih Ukuran</p>
-                      <div className="flex gap-1 justify-center flex-wrap">
-                        {product.variants.map((v) => (
-                          <motion.button
-                            key={v.id}
-                            onClick={(e) => handleSizeSelect(e, v.id)}
-                            disabled={v.stock === 0}
-                            whileHover={v.stock > 0 ? { scale: 1.08 } : {}}
-                            whileTap={v.stock > 0 ? { scale: 0.94 } : {}}
-                            className={cn(
-                              "w-9 h-9 text-xs font-bold border transition-colors",
-                              v.stock === 0
-                                ? "border-white/10 text-white/20 cursor-not-allowed"
-                                : "border-white/60 text-white hover:bg-white hover:text-black"
-                            )}
-                          >
-                            {v.size}
-                          </motion.button>
-                        ))}
+            <>
+              {/* Desktop: slide-up on hover */}
+              <AnimatePresence>
+                {hovered && (
+                  <motion.div
+                    key="cart-bar"
+                    initial={{ y: "100%" }}
+                    animate={{ y: 0 }}
+                    exit={{ y: "100%" }}
+                    transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                    className="hidden sm:block absolute bottom-0 inset-x-0 z-10"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    {showSizes ? (
+                      <div className="bg-black/95 p-3">
+                        <p className="text-[9px] uppercase tracking-[0.35em] text-white/40 mb-2 text-center">Pilih Ukuran</p>
+                        <div className="flex gap-1 justify-center flex-wrap">
+                          {product.variants.map((v) => (
+                            <motion.button
+                              key={v.id}
+                              onClick={(e) => handleSizeSelect(e, v.id)}
+                              disabled={v.stock === 0}
+                              whileHover={v.stock > 0 ? { scale: 1.08 } : {}}
+                              whileTap={v.stock > 0 ? { scale: 0.94 } : {}}
+                              className={cn(
+                                "w-9 h-9 text-xs font-bold border transition-colors",
+                                v.stock === 0
+                                  ? "border-white/10 text-white/20 cursor-not-allowed"
+                                  : "border-white/60 text-white hover:bg-white hover:text-black"
+                              )}
+                            >
+                              {v.size}
+                            </motion.button>
+                          ))}
+                        </div>
                       </div>
+                    ) : (
+                      <motion.button
+                        onClick={handleAddToCart}
+                        whileTap={{ scale: 0.98 }}
+                        className={cn(
+                          "w-full py-3 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors duration-200",
+                          added
+                            ? "bg-white text-black"
+                            : "bg-black/90 text-white hover:bg-white hover:text-black"
+                        )}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        {added ? "Ditambahkan ✓" : "Tambah ke Keranjang"}
+                      </motion.button>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Mobile: permanent bottom button */}
+              <div
+                className="sm:hidden absolute bottom-0 inset-x-0 z-10"
+                onClick={(e) => e.preventDefault()}
+              >
+                {showSizes ? (
+                  <div className="bg-black/95 p-2.5">
+                    <p className="text-[8px] uppercase tracking-widest text-white/40 mb-1.5 text-center">Ukuran</p>
+                    <div className="flex gap-1 justify-center flex-wrap">
+                      {product.variants.map((v) => (
+                        <button
+                          key={v.id}
+                          onClick={(e) => handleSizeSelect(e, v.id)}
+                          disabled={v.stock === 0}
+                          className={cn(
+                            "w-8 h-8 text-[10px] font-bold border transition-colors",
+                            v.stock === 0
+                              ? "border-white/10 text-white/20 cursor-not-allowed"
+                              : "border-white/60 text-white active:bg-white active:text-black"
+                          )}
+                        >
+                          {v.size}
+                        </button>
+                      ))}
                     </div>
-                  ) : (
-                    <motion.button
-                      onClick={handleAddToCart}
-                      whileTap={{ scale: 0.98 }}
-                      className={cn(
-                        "w-full py-3 text-[11px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 transition-colors duration-200",
-                        added
-                          ? "bg-white text-black"
-                          : "bg-black/90 text-white hover:bg-white hover:text-black"
-                      )}
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5" />
-                      {added ? "Ditambahkan ✓" : "Tambah ke Keranjang"}
-                    </motion.button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleAddToCart}
+                    className={cn(
+                      "w-full py-2.5 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-colors",
+                      added ? "bg-white text-black" : "bg-black/85 text-white"
+                    )}
+                  >
+                    <ShoppingBag className="w-3 h-3" />
+                    {added ? "✓ Ditambahkan" : "Keranjang"}
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
 

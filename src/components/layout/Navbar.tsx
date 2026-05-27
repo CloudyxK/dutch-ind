@@ -27,11 +27,12 @@ const navLinks = [
 export default function Navbar() {
   const { data: session }            = useSession();
   const { getTotalItems, toggleCart } = useCartStore();
-  const [scrolled, setScrolled]      = useState(false);
-  const [mobileOpen, setMobileOpen]  = useState(false);
-  const [searchOpen, setSearchOpen]  = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [shopOpen, setShopOpen]      = useState(false);
+  const [scrolled, setScrolled]        = useState(false);
+  const [mobileOpen, setMobileOpen]    = useState(false);
+  const [searchOpen, setSearchOpen]    = useState(false);
+  const [searchQuery, setSearchQuery]  = useState("");
+  const [shopOpen, setShopOpen]        = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [logoSpinning, setLogoSpinning] = useState(false);
   const totalItems = getTotalItems();
 
@@ -163,28 +164,45 @@ export default function Navbar() {
 
               {/* User */}
               {session ? (
-                <div className="relative group">
-                  <button className="p-2.5 hover:bg-white/[0.06] transition-colors">
+                <div className="relative">
+                  <button
+                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                    className="p-2.5 hover:bg-white/[0.06] transition-colors"
+                    aria-label="Akun"
+                  >
                     <User className="w-4 h-4" />
                   </button>
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-brand-black border border-white/[0.08] py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                    <div className="px-4 py-2 text-[10px] text-brand-gray-500 border-b border-white/[0.06] uppercase tracking-widest">
-                      {session.user?.name}
-                    </div>
-                    <Link href="/profile"        className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors">Profil Saya</Link>
-                    <Link href="/profile/orders" className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors">Pesanan Saya</Link>
-                    {(session.user as any)?.role === "ADMIN" && (
-                      <Link href="/admin" className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors text-yellow-400">
-                        Dashboard Admin
-                      </Link>
+                  <AnimatePresence>
+                    {userMenuOpen && (
+                      <>
+                        <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                        <motion.div
+                          initial={{ opacity: 0, y: 6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 6 }}
+                          transition={{ duration: 0.18 }}
+                          className="absolute right-0 top-full mt-1 w-48 bg-brand-black border border-white/[0.08] py-1 z-50"
+                        >
+                          <div className="px-4 py-2 text-[10px] text-brand-gray-500 border-b border-white/[0.06] uppercase tracking-widest truncate">
+                            {session.user?.name}
+                          </div>
+                          <Link href="/profile"        onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors">Profil Saya</Link>
+                          <Link href="/profile/orders" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors">Pesanan Saya</Link>
+                          {(session.user as any)?.role === "ADMIN" && (
+                            <Link href="/admin" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors text-yellow-400">
+                              Dashboard Admin
+                            </Link>
+                          )}
+                          <button
+                            onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: "/" }); }}
+                            className="block w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-white/[0.04] transition-colors"
+                          >
+                            Keluar
+                          </button>
+                        </motion.div>
+                      </>
                     )}
-                    <button
-                      onClick={() => signOut({ callbackUrl: "/" })}
-                      className="block w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-white/[0.04] transition-colors"
-                    >
-                      Keluar
-                    </button>
-                  </div>
+                  </AnimatePresence>
                 </div>
               ) : (
                 <Link href="/login" className="p-2.5 hover:bg-white/[0.06] transition-colors" aria-label="Login">

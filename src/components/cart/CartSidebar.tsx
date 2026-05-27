@@ -38,7 +38,7 @@ export default function CartSidebar() {
       ref={overlayRef}
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in"
     >
-      <div className="absolute right-0 top-0 h-full w-full max-w-md bg-brand-gray-900 border-l border-brand-gray-700 flex flex-col animate-slide-left">
+      <div className="absolute right-0 top-0 h-full w-[92vw] sm:w-full max-w-sm sm:max-w-md bg-brand-gray-900 border-l border-brand-gray-700 flex flex-col animate-slide-left">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-brand-gray-700">
           <div className="flex items-center gap-2">

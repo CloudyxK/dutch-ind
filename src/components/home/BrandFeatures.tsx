@@ -77,10 +77,14 @@ export default function BrandFeatures() {
               key={title}
               className="group relative p-4 lg:p-5 transition-all duration-500"
               style={{
-                borderRight:
-                  i < 3 ? "1px solid rgba(255,255,255,0.06)" : "none",
-                borderBottom:
-                  i < 2 ? "1px solid rgba(255,255,255,0.06)" : "none",
+                /* mobile 2-col: right border only on left column (0,2), bottom border only on top row (0,1) */
+                /* desktop 4-col: right border on first 3, no bottom border */
+                borderRight: i % 2 === 0
+                  ? "1px solid rgba(255,255,255,0.06)"   /* left col on mobile */
+                  : "none",
+                borderBottom: i < 2
+                  ? "1px solid rgba(255,255,255,0.06)"
+                  : "none",
               }}
             >
               {/* Hover glow */}
