@@ -56,13 +56,20 @@ export async function POST(request: NextRequest, { params }: Params) {
       },
     });
 
+    if (!hasPurchased) {
+      return NextResponse.json(
+        { error: "Kamu harus membeli dan menerima produk ini sebelum bisa memberi ulasan" },
+        { status: 403 }
+      );
+    }
+
     const review = await prisma.review.create({
       data: {
         userId: session.user.id,
         productId: product.id,
         rating: ratingNum,
         comment: cleanComment,
-        isVerified: !!hasPurchased,
+        isVerified: true,
       },
       include: { user: { select: { id: true, name: true, avatar: true } } },
     });

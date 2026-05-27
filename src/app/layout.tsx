@@ -21,6 +21,13 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "DUTCH.IND",
+  },
+  formatDetection: { telephone: false },
 };
 
 export default async function RootLayout({
@@ -32,6 +39,10 @@ export default async function RootLayout({
 
   return (
     <html lang="id" className="dark">
+      <head>
+        <meta name="theme-color" content="#050507" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body className="font-sans antialiased">
         <SessionProvider session={session}>
           {children}

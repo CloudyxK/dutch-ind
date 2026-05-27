@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
 import ProductDetailClient from "@/components/product/ProductDetailClient";
+import { auth } from "@/lib/auth";
 import type { Metadata } from "next";
 
 interface PageProps {
@@ -68,10 +69,27 @@ export default async function ProductDetailPage({ params }: PageProps) {
       ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
       : 0;
 
+  // Cek apakah user sudah pernah membeli & menerima produk ini
+  const session = await auth();
+  let hasPurchased = false;
+  if (session?.user?.id) {
+    const purchase = await prisma.orderItem.findFirst({
+      where: {
+        productId: product.id,
+        order: {
+          userId: session.user.id,
+          status: { in: ["DELIVERED", "COMPLETED"] },
+        },
+      },
+    });
+    hasPurchased = !!purchase;
+  }
+
   return (
     <ProductDetailClient
       product={{ ...product, averageRating: avgRating } as any}
       related={related as any}
+      hasPurchased={hasPurchased}
     />
   );
 }

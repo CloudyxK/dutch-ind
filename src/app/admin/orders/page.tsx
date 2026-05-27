@@ -2,6 +2,7 @@ import prisma from "@/lib/prisma";
 import { formatPrice, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
 import AdminOrderActions from "@/components/admin/AdminOrderActions";
 import AdminManualPaymentActions from "@/components/admin/AdminManualPaymentActions";
+import ExportOrdersButton from "@/components/admin/ExportOrdersButton";
 
 export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({
@@ -16,12 +17,15 @@ export default async function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "1.5rem" }}>
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
-          <span className="text-[9px] uppercase tracking-[0.5em]" style={{ color: "rgba(255,255,255,0.28)" }}>Admin</span>
+      <div style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", paddingBottom: "1.5rem" }} className="flex items-end justify-between">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-5 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
+            <span className="text-[9px] uppercase tracking-[0.5em]" style={{ color: "rgba(255,255,255,0.28)" }}>Admin</span>
+          </div>
+          <h1 className="text-3xl font-display tracking-widest uppercase text-white">Pesanan</h1>
         </div>
-        <h1 className="text-3xl font-display tracking-widest uppercase text-white">Pesanan</h1>
+        <ExportOrdersButton />
       </div>
 
       <div className="bg-brand-gray-900 border border-brand-gray-700 overflow-x-auto">

@@ -211,6 +211,12 @@
   70% { transform: none; }
 }
 
+@media (max-width: 768px) {
+  .logo-watermark {
+    opacity: 0.035 !important;
+  }
+}
+
 /* ── Admin dark theme overrides ──────────────────────
    Restyle Tailwind tokens inside .admin-main so all
    admin sub-pages automatically match the homepage palette

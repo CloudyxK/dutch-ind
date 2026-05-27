@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import ProductCard from "@/components/product/ProductCard";
+import ProductFilters from "@/components/product/ProductFilters";
 import { ProductGridSkeleton } from "@/components/ui/LoadingSkeleton";
 import type { Metadata } from "next";
 
@@ -15,6 +16,7 @@ interface PageProps {
     sort?: string;
     minPrice?: string;
     maxPrice?: string;
+    sizes?: string;
     page?: string;
     isFeatured?: string;
     isNewArrival?: string;
@@ -42,6 +44,10 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<PageProps["
   }
   if (searchParams.minPrice) where.price = { gte: parseFloat(searchParams.minPrice) };
   if (searchParams.maxPrice) where.price = { ...where.price, lte: parseFloat(searchParams.maxPrice) };
+  if (searchParams.sizes) {
+    const sizeList = searchParams.sizes.split(",").filter(Boolean);
+    if (sizeList.length) where.variants = { some: { size: { in: sizeList }, stock: { gt: 0 } } };
+  }
   if (searchParams.isFeatured === "true") where.isFeatured = true;
   if (searchParams.isNewArrival === "true") where.isNewArrival = true;
   if (searchParams.isBestSeller === "true") where.isBestSeller = true;
@@ -121,13 +127,6 @@ export default async function ProductsPage({ searchParams }: PageProps) {
     orderBy: { sortOrder: "asc" },
   });
 
-  const sortOptions = [
-    { value: "newest", label: "Terbaru" },
-    { value: "popular", label: "Terpopuler" },
-    { value: "price_asc", label: "Harga: Murah ke Mahal" },
-    { value: "price_desc", label: "Harga: Mahal ke Murah" },
-  ];
-
   return (
     <div className="min-h-screen py-10">
       <div className="container-main">
@@ -143,90 +142,10 @@ export default async function ProductsPage({ searchParams }: PageProps) {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-56 flex-shrink-0">
-            <div className="space-y-6">
-              {/* Categories */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest mb-3">Kategori</h3>
-                <ul className="space-y-1">
-                  <li>
-                    <a
-                      href="/products"
-                      className={`block text-sm py-1 transition-colors ${
-                        !params.category
-                          ? "text-white font-semibold"
-                          : "text-brand-gray-400 hover:text-white"
-                      }`}
-                    >
-                      Semua
-                    </a>
-                  </li>
-                  {categories.map((cat) => (
-                    <li key={cat.id}>
-                      <a
-                        href={`/products?category=${cat.slug}`}
-                        className={`block text-sm py-1 transition-colors ${
-                          params.category === cat.slug
-                            ? "text-white font-semibold"
-                            : "text-brand-gray-400 hover:text-white"
-                        }`}
-                      >
-                        {cat.name}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Filter checkboxes */}
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-widest mb-3">Filter</h3>
-                <ul className="space-y-2">
-                  {[
-                    { key: "isNewArrival", label: "Koleksi Baru" },
-                    { key: "isBestSeller", label: "Terlaris" },
-                    { key: "isFeatured", label: "Pilihan Editor" },
-                  ].map(({ key, label }) => (
-                    <li key={key}>
-                      <a
-                        href={`/products?${key}=true`}
-                        className={`block text-sm py-1 transition-colors ${
-                          params[key as keyof typeof params] === "true"
-                            ? "text-white font-semibold"
-                            : "text-brand-gray-400 hover:text-white"
-                        }`}
-                      >
-                        {label}
-                      </a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </aside>
+          <ProductFilters categories={categories} />
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Sort bar */}
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-brand-gray-800">
-              <div className="flex items-center gap-2 overflow-x-auto">
-                {sortOptions.map((opt) => (
-                  <a
-                    key={opt.value}
-                    href={`?${new URLSearchParams({ ...params, sort: opt.value }).toString()}`}
-                    className={`text-xs whitespace-nowrap px-3 py-1.5 border transition-colors ${
-                      (params.sort || "newest") === opt.value
-                        ? "border-white text-white"
-                        : "border-brand-gray-700 text-brand-gray-400 hover:border-white hover:text-white"
-                    }`}
-                  >
-                    {opt.label}
-                  </a>
-                ))}
-              </div>
-            </div>
-
             <Suspense fallback={<ProductGridSkeleton />}>
               <ProductGrid searchParams={params} />
             </Suspense>

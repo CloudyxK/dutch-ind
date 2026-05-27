@@ -15,9 +15,10 @@ import { cn } from "@/lib/utils";
 interface Props {
   product: Product & { averageRating: number };
   related: Product[];
+  hasPurchased?: boolean;
 }
 
-export default function ProductDetailClient({ product, related }: Props) {
+export default function ProductDetailClient({ product, related, hasPurchased = false }: Props) {
   const { addItem } = useCartStore();
   const { toggleWishlist, isWishlisted } = useWishlistStore();
   const { data: session } = useSession();
@@ -364,22 +365,19 @@ export default function ProductDetailClient({ product, related }: Props) {
             <p className="text-brand-gray-500 text-sm">Belum ada ulasan untuk produk ini.</p>
           )}
 
-          {/* Review form for logged-in users */}
-          {session?.user && !userReview && (
-            <ReviewForm
-              productSlug={product.slug}
-              userId={(session.user as any).id}
-              existingReview={null}
-              onReviewAdded={handleReviewAdded}
-            />
-          )}
-          {session?.user && userReview && (
+          {/* Review form — verified buyers only */}
+          {session?.user && hasPurchased && (
             <ReviewForm
               productSlug={product.slug}
               userId={(session.user as any).id}
               existingReview={userReview}
               onReviewAdded={handleReviewAdded}
             />
+          )}
+          {session?.user && !hasPurchased && (
+            <p className="text-xs text-brand-gray-500 mt-6 border border-brand-gray-800 px-4 py-3">
+              Hanya pembeli yang sudah menerima produk ini yang dapat menulis ulasan.
+            </p>
           )}
           {!session && (
             <p className="text-xs text-brand-gray-500 mt-6">

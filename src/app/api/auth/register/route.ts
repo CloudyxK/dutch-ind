@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import prisma from "@/lib/prisma";
 import { registerLimiter, getIp } from "@/lib/rateLimit";
 import { sanitize, isValidEmail, parseJsonSafe, verifySameOrigin, rateLimitResponse } from "@/lib/security";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   // CORS — only accept same-origin requests
@@ -70,6 +72,18 @@ export async function POST(request: NextRequest) {
     });
 
     await prisma.cart.create({ data: { userId: user.id } });
+
+    // Send verification email (fire-and-forget, don't block registration)
+    try {
+      const token = randomBytes(32).toString("hex");
+      const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      await prisma.setting.upsert({
+        where: { key: `email_verify_${token}` },
+        update: { value: `${user.id}:${expires}` },
+        create: { key: `email_verify_${token}`, value: `${user.id}:${expires}` },
+      });
+      sendVerificationEmail(user.email, user.name, token).catch(() => {});
+    } catch { /* non-blocking */ }
 
     return NextResponse.json({ success: true, data: user }, { status: 201 });
   } catch {

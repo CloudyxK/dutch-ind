@@ -146,6 +146,47 @@ export async function sendShippingEmail(
   });
 }
 
+// Kirim email verifikasi akun
+export async function sendVerificationEmail(to: string, name: string, token: string) {
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${token}`;
+  const content = `
+    <h1>Verifikasi Email Kamu</h1>
+    <p>Halo <strong style="color:#F5F5F5">${name}</strong>,</p>
+    <p>Klik tombol di bawah untuk memverifikasi alamat email kamu. Link berlaku selama <strong style="color:#F5F5F5">24 jam</strong>.</p>
+    <a href="${url}" class="btn">Verifikasi Email</a>
+    <p style="font-size:12px;color:#525252;margin-top:24px">Atau salin link ini ke browser: ${url}</p>
+    <p style="font-size:12px;color:#525252">Jika kamu tidak mendaftar di DUTCH.IND, abaikan email ini.</p>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject: "Verifikasi Email Akun DUTCH.IND",
+    html: baseTemplate("Verifikasi Email", content),
+  });
+}
+
+// Kirim email reset password
+export async function sendPasswordResetEmail(to: string, name: string, token: string) {
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+  const content = `
+    <h1>Reset Password</h1>
+    <p>Halo <strong style="color:#F5F5F5">${name}</strong>,</p>
+    <p>Kami menerima permintaan reset password untuk akun kamu. Klik tombol di bawah untuk membuat password baru.</p>
+    <p>Link ini berlaku selama <strong style="color:#F5F5F5">1 jam</strong>.</p>
+    <a href="${url}" class="btn">Reset Password</a>
+    <p style="font-size:12px;color:#525252;margin-top:24px">Atau salin link ini ke browser: ${url}</p>
+    <p style="font-size:12px;color:#525252">Jika kamu tidak meminta reset password, abaikan email ini. Password kamu tidak akan berubah.</p>
+  `;
+
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject: "Reset Password — DUTCH.IND",
+    html: baseTemplate("Reset Password", content),
+  });
+}
+
 // Kirim email selamat datang
 export async function sendWelcomeEmail(to: string, name: string) {
   const content = `
