@@ -1,7 +1,13 @@
 import { Resend } from "resend";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Lazy init — hanya dibuat saat API key tersedia
+let _resend: Resend | null = null;
+function getResend(): Resend | null {
+  if (!process.env.RESEND_API_KEY) return null;
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY);
+  return _resend;
+}
 
 // Alamat pengirim — ganti ke domain kamu kalau sudah punya
 const FROM_ADDRESS = process.env.EMAIL_FROM || "DUTCH.IND <onboarding@resend.dev>";
@@ -45,11 +51,12 @@ function baseTemplate(title: string, content: string): string {
 
 // ── Kirim helper ─────────────────────────────────────────────────────────────
 async function send(to: string, subject: string, html: string) {
-  if (!process.env.RESEND_API_KEY) {
+  const client = getResend();
+  if (!client) {
     console.warn("[email] RESEND_API_KEY tidak diset — email tidak dikirim");
     return;
   }
-  const { error } = await resend.emails.send({ from: FROM_ADDRESS, to, subject, html });
+  const { error } = await client.emails.send({ from: FROM_ADDRESS, to, subject, html });
   if (error) console.error("[email] Resend error:", error);
 }
 
