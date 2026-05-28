@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, Heart, Star, Share2, ChevronDown, Minus, Plus } from "lucide-react";
+import { ShoppingBag, Heart, Star, Share2, ChevronDown, Minus, Plus, X, ZoomIn, Copy, Check, MessageCircle } from "lucide-react";
 import { useCartStore, useWishlistStore } from "@/store/useCartStore";
 import { useSession } from "next-auth/react";
 import { formatPrice, calculateDiscount, formatDate } from "@/lib/utils";
@@ -11,6 +11,7 @@ import ProductCard from "./ProductCard";
 import ReviewForm from "./ReviewForm";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
+import toast from "react-hot-toast";
 
 interface Props {
   product: Product & { averageRating: number };
@@ -28,6 +29,28 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
   const [expandedSection, setExpandedSection] = useState<string | null>("deskripsi");
   const [reviews, setReviews] = useState<any[]>(product.reviews || []);
   const [avgRating, setAvgRating] = useState(product.averageRating);
+  const [zoomOpen, setZoomOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const shareRef = useRef<HTMLDivElement>(null);
+
+  // Close share dropdown on outside click
+  useEffect(() => {
+    if (!shareOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (shareRef.current && !shareRef.current.contains(e.target as Node)) {
+        setShareOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [shareOpen]);
+
+  // Lock scroll when zoom is open
+  useEffect(() => {
+    document.body.style.overflow = zoomOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [zoomOpen]);
 
   const userReview = session?.user
     ? reviews.find((r) => r.user?.id === (session.user as any).id) ?? null
@@ -45,6 +68,25 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
     : 0;
 
   const selectedVariantObj = product.variants.find((v) => v.id === selectedVariant);
+
+  const productUrl = typeof window !== "undefined"
+    ? window.location.href
+    : `${process.env.NEXT_PUBLIC_APP_URL}/products/${product.slug}`;
+
+  function handleShareWA() {
+    const text = `Cek produk ini di DUTCH.IND 👀\n*${product.name}* — ${formatPrice(product.price)}\n${productUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
+    setShareOpen(false);
+  }
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(productUrl).then(() => {
+      setCopied(true);
+      toast.success("Link disalin!");
+      setTimeout(() => setCopied(false), 2000);
+    });
+    setShareOpen(false);
+  }
 
   const handleAddToCart = () => {
     if (!selectedVariant) {
@@ -75,7 +117,7 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-24 lg:pb-0">
       {/* Breadcrumb */}
       <div className="border-b border-brand-gray-800 py-3">
         <div className="container-main">
@@ -101,12 +143,15 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
           {/* Images */}
           <div className="space-y-3">
             {/* Main image */}
-            <div className="relative aspect-square bg-brand-gray-800 overflow-hidden">
+            <div
+              className="relative aspect-square bg-brand-gray-800 overflow-hidden cursor-zoom-in group"
+              onClick={() => setZoomOpen(true)}
+            >
               <Image
                 src={product.images[activeImage]?.url || ""}
                 alt={product.name}
                 fill
-                className="object-cover"
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority
               />
@@ -115,6 +160,11 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                   <span className="badge-sale">-{discount}%</span>
                 </div>
               )}
+              {/* Zoom hint */}
+              <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm px-2 py-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                <ZoomIn className="w-3 h-3 text-white/70" />
+                <span className="text-[10px] text-white/70 uppercase tracking-wider">Zoom</span>
+              </div>
             </div>
 
             {/* Thumbnails */}
@@ -271,9 +321,36 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
               >
                 <Heart className={cn("w-4 h-4", wishlisted && "fill-current")} />
               </button>
-              <button className="w-12 h-12 border-2 border-brand-gray-600 hover:border-white flex items-center justify-center transition-colors">
-                <Share2 className="w-4 h-4" />
-              </button>
+              {/* Share button + dropdown */}
+              <div className="relative" ref={shareRef}>
+                <button
+                  onClick={() => setShareOpen(!shareOpen)}
+                  className="w-12 h-12 border-2 border-brand-gray-600 hover:border-white flex items-center justify-center transition-colors"
+                  aria-label="Bagikan produk"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
+                {shareOpen && (
+                  <div className="absolute right-0 bottom-14 w-48 bg-brand-black border border-brand-gray-700 py-1 z-20 shadow-xl">
+                    <button
+                      onClick={handleShareWA}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs hover:bg-white/[0.06] transition-colors text-left"
+                    >
+                      <MessageCircle className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      Bagikan ke WhatsApp
+                    </button>
+                    <button
+                      onClick={handleCopyLink}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 text-xs hover:bg-white/[0.06] transition-colors text-left"
+                    >
+                      {copied
+                        ? <Check className="w-4 h-4 text-green-400 flex-shrink-0" />
+                        : <Copy className="w-4 h-4 text-brand-gray-400 flex-shrink-0" />}
+                      {copied ? "Link Tersalin!" : "Salin Link Produk"}
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* SKU */}
@@ -398,6 +475,86 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
           </div>
         )}
       </div>
+
+      {/* ── Zoom Modal ───────────────────────────────────── */}
+      {zoomOpen && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center"
+          onClick={() => setZoomOpen(false)}
+        >
+          <button
+            className="absolute top-4 right-4 z-10 p-2 bg-white/10 hover:bg-white/20 transition-colors rounded-none"
+            onClick={() => setZoomOpen(false)}
+            aria-label="Tutup zoom"
+          >
+            <X className="w-5 h-5" />
+          </button>
+          {/* Thumbnail strip */}
+          {product.images.length > 1 && (
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+              {product.images.map((img, i) => (
+                <button
+                  key={img.id}
+                  onClick={(e) => { e.stopPropagation(); setActiveImage(i); }}
+                  className={cn(
+                    "w-12 h-12 border-2 overflow-hidden flex-shrink-0 transition-colors",
+                    activeImage === i ? "border-white" : "border-white/20 hover:border-white/60"
+                  )}
+                >
+                  <img src={img.url} alt="" className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+          <div
+            className="relative w-full h-full flex items-center justify-center p-4 overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+            style={{ touchAction: "pinch-zoom" }}
+          >
+            <img
+              src={product.images[activeImage]?.url || ""}
+              alt={product.name}
+              className="max-w-full max-h-full object-contain select-none"
+              style={{ maxHeight: "calc(100vh - 120px)" }}
+              draggable={false}
+              onClick={() => setZoomOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Sticky Add to Cart (mobile only) ────────────── */}
+      {product.totalStock > 0 && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-black border-t border-brand-gray-800">
+          <div className="flex items-stretch h-14">
+            {/* Size selector compact */}
+            <div className="flex items-center gap-1 px-3 overflow-x-auto flex-shrink-0 border-r border-brand-gray-800">
+              {product.variants.filter(v => v.stock > 0).map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVariant(v.id)}
+                  className={cn(
+                    "w-9 h-9 text-xs font-bold border flex-shrink-0 transition-all",
+                    selectedVariant === v.id
+                      ? "border-white bg-white text-black"
+                      : "border-brand-gray-600 hover:border-white"
+                  )}
+                >
+                  {v.size}
+                </button>
+              ))}
+            </div>
+            {/* Add to cart button */}
+            <button
+              onClick={handleAddToCart}
+              className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-white/90 active:scale-[0.98] transition-all"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {selectedVariant ? "Tambah ke Keranjang" : "Pilih Ukuran"}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

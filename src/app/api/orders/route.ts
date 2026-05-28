@@ -7,6 +7,7 @@ import { parseJsonSafe, verifySameOrigin, rateLimitResponse, sanitize } from "@/
 import { type RankKey } from "@/lib/rank";
 import { getMembershipConfig, isFreeShippingFromConfig } from "@/lib/membershipConfig";
 import { sendPushToAdmins } from "@/lib/webpush";
+import { sendOrderConfirmationEmail } from "@/lib/email";
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
 
       const itemSubtotal = item.price * item.quantity;
       subtotal += itemSubtotal;
-      validatedItems.push({ ...item, subtotal: itemSubtotal, productName: variant.product.name });
+      validatedItems.push({ ...item, subtotal: itemSubtotal, productName: variant.product.name, size: variant.size });
     }
 
     // Ambil rank user + config membership dari DB
@@ -229,6 +230,22 @@ export async function POST(request: NextRequest) {
       } catch (midtransError) {
         console.error("Midtrans error:", midtransError);
       }
+    }
+
+    // Kirim email konfirmasi ke pelanggan (fire-and-forget)
+    if (session.user.email) {
+      sendOrderConfirmationEmail(session.user.email, {
+        orderNumber: order.orderNumber,
+        total: order.total,
+        recipientName: session.user.name ?? "Pelanggan",
+        createdAt: order.createdAt,
+        items: validatedItems.map((i: any) => ({
+          name: i.productName,
+          size: i.size,
+          quantity: i.quantity,
+          price: i.price,
+        })),
+      }).catch(() => {});
     }
 
     // Kirim push notification ke admin
