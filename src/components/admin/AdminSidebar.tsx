@@ -20,6 +20,8 @@ import {
   FolderOpen,
   Star,
   Boxes,
+  Rocket,
+  RotateCcw,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -40,12 +42,14 @@ const navGroups = [
       { href: "/admin/inventory",  label: "Inventori", icon: Boxes },
       { href: "/admin/coupons",    label: "Kupon",     icon: Tag },
       { href: "/admin/flashsale",  label: "Flash Sale",icon: Zap },
+      { href: "/admin/drops",      label: "Drops",     icon: Rocket },
     ],
   },
   {
     label: "Operasional",
     items: [
       { href: "/admin/orders",    label: "Pesanan",    icon: ShoppingCart },
+      { href: "/admin/returns",   label: "Returns",    icon: RotateCcw },
       { href: "/admin/shipping",  label: "Pengiriman", icon: Truck },
       { href: "/admin/users",     label: "Pengguna",   icon: Users },
       { href: "/admin/reviews",   label: "Ulasan",     icon: Star },

@@ -177,6 +177,67 @@ export async function sendRestockEmail(
   );
 }
 
+// ── Drop live notification ───────────────────────────────────────────────────
+export async function sendDropLiveEmail(
+  to: string,
+  data: { name: string; dropName: string; dropSlug: string; couponCode?: string }
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://dutch-indd.vercel.app";
+  await send(to, `🔥 ${data.dropName} — Drop Sekarang LIVE! DUTCH.IND`,
+    baseTemplate("Drop Live!", `
+      <h1>${data.dropName} — Sekarang Live!</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.name}</strong>,</p>
+      <p>Drop yang kamu tunggu-tunggu sudah tersedia sekarang. Stok sangat terbatas!</p>
+      ${data.couponCode ? `
+        <p>Gunakan kode eksklusif untuk mendapat diskon spesial:</p>
+        <div class="num">${data.couponCode}</div>
+      ` : ""}
+      <a href="${appUrl}/drops/${data.dropSlug}" class="btn">Lihat Drop Sekarang →</a>
+      <p style="font-size:11px;color:#525252;margin-top:24px">
+        Kamu menerima email ini karena mendaftar ke waitlist drop ini.
+      </p>
+    `)
+  );
+}
+
+// ── Abandoned cart email ─────────────────────────────────────────────────────
+export async function sendAbandonedCartEmail(
+  to: string,
+  data: {
+    name: string;
+    items: Array<{ name: string; slug: string; size: string; price: number; image: string | null; qty: number }>;
+  }
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://dutch-indd.vercel.app";
+  const itemRows = data.items
+    .map(
+      (item) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid #262626">
+          ${item.image ? `<img src="${item.image}" width="50" height="60" style="object-fit:cover;display:inline-block;vertical-align:middle;margin-right:12px" alt="${item.name}"/>` : ""}
+          <span style="vertical-align:middle;font-size:13px;color:#D4D4D4">${item.name} <span style="color:#737373">/ ${item.size}</span></span>
+        </td>
+        <td style="padding:10px 0;border-bottom:1px solid #262626;text-align:right;color:#D4D4D4;font-size:13px">
+          Rp${item.price.toLocaleString("id-ID")} × ${item.qty}
+        </td>
+      </tr>`
+    )
+    .join("");
+
+  await send(to, `${data.name}, kamu masih punya barang di keranjang — DUTCH.IND`,
+    baseTemplate("Keranjang Belanjamu", `
+      <h1>Keranjangmu Menunggu</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.name}</strong>,</p>
+      <p>Kamu meninggalkan beberapa item di keranjang. Stok kami terbatas — selesaikan pesananmu sebelum kehabisan.</p>
+      <table style="width:100%;border-collapse:collapse;margin:20px 0">${itemRows}</table>
+      <a href="${appUrl}/cart" class="btn">Lanjutkan Belanja →</a>
+      <p style="font-size:11px;color:#525252;margin-top:24px">
+        Jika kamu tidak ingin menerima email ini, abaikan saja.
+      </p>
+    `)
+  );
+}
+
 // ── Email selamat datang ──────────────────────────────────────────────────────
 export async function sendWelcomeEmail(to: string, name: string) {
   await send(to, `Selamat Datang di DUTCH.IND, ${name}!`,

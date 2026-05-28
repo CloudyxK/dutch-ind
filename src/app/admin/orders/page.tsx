@@ -107,6 +107,7 @@ export default async function AdminOrdersPage() {
                         currentStatus={order.status}
                         currentTrackingNumber={order.trackingNumber}
                         currentTrackingCarrier={order.trackingCarrier}
+                        currentNotes={order.notes}
                       />
                               {/* Manual payment confirm/reject */}
                       {order.payment?.method === "MANUAL" &&

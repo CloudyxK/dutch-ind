@@ -1,6 +1,6 @@
 import prisma from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
-import { TrendingUp, ShoppingCart, Package, Users } from "lucide-react";
+import { TrendingUp, ShoppingCart, Users, UserPlus } from "lucide-react";
 
 async function getAnalytics() {
   const thirtyDaysAgo = new Date();
@@ -56,6 +56,20 @@ async function getAnalytics() {
       },
       select: { total: true, createdAt: true },
     }),
+
+    // Total pengguna aktif
+    prisma.user.count({ where: { role: "CUSTOMER", isActive: true } }),
+
+    // Total semua pesanan
+    prisma.order.count(),
+
+    // Pengguna baru bulan ini
+    prisma.user.count({
+      where: {
+        role: "CUSTOMER",
+        createdAt: { gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1) },
+      },
+    }),
   ]);
 
   // Enrichi data top products
@@ -81,12 +95,18 @@ async function getAnalytics() {
     if (key in salesMap) salesMap[key] = (salesMap[key] || 0) + order.total;
   });
 
+  const completedOrders = ordersByStatus.find((s) => ["DELIVERED", "COMPLETED"].includes(s.status))?._count ?? 0;
+  const conversionRate = totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(1) : "0";
+
   return {
     revenueThisMonth: revenueThisMonth._sum.amount || 0,
     transactionsThisMonth: revenueThisMonth._count,
     ordersByStatus,
     topProducts: enrichedTopProducts,
     salesByDay: Object.entries(salesMap).map(([date, revenue]) => ({ date, revenue })),
+    totalUsers,
+    newUsersThisMonth,
+    conversionRate,
   };
 }
 
@@ -106,16 +126,32 @@ export default async function AnalyticsPage() {
       <h1 className="text-3xl font-display tracking-widest uppercase text-white">Analitik</h1>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
           <div className="flex items-center justify-between mb-3">
             <TrendingUp className="w-5 h-5 text-brand-gray-500" />
-            <span className="text-xs text-brand-gray-500 uppercase tracking-wider">Bulan Ini</span>
+            <span className="text-xs text-brand-gray-500 uppercase tracking-wider">Revenue</span>
           </div>
-          <p className="text-3xl font-bold">{formatPrice(data.revenueThisMonth)}</p>
-          <p className="text-xs text-brand-gray-500 mt-1">
-            dari {data.transactionsThisMonth} transaksi
-          </p>
+          <p className="text-2xl font-bold">{formatPrice(data.revenueThisMonth)}</p>
+          <p className="text-xs text-brand-gray-500 mt-1">{data.transactionsThisMonth} transaksi bulan ini</p>
+        </div>
+
+        <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
+          <div className="flex items-center justify-between mb-3">
+            <Users className="w-5 h-5 text-brand-gray-500" />
+            <span className="text-xs text-brand-gray-500 uppercase tracking-wider">Pengguna</span>
+          </div>
+          <p className="text-2xl font-bold">{data.totalUsers.toLocaleString("id-ID")}</p>
+          <p className="text-xs text-brand-gray-500 mt-1">+{data.newUsersThisMonth} baru bulan ini</p>
+        </div>
+
+        <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
+          <div className="flex items-center justify-between mb-3">
+            <UserPlus className="w-5 h-5 text-brand-gray-500" />
+            <span className="text-xs text-brand-gray-500 uppercase tracking-wider">Konversi</span>
+          </div>
+          <p className="text-2xl font-bold">{data.conversionRate}%</p>
+          <p className="text-xs text-brand-gray-500 mt-1">Pesanan selesai / total</p>
         </div>
 
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">

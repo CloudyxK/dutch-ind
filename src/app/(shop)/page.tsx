@@ -65,11 +65,38 @@ async function getHomeData() {
   return { allProducts, featured, bestSellers, categories, flashSale };
 }
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://dutch-indd.vercel.app";
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "DUTCH.IND",
+  url: APP_URL,
+  logo: `${APP_URL}/logo.png`,
+  description: "Brand streetwear premium dari Samarinda, Kalimantan Timur.",
+  contactPoint: { "@type": "ContactPoint", contactType: "customer service", availableLanguage: "Indonesian" },
+  sameAs: [],
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "DUTCH.IND",
+  url: APP_URL,
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: `${APP_URL}/products?search={search_term_string}` },
+    "query-input": "required name=search_term_string",
+  },
+};
+
 export default async function HomePage() {
   const { allProducts, featured, bestSellers, categories, flashSale } = await getHomeData();
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }} />
       {/* Compact brand header — not full screen */}
       <StoreHeader />
 

@@ -21,13 +21,14 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await request.json();
-    const { status, trackingNumber, trackingCarrier } = body;
+    const { status, trackingNumber, trackingCarrier, notes } = body;
 
     // Build base update data
     const updateData: any = {};
     if (status) updateData.status = status;
     if (trackingNumber !== undefined) updateData.trackingNumber = trackingNumber;
     if (trackingCarrier !== undefined) updateData.trackingCarrier = trackingCarrier;
+    if (notes !== undefined) updateData.notes = String(notes).slice(0, 500);
 
     // If a tracking number is being saved, auto-check tracking and update status
     if (trackingNumber && trackingNumber.trim()) {

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Truck, Check, RefreshCw, ChevronDown, X, Trash2 } from "lucide-react";
+import { Truck, Check, RefreshCw, ChevronDown, X, Trash2, StickyNote } from "lucide-react";
 import { CARRIER_OPTIONS } from "@/lib/tracking";
 
 const STATUS_OPTIONS = [
@@ -21,6 +21,7 @@ interface Props {
   currentStatus: string;
   currentTrackingNumber?: string | null;
   currentTrackingCarrier?: string | null;
+  currentNotes?: string | null;
 }
 
 export default function AdminOrderActions({
@@ -28,6 +29,7 @@ export default function AdminOrderActions({
   currentStatus,
   currentTrackingNumber,
   currentTrackingCarrier,
+  currentNotes,
 }: Props) {
   const router = useRouter();
   const [updating, setUpdating]   = useState(false);
@@ -38,6 +40,9 @@ export default function AdminOrderActions({
   const [carrier, setCarrier]   = useState(currentTrackingCarrier ?? "");
   const [checking, setChecking] = useState(false);
   const [lastStatus, setLastStatus] = useState<string | null>(null);
+  const [showNote, setShowNote]   = useState(false);
+  const [note, setNote]           = useState(currentNotes ?? "");
+  const [savingNote, setSavingNote] = useState(false);
 
   /* ── status dropdown ─────────────────────────────── */
   const updateStatus = async (status: string) => {
@@ -125,6 +130,25 @@ export default function AdminOrderActions({
     } finally {
       setDeleting(false);
       setConfirmDel(false);
+    }
+  };
+
+  const saveNote = async () => {
+    setSavingNote(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: note }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Catatan disimpan");
+      setShowNote(false);
+      router.refresh();
+    } catch {
+      toast.error("Gagal menyimpan catatan");
+    } finally {
+      setSavingNote(false);
     }
   };
 
@@ -223,6 +247,36 @@ export default function AdminOrderActions({
         <p className="text-[9px] text-brand-gray-600 truncate uppercase tracking-wider">
           via {CARRIER_OPTIONS.find(c => c.code === currentTrackingCarrier)?.label ?? currentTrackingCarrier}
         </p>
+      )}
+
+      {/* Admin note */}
+      {!showNote ? (
+        <button
+          onClick={() => setShowNote(true)}
+          className="flex items-center gap-1 text-[10px] text-brand-gray-500 hover:text-white transition-colors"
+        >
+          <StickyNote className="w-3 h-3" />
+          <span className="truncate">{note ? note.slice(0, 20) + (note.length > 20 ? "…" : "") : "Tambah Catatan"}</span>
+        </button>
+      ) : (
+        <div className="space-y-1">
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={2}
+            maxLength={300}
+            placeholder="Catatan internal..."
+            className="w-full bg-brand-gray-800 border border-brand-gray-600 text-[10px] px-2 py-1 text-white focus:outline-none focus:border-white resize-none"
+          />
+          <div className="flex gap-1">
+            <button onClick={saveNote} disabled={savingNote} className="bg-white text-black text-[10px] px-2 py-1 hover:bg-brand-gray-200 disabled:opacity-50">
+              <Check className="w-3 h-3" />
+            </button>
+            <button onClick={() => setShowNote(false)} className="text-brand-gray-500 hover:text-white px-1">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Delete order */}

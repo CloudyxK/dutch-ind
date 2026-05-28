@@ -9,6 +9,7 @@ import TrackingPanel from "@/components/order/TrackingPanel";
 import OrderReviewSection from "@/components/order/OrderReviewSection";
 import ManualPaymentPanel from "@/components/order/ManualPaymentPanel";
 import CancelOrderButton from "@/components/order/CancelOrderButton";
+import ReturnRequestButton from "@/components/order/ReturnRequestButton";
 
 const STATUS_STEPS = [
   { key: "AWAITING_PAYMENT", label: "Menunggu Bayar" },
@@ -109,7 +110,10 @@ export default async function OrderDetailPage({ params }: Props) {
 
   /* ── Reviews (only for COMPLETED / DELIVERED) ── */
   const canReview = order.status === "COMPLETED" || order.status === "DELIVERED";
+  const canReturn = canReview;
   let reviewMap: Record<string, { id: string; rating: number; comment: string | null }> = {};
+
+  const returnRequest = await prisma.returnRequest.findUnique({ where: { orderId: id } });
 
   if (canReview) {
     const productIds = [...new Set(order.items.map((i) => i.productId))];
@@ -425,6 +429,17 @@ export default async function OrderDetailPage({ params }: Props) {
                 existingReview: reviewMap[item.productId] ?? null,
               }))}
             />
+          )}
+
+          {/* Return request */}
+          {canReturn && (
+            <div className="bg-brand-gray-900 border border-brand-gray-700 p-5">
+              <h2 className="text-xs font-bold uppercase tracking-widest mb-3">Return / Pengembalian</h2>
+              <ReturnRequestButton
+                orderId={order.id}
+                existingReturn={returnRequest as any}
+              />
+            </div>
           )}
 
           {/* Notes */}
