@@ -25,6 +25,7 @@ model User {
   password      String?
   name          String
   phone         String?
+  instagram     String?
   avatar        String?
   role          String    @default("CUSTOMER")
   emailVerified DateTime?

@@ -39,6 +39,7 @@ export default async function ProfilePage() {
           name        = {user.name}
           email       = {user.email}
           phone       = {user.phone}
+          instagram   = {(user as any).instagram}
           avatar      = {user.avatar}
           rank        = {rank}
           totalSpend  = {user.totalSpend ?? 0}
