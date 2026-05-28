@@ -4,10 +4,11 @@ import Image from "next/image";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { formatPrice, formatDate, formatDateTime, getOrderStatusLabel, getOrderStatusColor } from "@/lib/utils";
-import { ChevronLeft, MapPin, CreditCard, Package, MessageCircle, Instagram } from "lucide-react";
+import { ChevronLeft, MapPin, CreditCard, Package, MessageCircle, Instagram, Printer } from "lucide-react";
 import TrackingPanel from "@/components/order/TrackingPanel";
 import OrderReviewSection from "@/components/order/OrderReviewSection";
 import ManualPaymentPanel from "@/components/order/ManualPaymentPanel";
+import CancelOrderButton from "@/components/order/CancelOrderButton";
 
 const STATUS_STEPS = [
   { key: "AWAITING_PAYMENT", label: "Menunggu Bayar" },
@@ -141,9 +142,23 @@ export default async function OrderDetailPage({ params }: Props) {
             </h1>
             <p className="text-xs text-brand-gray-500 mt-1">{formatDateTime(order.createdAt)}</p>
           </div>
-          <span className={`text-xs font-bold px-3 py-1.5 ${getOrderStatusColor(order.status)}`}>
-            {getOrderStatusLabel(order.status)}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className={`text-xs font-bold px-3 py-1.5 ${getOrderStatusColor(order.status)}`}>
+              {getOrderStatusLabel(order.status)}
+            </span>
+            <div className="flex gap-2 flex-wrap justify-end">
+              <Link
+                href={`/profile/orders/${order.id}/invoice`}
+                className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-brand-gray-400 hover:text-white border border-brand-gray-700 hover:border-white px-3 py-1.5 transition-colors"
+              >
+                <Printer className="w-3 h-3" />
+                Invoice
+              </Link>
+              {["AWAITING_PAYMENT", "PROCESSING"].includes(order.status) && (
+                <CancelOrderButton orderId={order.id} />
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Status timeline */}
