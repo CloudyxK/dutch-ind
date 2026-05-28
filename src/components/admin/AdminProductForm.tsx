@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, X } from "lucide-react";
+import { Plus, X, ImagePlus, Loader2 } from "lucide-react";
 import { slugify } from "@/lib/utils";
+import Image from "next/image";
 
 interface Category {
   id: string;
@@ -47,6 +48,8 @@ export default function AdminProductForm({ categories, initialData }: Props) {
   );
 
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleNameChange = (name: string) => {
     setForm((prev) => ({
@@ -61,6 +64,30 @@ export default function AdminProductForm({ categories, initialData }: Props) {
     setImages((prev) => prev.filter((_, i) => i !== index));
   const updateImage = (index: number, url: string) =>
     setImages((prev) => prev.map((img, i) => (i === index ? url : img)));
+
+  const handleFileUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    const uploaded: string[] = [];
+    for (const file of Array.from(files)) {
+      const fd = new FormData();
+      fd.append("file", file);
+      try {
+        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Upload gagal");
+        uploaded.push(data.url);
+      } catch (err: any) {
+        toast.error(err.message);
+      }
+    }
+    setUploading(false);
+    if (uploaded.length === 0) return;
+    setImages((prev) => {
+      const cleaned = prev.filter(Boolean);
+      return [...cleaned, ...uploaded];
+    });
+  };
 
   const addVariant = () => {
     const usedSizes = variants.map((v) => v.size);
@@ -211,34 +238,75 @@ export default function AdminProductForm({ categories, initialData }: Props) {
 
         {/* Images */}
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest">Gambar Produk</h2>
-            <button type="button" onClick={addImage} className="btn-ghost text-xs gap-1">
-              <Plus className="w-3 h-3" /> Tambah
-            </button>
-          </div>
-          <div className="space-y-2">
-            {images.map((url, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  value={url}
-                  onChange={(e) => updateImage(index, e.target.value)}
-                  className="input-field flex-1"
-                  placeholder={`URL gambar ${index + 1}`}
-                />
-                {images.length > 1 && (
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-4">Gambar Produk</h2>
+
+          {/* Upload area */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => handleFileUpload(e.target.files)}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="w-full border-2 border-dashed border-brand-gray-700 hover:border-brand-gray-500 transition-colors p-8 flex flex-col items-center gap-3 group disabled:opacity-50"
+          >
+            {uploading ? (
+              <>
+                <Loader2 className="w-8 h-8 text-brand-gray-400 animate-spin" />
+                <span className="text-sm text-brand-gray-400">Mengupload...</span>
+              </>
+            ) : (
+              <>
+                <ImagePlus className="w-8 h-8 text-brand-gray-500 group-hover:text-brand-gray-300 transition-colors" />
+                <div className="text-center">
+                  <p className="text-sm text-brand-gray-300 group-hover:text-white transition-colors">
+                    Klik untuk pilih foto
+                  </p>
+                  <p className="text-xs text-brand-gray-500 mt-1">
+                    Dari galeri atau kamera · maks. 10 MB per foto
+                  </p>
+                </div>
+              </>
+            )}
+          </button>
+
+          {/* Preview thumbnails */}
+          {images.filter(Boolean).length > 0 && (
+            <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {images.filter(Boolean).map((url, index) => (
+                <div key={url + index} className="relative aspect-square group">
+                  <Image
+                    src={url}
+                    alt={`Gambar ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="150px"
+                  />
+                  {index === 0 && (
+                    <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[9px] text-center py-0.5 text-brand-gray-300 uppercase tracking-widest">
+                      Utama
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="p-2 bg-brand-gray-800 hover:bg-red-900/30 hover:text-red-400 transition-colors"
+                    className="absolute top-1 right-1 w-5 h-5 bg-black/80 hover:bg-red-900 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3 h-3" />
                   </button>
-                )}
-              </div>
-            ))}
-          </div>
-          <p className="text-xs text-brand-gray-500 mt-2">Gambar pertama akan jadi gambar utama</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <p className="text-xs text-brand-gray-500 mt-3">
+            Foto pertama jadi gambar utama · bisa pilih banyak sekaligus
+          </p>
         </div>
 
         {/* Variants */}
