@@ -23,7 +23,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
       <div className="relative z-10 flex flex-col min-h-screen">
         {/* Logo watermark — overlaid above section backgrounds via mix-blend-mode */}
         <div
-          className="logo-watermark fixed inset-0 pointer-events-none select-none"
+          className="logo-watermark hidden md:block fixed inset-0 pointer-events-none select-none"
           style={{
             zIndex: 2,
             backgroundImage: "url(/logo.png)",
