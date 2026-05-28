@@ -1,28 +1,36 @@
-import nodemailer from "nodemailer";
 import { formatPrice, formatDateTime } from "@/lib/utils";
 
-// ── Transporter (Brevo SMTP) ─────────────────────────────────────────────────
-function getTransporter() {
-  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return null;
-  return nodemailer.createTransport({
-    host:   process.env.EMAIL_HOST  || "smtp-relay.brevo.com",
-    port:   Number(process.env.EMAIL_PORT)  || 587,
-    secure: process.env.EMAIL_SECURE === "true",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-}
-
-const FROM = process.env.EMAIL_FROM || "DUTCH.IND <noreply@dutch-ind.com>";
-
-// ── Kirim helper ─────────────────────────────────────────────────────────────
+// ── Brevo HTTP API (lebih reliable dari SMTP di serverless) ──────────────────
 async function send(to: string, subject: string, html: string) {
-  const t = getTransporter();
-  if (!t) { console.warn("[email] Kredensial belum diset — email tidak dikirim"); return; }
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    console.warn("[email] BREVO_API_KEY belum diset — email tidak dikirim");
+    return;
+  }
+
+  const fromName  = process.env.NEXT_PUBLIC_APP_NAME || "DUTCH.IND";
+  const fromEmail = process.env.EMAIL_FROM_ADDRESS   || "noreply@dutch-ind.com";
+
   try {
-    await t.sendMail({ from: FROM, to, subject, html });
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method:  "POST",
+      headers: {
+        "api-key":      apiKey,
+        "Content-Type": "application/json",
+        "Accept":       "application/json",
+      },
+      body: JSON.stringify({
+        sender:      { name: fromName, email: fromEmail },
+        to:          [{ email: to }],
+        subject,
+        htmlContent: html,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      console.error("[email] Brevo error:", err);
+    }
   } catch (e) {
     console.error("[email] Gagal kirim:", e);
   }

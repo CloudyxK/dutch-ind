@@ -32,6 +32,7 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
   const [zoomOpen, setZoomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Close share dropdown on outside click
@@ -248,7 +249,10 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                     </span>
                   )}
                 </p>
-                <button className="text-xs text-brand-gray-400 hover:text-white underline">
+                <button
+                  onClick={() => setSizeGuideOpen(true)}
+                  className="text-xs text-brand-gray-400 hover:text-white underline"
+                >
                   Panduan Ukuran
                 </button>
               </div>
@@ -475,6 +479,101 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
           </div>
         )}
       </div>
+
+      {/* ── Size Guide Modal ─────────────────────────────── */}
+      {sizeGuideOpen && (
+        <div
+          className="fixed inset-0 z-[110] bg-black/80 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => setSizeGuideOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-lg bg-brand-black border border-brand-gray-700 overflow-y-auto max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-brand-gray-800">
+              <p className="text-xs font-bold uppercase tracking-widest">Panduan Ukuran</p>
+              <button
+                onClick={() => setSizeGuideOpen(false)}
+                className="p-1 hover:text-brand-gray-400 transition-colors"
+                aria-label="Tutup"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-6">
+              {/* How to measure */}
+              <div className="space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-400 mb-3">Cara Mengukur</p>
+                <div className="grid grid-cols-1 gap-2 text-xs text-brand-gray-400">
+                  <div className="flex gap-3 items-start">
+                    <span className="w-5 h-5 border border-brand-gray-600 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">A</span>
+                    <span><strong className="text-white">Lingkar Dada</strong> — Ukur melingkar bagian terlebar dada, tepat di bawah ketiak</span>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <span className="w-5 h-5 border border-brand-gray-600 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">B</span>
+                    <span><strong className="text-white">Lebar Bahu</strong> — Ukur dari ujung bahu kiri ke ujung bahu kanan</span>
+                  </div>
+                  <div className="flex gap-3 items-start">
+                    <span className="w-5 h-5 border border-brand-gray-600 flex items-center justify-center text-[10px] flex-shrink-0 mt-0.5">C</span>
+                    <span><strong className="text-white">Panjang Baju</strong> — Ukur dari leher belakang hingga ujung bawah baju</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Size chart */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-400 mb-3">Tabel Ukuran (cm)</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b border-brand-gray-700">
+                        <th className="text-left py-2.5 pr-4 text-brand-gray-500 font-semibold uppercase tracking-widest text-[10px]">Ukuran</th>
+                        <th className="py-2.5 px-3 text-brand-gray-500 font-semibold uppercase tracking-widest text-[10px]">A — Dada</th>
+                        <th className="py-2.5 px-3 text-brand-gray-500 font-semibold uppercase tracking-widest text-[10px]">B — Bahu</th>
+                        <th className="py-2.5 px-3 text-brand-gray-500 font-semibold uppercase tracking-widest text-[10px]">C — Panjang</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[
+                        { size: "XS", chest: "82–86",  shoulder: "40–42", length: "65–67" },
+                        { size: "S",  chest: "86–91",  shoulder: "42–44", length: "67–69" },
+                        { size: "M",  chest: "91–97",  shoulder: "44–46", length: "69–71" },
+                        { size: "L",  chest: "97–103", shoulder: "46–48", length: "71–73" },
+                        { size: "XL", chest: "103–109",shoulder: "48–50", length: "73–75" },
+                        { size: "XXL",chest: "109–116",shoulder: "50–52", length: "75–77" },
+                      ].map((row) => {
+                        const isSelected = selectedVariantObj?.size === row.size;
+                        return (
+                          <tr
+                            key={row.size}
+                            className={`border-b border-brand-gray-800 transition-colors ${
+                              isSelected ? "bg-white/10 text-white" : "text-brand-gray-400"
+                            }`}
+                          >
+                            <td className="py-2.5 pr-4 font-bold text-white">{row.size}</td>
+                            <td className="py-2.5 px-3 text-center font-mono">{row.chest}</td>
+                            <td className="py-2.5 px-3 text-center font-mono">{row.shoulder}</td>
+                            <td className="py-2.5 px-3 text-center font-mono">{row.length}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Tips */}
+              <div className="bg-brand-gray-900 border border-brand-gray-800 px-4 py-3 space-y-1.5">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500">Tips Memilih Ukuran</p>
+                <p className="text-xs text-brand-gray-400">Jika ukuran tubuhmu berada di antara dua ukuran, pilih yang <strong className="text-white">lebih besar</strong> untuk tampilan lebih longgar, atau yang <strong className="text-white">lebih kecil</strong> untuk fit yang lebih ketat.</p>
+                <p className="text-xs text-brand-gray-400">Semua produk DUTCH.IND menggunakan potongan <strong className="text-white">oversized</strong> — jika kamu biasa pakai M, pertimbangkan S untuk fit standar.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Zoom Modal ───────────────────────────────────── */}
       {zoomOpen && (
