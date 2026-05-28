@@ -38,13 +38,13 @@ model User {
   totalSpend    Float     @default(0)
   orderCount    Int       @default(0)
 
-  addresses     Address[]
-  orders        Order[]
-  cart          Cart?
-  wishlist      Wishlist[]
-  reviews       Review[]
-  sessions      Session[]
-  accounts      Account[]
+  addresses          Address[]
+  orders             Order[]
+  cart               Cart?
+  wishlist           Wishlist[]
+  reviews            Review[]
+  sessions           Session[]
+  accounts           Account[]
 
   @@index([email])
   @@map("users")
@@ -141,18 +141,30 @@ model Product {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  category      Category         @relation(fields: [categoryId], references: [id])
-  images        ProductImage[]
-  variants      ProductVariant[]
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  wishlist      Wishlist[]
-  reviews       Review[]
-  inventoryLogs InventoryLog[]
+  category           Category              @relation(fields: [categoryId], references: [id])
+  images             ProductImage[]
+  variants           ProductVariant[]
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  wishlist           Wishlist[]
+  reviews            Review[]
+  inventoryLogs      InventoryLog[]
+  stockNotifications StockNotification[]
 
   @@index([slug])
   @@index([categoryId])
   @@map("products")
+}
+
+model StockNotification {
+  id        String   @id @default(cuid())
+  email     String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([email, productId])
+  @@map("stock_notifications")
 }
 
 model ProductImage {

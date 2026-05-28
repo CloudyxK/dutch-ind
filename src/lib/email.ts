@@ -158,6 +158,25 @@ export async function sendPasswordResetEmail(to: string, name: string, token: st
   );
 }
 
+// ── Email restock notifikasi ─────────────────────────────────────────────────
+export async function sendRestockEmail(
+  to: string,
+  data: { productName: string; productSlug: string; price: number }
+) {
+  const url = `${process.env.NEXT_PUBLIC_APP_URL}/products/${data.productSlug}`;
+  await send(to, `${data.productName} Kembali Tersedia — DUTCH.IND`,
+    baseTemplate("Produk Kembali Tersedia", `
+      <h1>Stok Kembali!</h1>
+      <p>Kabar baik! Produk yang kamu pantau sudah kembali tersedia:</p>
+      <div class="num">${data.productName}</div>
+      <p>Harga: <strong style="color:#F5F5F5">${formatPrice(data.price)}</strong></p>
+      <p style="font-size:12px;color:#737373">Jangan sampai kehabisan lagi — stok terbatas!</p>
+      <a href="${url}" class="btn">Beli Sekarang →</a>
+      <p style="font-size:11px;color:#525252;margin-top:24px">Kamu menerima email ini karena kamu mendaftar notifikasi stok untuk produk ini.</p>
+    `)
+  );
+}
+
 // ── Email selamat datang ──────────────────────────────────────────────────────
 export async function sendWelcomeEmail(to: string, name: string) {
   await send(to, `Selamat Datang di DUTCH.IND, ${name}!`,

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag, Heart, Star, Share2, ChevronDown, Minus, Plus, X, ZoomIn, Copy, Check, MessageCircle } from "lucide-react";
+import { ShoppingBag, Heart, Star, Share2, ChevronDown, Minus, Plus, X, ZoomIn, Copy, Check, MessageCircle, Loader2 } from "lucide-react";
 import { useCartStore, useWishlistStore } from "@/store/useCartStore";
 import { useSession } from "next-auth/react";
 import { formatPrice, calculateDiscount, formatDate } from "@/lib/utils";
@@ -32,7 +32,10 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
   const [zoomOpen, setZoomOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+  const [sizeGuideOpen,    setSizeGuideOpen]    = useState(false);
+  const [notifyEmail,      setNotifyEmail]      = useState("");
+  const [notifySubmitting, setNotifySubmitting] = useState(false);
+  const [notifyDone,       setNotifyDone]       = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
 
   // Close share dropdown on outside click
@@ -78,6 +81,27 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
     const text = `Cek produk ini di DUTCH.IND 👀\n*${product.name}* — ${formatPrice(product.price)}\n${productUrl}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     setShareOpen(false);
+  }
+
+  async function handleNotifySubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!notifyEmail) return;
+    setNotifySubmitting(true);
+    try {
+      const res = await fetch(`/api/products/${product.slug}/notify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: notifyEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Gagal mendaftar");
+      setNotifyDone(true);
+      toast.success("Kami akan beritahu kamu saat stok tersedia!");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setNotifySubmitting(false);
+    }
   }
 
   function handleCopyLink() {
@@ -302,6 +326,37 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                 </button>
               </div>
             </div>
+
+            {/* Out of stock — notify form */}
+            {product.totalStock === 0 && (
+              <div className="mt-6 border border-brand-gray-700 p-4 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-red-400">Stok Habis</p>
+                {notifyDone ? (
+                  <p className="text-sm text-green-400">Kami akan beritahu kamu lewat email saat stok kembali tersedia.</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-brand-gray-400">Masukkan email kamu — kami akan beritahu saat stok kembali.</p>
+                    <form onSubmit={handleNotifySubmit} className="flex gap-2">
+                      <input
+                        type="email"
+                        value={notifyEmail}
+                        onChange={(e) => setNotifyEmail(e.target.value)}
+                        placeholder="email@kamu.com"
+                        className="input-field flex-1 text-sm"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        disabled={notifySubmitting}
+                        className="btn-primary px-4 text-xs disabled:opacity-50 whitespace-nowrap"
+                      >
+                        {notifySubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Beritahu Saya"}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 mt-6">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { parseJsonSafe, verifySameOrigin, sanitize } from "@/lib/security";
+import { sendRestockEmail } from "@/lib/email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -79,6 +80,33 @@ export async function POST(request: NextRequest) {
       },
     }),
   ]);
+
+  // Kirim notifikasi restock jika stok sebelumnya 0 dan sekarang > 0
+  if (action === "ADD" && prevStock === 0 && newStock > 0) {
+    try {
+      const subscribers = await prisma.stockNotification.findMany({
+        where: { productId: variant.productId },
+        select: { email: true },
+      });
+      if (subscribers.length > 0) {
+        // Kirim email ke semua subscriber (fire-and-forget)
+        Promise.all(
+          subscribers.map((s) =>
+            sendRestockEmail(s.email, {
+              productName: variant.product.name,
+              productSlug: variant.product.slug,
+              price:       variant.product.price,
+            })
+          )
+        ).then(() => {
+          // Hapus semua notifikasi setelah email terkirim
+          prisma.stockNotification.deleteMany({
+            where: { productId: variant.productId },
+          }).catch(() => {});
+        }).catch(() => {});
+      }
+    } catch {}
+  }
 
   return NextResponse.json({ success: true, newStock });
 }

@@ -53,7 +53,12 @@ export async function PATCH(
       where: { id },
       include: {
         user:  { select: { email: true, name: true } },
-        items: { select: { productName: true, variantSize: true, quantity: true, price: true } },
+        items: {
+          include: {
+            product: { select: { name: true } },
+            variant: { select: { size: true } },
+          },
+        },
       },
     });
     if (fullOrder?.user?.email) {
@@ -62,9 +67,9 @@ export async function PATCH(
         orderNumber:   fullOrder.orderNumber,
         total:         fullOrder.total,
         createdAt:     fullOrder.createdAt,
-        items: fullOrder.items.map((i) => ({
-          name:     i.productName,
-          size:     i.variantSize,
+        items: (fullOrder.items as any[]).map((i) => ({
+          name:     i.product.name,
+          size:     i.variant.size,
           quantity: i.quantity,
           price:    i.price,
         })),
