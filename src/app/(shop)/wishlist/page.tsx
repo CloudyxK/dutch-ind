@@ -3,6 +3,7 @@
 import { Heart, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
+import ProductCardSkeleton from "@/components/ui/ProductCardSkeleton";
 import { useWishlistStore, useCartStore } from "@/store/useCartStore";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -60,8 +61,17 @@ export default function WishlistPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen py-10">
+        <div className="container-main">
+          <div className="flex items-center justify-between mb-8">
+            <div className="animate-pulse bg-brand-gray-800 h-6 w-40 rounded" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <ProductCardSkeleton key={i} />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

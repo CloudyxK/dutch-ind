@@ -46,6 +46,8 @@ export default function CheckoutPage() {
   const [showAddressPicker, setShowAddressPicker] = useState(false);
 
   const [codMeetingPoint, setCodMeetingPoint] = useState("");
+  const [giftNote, setGiftNote] = useState("");
+  const [isGift, setIsGift] = useState(false);
   const [codPayment, setCodPayment] = useState<"COD" | "MANUAL">("COD");
   const [manualMethod, setManualMethod] = useState<"TRANSFER" | "QRIS" | "EWALLET">(() => {
     if (typeof window !== "undefined") {
@@ -262,9 +264,11 @@ export default function CheckoutPage() {
             ? `COD - Antar Jemput (${codMeetingPoint || "Samarinda"})`
             : `${form.shippingMethod} - ${form.shippingCarrier}`,
           shippingCost: isCodAntar ? 0 : shippingCost,
-          notes: isCodAntar
-            ? `[COD] Titik pertemuan: ${codMeetingPoint}${form.notes ? `\n${form.notes}` : ""}`
-            : form.notes,
+          notes: [
+            isCodAntar ? `[COD] Titik pertemuan: ${codMeetingPoint}` : "",
+            form.notes,
+            isGift && giftNote ? `[HADIAH] ${giftNote}` : "",
+          ].filter(Boolean).join("\n"),
           paymentMethod,
         }),
       });
@@ -673,9 +677,9 @@ export default function CheckoutPage() {
                   </div>
                 </div>
 
-                {/* Notes */}
-                <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-                  <h2 className="text-sm font-bold uppercase tracking-widest mb-4">
+                {/* Notes + Gift */}
+                <div className="bg-brand-gray-900 border border-brand-gray-700 p-6 space-y-4">
+                  <h2 className="text-sm font-bold uppercase tracking-widest">
                     Catatan Pesanan (Opsional)
                   </h2>
                   <textarea
@@ -685,6 +689,25 @@ export default function CheckoutPage() {
                     className="input-field resize-none h-20"
                     placeholder="Tambahkan catatan untuk penjual..."
                   />
+                  {/* Gift option */}
+                  <label className="flex items-center gap-3 cursor-pointer select-none group">
+                    <div
+                      onClick={() => setIsGift((v) => !v)}
+                      className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isGift ? "bg-white border-white" : "border-brand-gray-600 group-hover:border-white"}`}
+                    >
+                      {isGift && <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                    </div>
+                    <span className="text-sm">🎁 Ini pesanan hadiah — tambahkan pesan</span>
+                  </label>
+                  {isGift && (
+                    <textarea
+                      value={giftNote}
+                      onChange={(e) => setGiftNote(e.target.value)}
+                      className="input-field resize-none h-16 border-white/20 focus:border-white"
+                      placeholder="Pesan hadiah yang akan disertakan dalam paket..."
+                      maxLength={200}
+                    />
+                  )}
                 </div>
               </div>
 

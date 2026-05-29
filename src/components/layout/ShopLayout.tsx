@@ -2,6 +2,7 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 import CartSidebar from "@/components/cart/CartSidebar";
 import FloatingContact from "./FloatingContact";
+import BackToTop from "./BackToTop";
 import SplashScreen from "./SplashScreen";
 import AnnouncementTicker from "./AnnouncementTicker";
 import CustomCursor from "@/components/ui/CustomCursor";
@@ -44,6 +45,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
 
       <CartSidebar />
       <FloatingContact />
+      <BackToTop />
     </>
   );
 }

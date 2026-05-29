@@ -2,111 +2,222 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Kebijakan Privasi — DUTCH.IND",
-  description: "Kebijakan privasi DUTCH.IND — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi kamu.",
+  description:
+    "Kebijakan privasi DUTCH.IND — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi kamu.",
 };
 
-export default function PrivacyPage() {
-  const lastUpdated = "1 Januari 2025";
+const sections = [
+  { id: "pendahuluan", label: "Pendahuluan" },
+  { id: "data-dikumpulkan", label: "Data yang Kami Kumpulkan" },
+  { id: "penggunaan-data", label: "Cara Kami Menggunakan Data" },
+  { id: "keamanan-data", label: "Keamanan Data" },
+  { id: "cookie", label: "Cookie" },
+  { id: "hak-pengguna", label: "Hak Pengguna" },
+  { id: "perubahan-kebijakan", label: "Perubahan Kebijakan" },
+];
 
+export default function PrivacyPage() {
   return (
     <div className="min-h-screen py-16">
-      <div className="container-main max-w-2xl">
-        <p className="text-xs uppercase tracking-widest text-brand-gray-500 mb-3">Legal</p>
-        <h1 className="text-3xl font-display uppercase tracking-wider mb-2">Kebijakan Privasi</h1>
-        <p className="text-xs text-brand-gray-600 mb-12">Terakhir diperbarui: {lastUpdated}</p>
+      <div className="container-main max-w-3xl">
+        {/* Header */}
+        <div className="mb-12">
+          <p className="text-xs uppercase tracking-[.3em] text-brand-gray-500 mb-3">Legal</p>
+          <h1 className="section-title mb-2">Kebijakan Privasi</h1>
+          <p className="text-xs text-brand-gray-600">Berlaku sejak 1 Januari 2025</p>
+        </div>
 
-        <div className="prose prose-invert prose-sm max-w-none space-y-10 text-brand-gray-400 leading-relaxed">
+        <div className="lg:flex lg:gap-16">
+          {/* Sticky sidebar nav — desktop only */}
+          <nav className="hidden lg:block w-48 shrink-0">
+            <div className="sticky top-24">
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-600 mb-4">
+                Isi
+              </p>
+              <ul className="space-y-2.5">
+                {sections.map((s) => (
+                  <li key={s.id}>
+                    <a
+                      href={`#${s.id}`}
+                      className="text-xs text-brand-gray-500 hover:text-white transition-colors duration-150 leading-snug block"
+                    >
+                      {s.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </nav>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">1. Pendahuluan</h2>
-            <p>
-              DUTCH.IND ("kami", "kita") berkomitmen untuk melindungi privasi penggunanya.
-              Kebijakan ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan menjaga
-              informasi pribadi kamu saat menggunakan layanan kami di dutch-ind.vercel.app.
-            </p>
-          </section>
+          {/* Main content */}
+          <div className="flex-1 min-w-0">
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">2. Data Yang Kami Kumpulkan</h2>
-            <p className="mb-3">Saat kamu menggunakan platform kami, kami dapat mengumpulkan:</p>
-            <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li><strong className="text-white">Data akun:</strong> nama, alamat email, nomor telepon, kata sandi terenkripsi</li>
-              <li><strong className="text-white">Data transaksi:</strong> alamat pengiriman, riwayat pesanan, metode pembayaran</li>
-              <li><strong className="text-white">Data teknis:</strong> alamat IP, jenis browser, halaman yang dikunjungi</li>
-              <li><strong className="text-white">Data opsional:</strong> foto profil, username Instagram</li>
-            </ul>
-          </section>
+            {/* Introduction */}
+            <section id="pendahuluan" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8 first:mt-0">
+                Pendahuluan
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>
+                  DUTCH.IND adalah brand streetwear premium Indonesia yang berkomitmen penuh
+                  menjaga privasi setiap penggunanya. Kebijakan ini menjelaskan bagaimana kami
+                  mengumpulkan, menggunakan, dan melindungi informasi pribadi kamu saat
+                  menggunakan layanan kami.
+                </p>
+                <p>
+                  Dengan menggunakan platform DUTCH.IND, kamu menyetujui praktik yang
+                  dijelaskan dalam kebijakan privasi ini.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">3. Penggunaan Data</h2>
-            <p className="mb-3">Kami menggunakan data kamu untuk:</p>
-            <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li>Memproses dan mengantarkan pesanan kamu</li>
-              <li>Mengirim konfirmasi pesanan dan notifikasi pengiriman</li>
-              <li>Memberikan layanan pelanggan</li>
-              <li>Meningkatkan pengalaman berbelanja di platform kami</li>
-              <li>Memenuhi kewajiban hukum yang berlaku di Indonesia</li>
-            </ul>
-          </section>
+            {/* Section 1 */}
+            <section id="data-dikumpulkan" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8">
+                1. Data yang Kami Kumpulkan
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>Saat kamu menggunakan platform kami, kami dapat mengumpulkan data berikut:</p>
+                <ul className="list-disc list-inside space-y-1.5 ml-2">
+                  <li>
+                    <span className="text-white font-medium">Identitas:</span> nama lengkap dan
+                    alamat email
+                  </li>
+                  <li>
+                    <span className="text-white font-medium">Pengiriman:</span> alamat lengkap,
+                    kota, kode pos, nomor telepon
+                  </li>
+                  <li>
+                    <span className="text-white font-medium">Transaksi:</span> riwayat pesanan,
+                    detail pembayaran, metode pembayaran yang dipilih
+                  </li>
+                  <li>
+                    <span className="text-white font-medium">Perangkat:</span> alamat IP, jenis
+                    browser, sistem operasi, halaman yang dikunjungi
+                  </li>
+                </ul>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">4. Penyimpanan dan Keamanan</h2>
-            <p>
-              Data kamu disimpan di server yang dilindungi dengan enkripsi standar industri.
-              Kata sandi disimpan dalam bentuk terenkripsi (bcrypt) dan tidak dapat dibaca oleh siapapun,
-              termasuk tim kami. Kami menggunakan HTTPS untuk semua komunikasi data.
-            </p>
-          </section>
+            {/* Section 2 */}
+            <section id="penggunaan-data" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8">
+                2. Cara Kami Menggunakan Data
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>Data yang kami kumpulkan digunakan untuk:</p>
+                <ul className="list-disc list-inside space-y-1.5 ml-2">
+                  <li>Memproses dan mengelola pesanan kamu</li>
+                  <li>Mengirim email konfirmasi pesanan dan notifikasi pengiriman</li>
+                  <li>Meningkatkan kualitas layanan dan pengalaman berbelanja</li>
+                  <li>
+                    Mengirim newsletter dan informasi produk terbaru (hanya jika kamu
+                    berlangganan)
+                  </li>
+                  <li>Memenuhi kewajiban hukum yang berlaku di Indonesia</li>
+                </ul>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">5. Berbagi Data dengan Pihak Ketiga</h2>
-            <p className="mb-3">Kami dapat berbagi data dengan pihak ketiga berikut <em>hanya</em> sejauh diperlukan:</p>
-            <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li><strong className="text-white">Midtrans</strong> — pemrosesan pembayaran (data transaksi)</li>
-              <li><strong className="text-white">Brevo</strong> — pengiriman email transaksional</li>
-              <li><strong className="text-white">Cloudinary</strong> — penyimpanan gambar (foto profil, produk)</li>
-              <li><strong className="text-white">Jasa ekspedisi</strong> — nama dan alamat pengiriman untuk proses pengiriman</li>
-            </ul>
-            <p className="mt-3">Kami tidak menjual data pribadi kamu kepada pihak manapun.</p>
-          </section>
+            {/* Section 3 */}
+            <section id="keamanan-data" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8">
+                3. Keamanan Data
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>
+                  Kami menyimpan seluruh data kamu menggunakan enkripsi standar industri.
+                  Kata sandi disimpan dalam bentuk hash terenkripsi — tidak dapat dibaca oleh
+                  siapapun, termasuk tim kami.
+                </p>
+                <p>
+                  DUTCH.IND tidak pernah menjual, menyewakan, atau membagikan data pribadi
+                  kamu kepada pihak ketiga untuk tujuan komersial. Data hanya dibagikan kepada
+                  mitra layanan (ekspedisi, payment gateway) sejauh yang diperlukan untuk
+                  memproses pesananmu.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">6. Hak Kamu</h2>
-            <p className="mb-3">Kamu memiliki hak untuk:</p>
-            <ul className="list-disc list-inside space-y-1.5 ml-2">
-              <li>Mengakses dan memperbarui data pribadi kamu melalui halaman profil</li>
-              <li>Menghapus akun dan data terkait dengan menghubungi kami</li>
-              <li>Menolak menerima email pemasaran (unsubscribe tersedia di setiap email)</li>
-            </ul>
-          </section>
+            {/* Section 4 */}
+            <section id="cookie" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8">
+                4. Cookie
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>
+                  Kami menggunakan cookie untuk meningkatkan pengalaman belanja kamu, termasuk
+                  menyimpan isi keranjang belanja dan menjaga sesi login tetap aktif.
+                </p>
+                <p>
+                  Cookie ini bersifat fungsional dan tidak digunakan untuk pelacakan iklan
+                  pihak ketiga. Kamu dapat menonaktifkan cookie melalui pengaturan browser,
+                  namun beberapa fitur platform mungkin tidak berfungsi optimal.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">7. Cookie</h2>
-            <p>
-              Kami menggunakan cookie yang diperlukan untuk fungsi autentikasi (login session).
-              Kami tidak menggunakan cookie untuk pelacakan pemasaran pihak ketiga.
-            </p>
-          </section>
+            {/* Section 5 */}
+            <section id="hak-pengguna" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8">
+                5. Hak Pengguna
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>Kamu memiliki hak penuh atas data pribadimu, termasuk:</p>
+                <ul className="list-disc list-inside space-y-1.5 ml-2">
+                  <li>
+                    <span className="text-white font-medium">Akses:</span> meminta salinan data
+                    pribadi yang kami simpan
+                  </li>
+                  <li>
+                    <span className="text-white font-medium">Koreksi:</span> memperbarui data
+                    yang tidak akurat melalui halaman profil atau menghubungi kami
+                  </li>
+                  <li>
+                    <span className="text-white font-medium">Penghapusan:</span> meminta
+                    penghapusan akun dan seluruh data terkait
+                  </li>
+                  <li>
+                    <span className="text-white font-medium">Portabilitas:</span> menerima data
+                    dalam format yang dapat dibaca mesin
+                  </li>
+                </ul>
+                <p>
+                  Untuk mengajukan permintaan, kirim email ke{" "}
+                  <a
+                    href="mailto:privacy@dutch-ind.com"
+                    className="text-white underline hover:no-underline"
+                  >
+                    privacy@dutch-ind.com
+                  </a>
+                  . Kami akan merespons dalam 7 hari kerja.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">8. Perubahan Kebijakan</h2>
-            <p>
-              Kami dapat memperbarui kebijakan ini sewaktu-waktu. Perubahan signifikan akan kami
-              informasikan melalui email atau notifikasi di platform. Tanggal "Terakhir diperbarui"
-              di atas akan mencerminkan pembaruan terbaru.
-            </p>
-          </section>
+            {/* Section 6 */}
+            <section id="perubahan-kebijakan" className="scroll-mt-24">
+              <h2 className="text-sm font-bold uppercase tracking-widest text-brand-gray-400 mb-3 mt-8">
+                6. Perubahan Kebijakan
+              </h2>
+              <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
+                <p>
+                  Kami berhak memperbarui kebijakan privasi ini sewaktu-waktu. Setiap
+                  perubahan signifikan akan diumumkan melalui website dan, jika memungkinkan,
+                  melalui email ke pengguna terdaftar.
+                </p>
+                <p>
+                  Terus menggunakan layanan DUTCH.IND setelah perubahan berlaku dianggap
+                  sebagai persetujuan kamu terhadap kebijakan yang diperbarui.
+                </p>
+              </div>
+            </section>
 
-          <section>
-            <h2 className="text-sm font-bold uppercase tracking-widest text-white mb-3">9. Hubungi Kami</h2>
-            <p>
-              Untuk pertanyaan terkait privasi, hubungi kami di:{" "}
-              <a href="mailto:adinbilok@gmail.com" className="text-white underline hover:no-underline">
-                adinbilok@gmail.com
-              </a>
-            </p>
-          </section>
-
+            {/* Footer note */}
+            <div className="mt-12 pt-8 border-t border-brand-gray-800">
+              <p className="text-xs text-brand-gray-600">Berlaku sejak 1 Januari 2025</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>

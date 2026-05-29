@@ -2,6 +2,7 @@ import StoreHeader from "@/components/home/StoreHeader";
 import AllProductsShowcase from "@/components/home/AllProductsShowcase";
 import CategorySection from "@/components/home/CategorySection";
 import PromoBanner from "@/components/home/PromoBanner";
+import FlashSaleSection from "@/components/home/FlashSaleSection";
 import BestSellers from "@/components/home/BestSellers";
 import BrandFeatures from "@/components/home/BrandFeatures";
 import MarqueeTicker from "@/components/home/MarqueeTicker";
@@ -163,6 +164,11 @@ export default async function HomePage() {
       {/* Scrolling ticker */}
       <MarqueeTicker />
 
+      {/* Flash sale section — shown prominently if active */}
+      {flashSale && (
+        <FlashSaleSection flashSale={flashSale as any} products={allProducts as any} />
+      )}
+
       {/* ── Products directly — Hellstar style ── */}
       <AllProductsShowcase
         products={allProducts as any}
@@ -174,7 +180,7 @@ export default async function HomePage() {
       {/* Divider ticker */}
       <MarqueeTicker />
 
-      {/* Flash sale if active */}
+      {/* Flash sale promo banner (coupon reminder) if active */}
       <RevealSection direction="none">
         <PromoBanner flashSale={flashSale} />
       </RevealSection>

@@ -8,6 +8,7 @@ import { ShoppingBag, Search, User, Menu, X, Heart, ChevronDown } from "lucide-r
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
 import { cn } from "@/lib/utils";
+import NotificationBell from "@/components/layout/NotificationBell";
 
 const shopLinks = [
   { href: "/products",                         label: "Semua Produk" },
@@ -161,6 +162,9 @@ export default function Navbar() {
                   <Heart className="w-[18px] h-[18px]" />
                 </Link>
               )}
+
+              {/* Notification Bell — shown only for logged-in users */}
+              {session && <NotificationBell />}
 
               {/* User — hidden on mobile (in hamburger menu instead) */}
               {session ? (
