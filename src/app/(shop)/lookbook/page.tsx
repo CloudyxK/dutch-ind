@@ -1,12 +1,12 @@
-import Image from "next/image";
+﻿import Image from "next/image";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
 import RevealSection from "@/components/ui/RevealSection";
 
 export const metadata: Metadata = {
-  title: "Lookbook — DUTCH.IND",
-  description: "Editorial fashion lookbook — koleksi terbaru DUTCH.IND.",
+  title: "Lookbook â€” DUTCH.IND",
+  description: "Editorial fashion lookbook â€” koleksi terbaru DUTCH.IND.",
 };
 
 async function getLookbookProducts() {
@@ -33,7 +33,7 @@ export default async function LookbookPage() {
   return (
     <div className="bg-[#080808] min-h-screen">
 
-      {/* ── Page header ────────────────────────────────────── */}
+      {/* â”€â”€ Page header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="relative overflow-hidden py-28 border-b border-white/[0.05]">
         {/* Grain */}
         <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ opacity: 0.04 }} aria-hidden>
@@ -47,7 +47,7 @@ export default async function LookbookPage() {
         <div className="container-main relative z-10 text-center">
           <RevealSection>
             <p className="text-[10px] uppercase tracking-[0.6em] text-white/30 mb-5">
-              ◈ &nbsp; DUTCH.IND &nbsp; ◈
+              â—ˆ &nbsp; DUTCH.IND &nbsp; â—ˆ
             </p>
             <h1
               className="font-display uppercase"
@@ -64,13 +64,13 @@ export default async function LookbookPage() {
               </span>
             </h1>
             <p className="mt-5 text-sm text-white/30 tracking-wider max-w-sm mx-auto">
-              Editorial visual — koleksi premium yang dirancang untuk generasi urban.
+              Editorial visual â€” koleksi premium yang dirancang untuk generasi urban.
             </p>
           </RevealSection>
         </div>
       </div>
 
-      {/* ── Hero editorial ──────────────────────────────────── */}
+      {/* â”€â”€ Hero editorial â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {hero && (
         <RevealSection>
           <Link
@@ -97,14 +97,14 @@ export default async function LookbookPage() {
                 {(hero as any).name}
               </h2>
               <p className="mt-3 text-sm text-white/40 uppercase tracking-widest">
-                Lihat Produk →
+                Lihat Produk â†’
               </p>
             </div>
           </Link>
         </RevealSection>
       )}
 
-      {/* ── Two large side-by-side ──────────────────────────── */}
+      {/* â”€â”€ Two large side-by-side â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {(large1 || large2) && (
         <div className="grid grid-cols-1 md:grid-cols-2">
           {[large1, large2].filter(Boolean).map((p, i) => (
@@ -133,7 +133,7 @@ export default async function LookbookPage() {
         </div>
       )}
 
-      {/* ── Divider quote ───────────────────────────────────── */}
+      {/* â”€â”€ Divider quote â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <RevealSection>
         <div className="py-24 text-center border-y border-white/[0.04]">
           <blockquote
@@ -151,12 +151,12 @@ export default async function LookbookPage() {
             </span>"
           </blockquote>
           <p className="mt-4 text-[10px] uppercase tracking-[0.5em] text-white/20">
-            DUTCH.IND — EST. 2025
+            DUTCH.IND â€” EST. 2026
           </p>
         </div>
       </RevealSection>
 
-      {/* ── 4-column grid ───────────────────────────────────── */}
+      {/* â”€â”€ 4-column grid â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {mid.length > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4">
           {mid.map((p, i) => (
@@ -182,7 +182,7 @@ export default async function LookbookPage() {
         </div>
       )}
 
-      {/* ── Full-width strip + CTA ───────────────────────────── */}
+      {/* â”€â”€ Full-width strip + CTA â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <RevealSection>
         <div className="py-24 border-t border-white/[0.04]">
           <div className="container-main text-center">

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -54,7 +54,7 @@ export default function HeroSection() {
       ref={sectionRef}
       className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]"
     >
-      {/* ── Film grain ────────────────────────────────────────── */}
+      {/* â”€â”€ Film grain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none z-20"
         style={{ opacity: 0.055, mixBlendMode: "overlay" }}
@@ -67,7 +67,7 @@ export default function HeroSection() {
         <rect width="100%" height="100%" filter="url(#grain-filter)" />
       </svg>
 
-      {/* ── Vignette ─────────────────────────────────────────── */}
+      {/* â”€â”€ Vignette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div
         aria-hidden
         className="absolute inset-0 z-10 pointer-events-none"
@@ -77,7 +77,7 @@ export default function HeroSection() {
         }}
       />
 
-      {/* ── Diagonal light beam ──────────────────────────────── */}
+      {/* â”€â”€ Diagonal light beam â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <motion.div
         aria-hidden
         className="absolute pointer-events-none z-10 will-change-transform"
@@ -92,7 +92,7 @@ export default function HeroSection() {
         }}
       />
 
-      {/* ── Ambient glow ─────────────────────────────────────── */}
+      {/* â”€â”€ Ambient glow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div
         aria-hidden
         className="absolute pointer-events-none z-[5]"
@@ -104,11 +104,11 @@ export default function HeroSection() {
         }}
       />
 
-      {/* ── Cinematic letterbox bars ──────────────────────────── */}
+      {/* â”€â”€ Cinematic letterbox bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div aria-hidden className="absolute top-0 inset-x-0 h-[3.5vh] bg-black z-30 pointer-events-none" />
       <div aria-hidden className="absolute bottom-0 inset-x-0 h-[3.5vh] bg-black z-30 pointer-events-none" />
 
-      {/* ── Background wordmark + parallax ───────────────────── */}
+      {/* â”€â”€ Background wordmark + parallax â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <motion.div
         aria-hidden
         style={{ y: parallaxY }}
@@ -127,7 +127,7 @@ export default function HeroSection() {
         </span>
       </motion.div>
 
-      {/* ── 3D Floating logo emblem (top-right) ─────────────── */}
+      {/* â”€â”€ 3D Floating logo emblem (top-right) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <motion.div
         aria-hidden
         className="absolute pointer-events-none select-none hidden lg:block"
@@ -159,7 +159,7 @@ export default function HeroSection() {
         </div>
       </motion.div>
 
-      {/* ── Main content ─────────────────────────────────────── */}
+      {/* â”€â”€ Main content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <motion.div
         className="container-main relative z-20 py-24"
         variants={container}
@@ -202,7 +202,7 @@ export default function HeroSection() {
           {/* Divider */}
           <motion.div variants={fadePlain} className="mt-8 flex items-center gap-4">
             <div className="h-px flex-1 max-w-[60px] bg-white/15" />
-            <span className="text-[9px] uppercase tracking-[0.4em] text-white/20">Est. 2025</span>
+            <span className="text-[9px] uppercase tracking-[0.4em] text-white/20">Est. 2026</span>
           </motion.div>
 
           {/* Description */}
@@ -211,7 +211,7 @@ export default function HeroSection() {
             className="mt-6 text-sm max-w-[280px] leading-relaxed text-white/38"
             style={{ color: "rgba(255,255,255,0.38)" }}
           >
-            Seller brand lokal streetwear #1 termurah di Samarinda — kualitas premium, harga terjangkau.
+            Seller brand lokal streetwear #1 termurah di Samarinda â€” kualitas premium, harga terjangkau.
           </motion.p>
 
           {/* CTAs */}
@@ -249,7 +249,7 @@ export default function HeroSection() {
         </div>
       </motion.div>
 
-      {/* ── Scroll indicator ─────────────────────────────────── */}
+      {/* â”€â”€ Scroll indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.3 }}

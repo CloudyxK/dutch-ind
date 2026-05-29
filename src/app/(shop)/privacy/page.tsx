@@ -1,9 +1,9 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Kebijakan Privasi — DUTCH.IND",
+  title: "Kebijakan Privasi â€” DUTCH.IND",
   description:
-    "Kebijakan privasi DUTCH.IND — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi kamu.",
+    "Kebijakan privasi DUTCH.IND â€” bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi kamu.",
 };
 
 const sections = [
@@ -24,11 +24,11 @@ export default function PrivacyPage() {
         <div className="mb-12">
           <p className="text-xs uppercase tracking-[.3em] text-brand-gray-500 mb-3">Legal</p>
           <h1 className="section-title mb-2">Kebijakan Privasi</h1>
-          <p className="text-xs text-brand-gray-600">Berlaku sejak 1 Januari 2025</p>
+          <p className="text-xs text-brand-gray-600">Berlaku sejak 1 Januari 2026</p>
         </div>
 
         <div className="lg:flex lg:gap-16">
-          {/* Sticky sidebar nav — desktop only */}
+          {/* Sticky sidebar nav â€” desktop only */}
           <nav className="hidden lg:block w-48 shrink-0">
             <div className="sticky top-24">
               <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-600 mb-4">
@@ -127,7 +127,7 @@ export default function PrivacyPage() {
               <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
                 <p>
                   Kami menyimpan seluruh data kamu menggunakan enkripsi standar industri.
-                  Kata sandi disimpan dalam bentuk hash terenkripsi — tidak dapat dibaca oleh
+                  Kata sandi disimpan dalam bentuk hash terenkripsi â€” tidak dapat dibaca oleh
                   siapapun, termasuk tim kami.
                 </p>
                 <p>
@@ -215,7 +215,7 @@ export default function PrivacyPage() {
 
             {/* Footer note */}
             <div className="mt-12 pt-8 border-t border-brand-gray-800">
-              <p className="text-xs text-brand-gray-600">Berlaku sejak 1 Januari 2025</p>
+              <p className="text-xs text-brand-gray-600">Berlaku sejak 1 Januari 2026</p>
             </div>
           </div>
         </div>

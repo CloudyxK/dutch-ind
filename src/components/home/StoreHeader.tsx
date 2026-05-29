@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import Image from "next/image";
@@ -36,7 +36,7 @@ export default function StoreHeader() {
         }}
       />
 
-      {/* Edition marker — top right */}
+      {/* Edition marker â€” top right */}
       <div className="absolute top-7 right-8 hidden md:block" aria-hidden>
         <p
           className="font-mono text-[8px] uppercase tracking-[0.45em]"
@@ -46,7 +46,7 @@ export default function StoreHeader() {
         </p>
       </div>
 
-      {/* Main content — centered */}
+      {/* Main content â€” centered */}
       <div
         className="container-main relative z-10 flex items-center justify-center"
         style={{ minHeight: "300px" }}
@@ -70,7 +70,7 @@ export default function StoreHeader() {
             <div className="w-7 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
           </motion.div>
 
-          {/* Logo — bigger */}
+          {/* Logo â€” bigger */}
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -101,7 +101,7 @@ export default function StoreHeader() {
             className="text-[10px] uppercase tracking-[0.45em] mb-10"
             style={{ color: "rgba(255,255,255,0.2)" }}
           >
-            Samarinda, Indonesia &nbsp;·&nbsp; Est. 2025
+            Samarinda, Indonesia &nbsp;Â·&nbsp; Est. 2026
           </motion.p>
 
           {/* CTAs */}
@@ -128,7 +128,7 @@ export default function StoreHeader() {
                 className="transition-transform group-hover:translate-x-0.5"
                 style={{ display: "inline-block" }}
               >
-                →
+                â†’
               </span>
             </Link>
           </motion.div>
