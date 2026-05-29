@@ -858,9 +858,8 @@ export default function CheckoutPage() {
                       /* Ekspedisi — pilih salah satu */
                       <>
                         {([
-                          { value: "TRANSFER", label: "Transfer Bank",  desc: "Via virtual account BCA, Mandiri, BNI, BRI",  Icon: Banknote },
-                          { value: "QRIS",     label: "QRIS",           desc: "Scan QR dengan e-wallet / m-banking apapun", Icon: QrCode  },
-                          { value: "EWALLET",  label: "E-Wallet",       desc: "Transfer via GoPay, DANA, OVO, ShopeePay ke nomor tujuan", Icon: Wallet  },
+                          { value: "TRANSFER", label: "Transfer Bank (Virtual Account)",  desc: "BCA, Mandiri, BNI, BRI — nomor VA diberikan setelah pesanan dibuat",  Icon: Banknote },
+                          { value: "EWALLET",  label: "E-Wallet",       desc: "Transfer via GoPay, DANA, OVO, ShopeePay ke nomor tujuan yang tertera", Icon: Wallet  },
                         ] as const).map(({ value, label, desc, Icon }) => (
                           <button
                             key={value}
@@ -878,18 +877,45 @@ export default function CheckoutPage() {
                             </div>
                           </button>
                         ))}
+                        {/* QRIS nonaktif sementara */}
+                        <div className="w-full flex items-center gap-3 p-3 border border-brand-gray-800 text-left opacity-50 cursor-not-allowed select-none">
+                          <div className="w-4 h-4 border-2 border-brand-gray-700 rounded-full flex-shrink-0" />
+                          <QrCode className="w-4 h-4 text-brand-gray-600 flex-shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-semibold text-brand-gray-600">QRIS</p>
+                            <p className="text-[10px] text-brand-gray-700">Sementara tidak tersedia</p>
+                          </div>
+                          <span className="text-[9px] uppercase tracking-wider bg-brand-gray-800 text-brand-gray-600 px-2 py-0.5 flex-shrink-0">Nonaktif</span>
+                        </div>
                       </>
                     )}
                   </div>
 
-                  {/* Notice: Transfer Bank hanya via Virtual Account */}
+                  {/* Notice ketat pembayaran */}
                   {!isCodAntar && manualMethod === "TRANSFER" && (
-                    <div className="flex gap-3 p-3 bg-amber-500/10 border border-amber-500/30 text-amber-400">
-                      <Banknote className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                      <p className="text-[11px] leading-relaxed">
-                        <span className="font-bold block mb-0.5">Perhatian: Transfer Bank hanya via Virtual Account</span>
-                        Pembayaran transfer bank dilakukan melalui nomor virtual account yang akan diberikan setelah pesanan dibuat. Tidak bisa transfer langsung ke rekening biasa.
+                    <div className="space-y-2 p-3 bg-amber-500/10 border border-amber-500/40">
+                      <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Banknote className="w-3.5 h-3.5" /> Wajib Dibaca — Transfer Bank
                       </p>
+                      <ul className="text-[11px] text-amber-300/80 space-y-1 leading-relaxed list-none">
+                        <li>⚠ Transfer <strong>hanya</strong> via nomor <strong>Virtual Account</strong> yang diberikan setelah pesanan — bukan ke rekening biasa</li>
+                        <li>⚠ Nominal transfer harus <strong>tepat sama</strong> dengan total pesanan (termasuk ongkir)</li>
+                        <li>⚠ Jangan tambah atau kurangi nominal — sistem otomatis mencocokkan jumlah</li>
+                        <li>⚠ Upload bukti transfer yang jelas dan tidak buram</li>
+                      </ul>
+                    </div>
+                  )}
+                  {!isCodAntar && manualMethod === "EWALLET" && (
+                    <div className="space-y-2 p-3 bg-amber-500/10 border border-amber-500/40">
+                      <p className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <Wallet className="w-3.5 h-3.5" /> Wajib Dibaca — E-Wallet
+                      </p>
+                      <ul className="text-[11px] text-amber-300/80 space-y-1 leading-relaxed list-none">
+                        <li>⚠ Transfer ke <strong>nomor e-wallet</strong> yang tertera di halaman instruksi pembayaran</li>
+                        <li>⚠ Nominal transfer harus <strong>tepat sama</strong> dengan total pesanan</li>
+                        <li>⚠ Pastikan kamu transfer ke <strong>e-wallet yang benar</strong> (GoPay→GoPay, DANA→DANA, dll)</li>
+                        <li>⚠ Screenshot bukti pembayaran dari dalam aplikasi, bukan dari riwayat notifikasi</li>
+                      </ul>
                     </div>
                   )}
 

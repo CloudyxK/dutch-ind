@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Upload, CheckCircle2, XCircle, Clock, Copy, QrCode, Banknote, Loader2, ImageIcon, Wallet } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Clock, Copy, QrCode, Banknote, Loader2, ImageIcon, Wallet, AlertTriangle, ShieldCheck } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
 type Bank    = { name: string; number: string; holder: string };
@@ -26,6 +26,7 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
   const [preview, setPreview] = useState<string | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"bank" | "ewallet" | "qris">("bank");
+  const [confirmed, setConfirmed] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -202,17 +203,49 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
       {/* Bank accounts */}
       {activeTab === "bank" && hasBank && (
         <div className="space-y-3">
+          {/* Panduan ketat transfer */}
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+            <p className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5" /> Perhatian Sebelum Transfer
+            </p>
+            <ul className="text-[11px] text-amber-300/80 space-y-1 leading-relaxed">
+              <li>• Transfer hanya ke <strong>nomor Virtual Account</strong> di bawah — bukan rekening biasa</li>
+              <li>• Nominal transfer harus <strong>tepat {formatPrice(amount)}</strong> — tidak boleh lebih/kurang</li>
+              <li>• Upload foto bukti transfer yang <strong>jelas & tidak buram</strong></li>
+            </ul>
+          </div>
+
           {config!.banks.map((bank, i) => (
-            <div key={i} className="flex items-center justify-between p-3 bg-brand-gray-800">
-              <div>
-                <p className="text-xs text-brand-gray-500 uppercase tracking-widest">{bank.name}</p>
-                <p className="font-mono font-bold text-lg tracking-widest mt-0.5">{bank.number}</p>
-                <p className="text-xs text-brand-gray-400">{bank.holder}</p>
+            <div key={i} className="border border-brand-gray-700 overflow-hidden">
+              {/* Bank header */}
+              <div className="bg-brand-gray-700 px-4 py-2 flex items-center gap-2">
+                <Banknote className="w-3.5 h-3.5 text-white" />
+                <span className="text-xs font-bold uppercase tracking-wider text-white">{bank.name}</span>
+                <span className="ml-auto text-[10px] text-brand-gray-400 uppercase tracking-widest">Virtual Account</span>
               </div>
-              <button onClick={() => copyToClipboard(bank.number, `No. VA ${bank.name}`)}
-                      className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
-                <Copy className="w-3 h-3" /> Salin
-              </button>
+              <div className="p-4 bg-brand-gray-800 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] text-brand-gray-500 uppercase tracking-widest">No. Virtual Account</p>
+                    <p className="font-mono font-bold text-xl tracking-widest mt-0.5">{bank.number}</p>
+                    <p className="text-xs text-brand-gray-400 mt-0.5">a.n. {bank.holder}</p>
+                  </div>
+                  <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    <button onClick={() => copyToClipboard(bank.number, `No. VA ${bank.name}`)}
+                            className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
+                      <Copy className="w-3 h-3" /> Salin No. VA
+                    </button>
+                    <button onClick={() => copyToClipboard(String(amount), "Nominal")}
+                            className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
+                      <Copy className="w-3 h-3" /> Salin Nominal
+                    </button>
+                  </div>
+                </div>
+                <div className="pt-3 border-t border-brand-gray-700 flex items-center justify-between">
+                  <p className="text-[10px] text-brand-gray-500">Nominal yang harus ditransfer</p>
+                  <p className="font-mono font-bold text-white text-sm">{formatPrice(amount)}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -291,15 +324,12 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
         </div>
       )}
 
-      {/* QRIS */}
-      {activeTab === "qris" && hasQris && (
-        <div className="flex flex-col items-center gap-3 py-2">
-          <p className="text-xs text-brand-gray-400">Scan QR dengan aplikasi e-wallet / m-banking apapun</p>
-          <div className="p-4 bg-white">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={config!.qrisImageUrl} alt="QRIS" className="w-48 h-48 object-contain" />
-          </div>
-          <p className="text-xs text-brand-gray-500">Pastikan nominal sesuai: <span className="text-white font-bold">{formatPrice(amount)}</span></p>
+      {/* QRIS — sementara nonaktif */}
+      {activeTab === "qris" && (
+        <div className="flex flex-col items-center gap-3 py-8 text-center border border-brand-gray-800">
+          <QrCode className="w-8 h-8 text-brand-gray-700" />
+          <p className="text-sm font-semibold text-brand-gray-500">Pembayaran QRIS Sementara Tidak Tersedia</p>
+          <p className="text-xs text-brand-gray-600 max-w-xs">Gunakan Transfer Bank (Virtual Account) atau E-Wallet sebagai alternatif pembayaran.</p>
         </div>
       )}
 
@@ -311,8 +341,30 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
       )}
 
 
+      {/* Konfirmasi wajib sebelum upload */}
+      <div className="border-t border-brand-gray-700 pt-4 space-y-4">
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div className={`w-5 h-5 border-2 flex-shrink-0 mt-0.5 flex items-center justify-center transition-colors ${confirmed ? "bg-white border-white" : "border-brand-gray-600 group-hover:border-brand-gray-400"}`}
+               onClick={() => setConfirmed(v => !v)}>
+            {confirmed && <ShieldCheck className="w-3.5 h-3.5 text-black" />}
+          </div>
+          <span className="text-[11px] text-brand-gray-400 leading-relaxed">
+            Saya menyatakan telah mentransfer sebesar{" "}
+            <span className="font-bold text-white font-mono">{formatPrice(amount)}</span>{" "}
+            ke nomor yang tertera di atas, dan bukti transfer yang saya upload adalah asli dan jelas.
+          </span>
+        </label>
+
+        {!confirmed && (
+          <p className="text-[10px] text-brand-gray-600 flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3" />
+            Centang pernyataan di atas untuk mengaktifkan upload bukti pembayaran.
+          </p>
+        )}
+      </div>
+
       {/* Upload proof */}
-      <div className="border-t border-brand-gray-700 pt-4 space-y-3">
+      <div className="space-y-3">
         <p className="text-xs font-bold uppercase tracking-widest">Upload Bukti Pembayaran</p>
 
         <input ref={fileRef} type="file" accept="image/*" className="hidden"
@@ -329,16 +381,18 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
                       className="text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 px-3 py-1.5 transition-colors">
                 Ganti Gambar
               </button>
-              <button onClick={submitProof} disabled={uploading}
-                      className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50">
+              <button onClick={submitProof} disabled={uploading || !confirmed}
+                      className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {uploading ? "Mengirim..." : "Kirim Bukti Pembayaran"}
               </button>
             </div>
           </div>
         ) : (
-          <button onClick={() => fileRef.current?.click()}
-                  className="w-full border-2 border-dashed border-brand-gray-700 hover:border-white transition-colors py-8 flex flex-col items-center gap-2">
+          <button
+            onClick={() => confirmed ? fileRef.current?.click() : toast.error("Centang pernyataan konfirmasi terlebih dahulu")}
+            className={`w-full border-2 border-dashed py-8 flex flex-col items-center gap-2 transition-colors ${confirmed ? "border-brand-gray-700 hover:border-white cursor-pointer" : "border-brand-gray-800 cursor-not-allowed opacity-40"}`}
+          >
             <ImageIcon className="w-8 h-8 text-brand-gray-600" />
             <span className="text-sm text-brand-gray-400">Klik untuk pilih foto bukti transfer</span>
             <span className="text-xs text-brand-gray-600">JPG, PNG — maks 5MB</span>
