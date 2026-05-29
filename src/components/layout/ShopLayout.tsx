@@ -7,6 +7,7 @@ import SplashScreen from "./SplashScreen";
 import AnnouncementTicker from "./AnnouncementTicker";
 import CustomCursor from "@/components/ui/CustomCursor";
 import MusicToggle from "@/components/ui/MusicToggle";
+import PageTransition from "./PageTransition";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -39,7 +40,7 @@ export default function ShopLayout({ children }: { children: React.ReactNode }) 
 
         <AnnouncementTicker />
         <Navbar />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1"><PageTransition>{children}</PageTransition></main>
         <Footer />
       </div>
 

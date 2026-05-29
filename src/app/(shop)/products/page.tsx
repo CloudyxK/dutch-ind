@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import Link from "next/link";
+import { ShoppingBag } from "lucide-react";
 import prisma from "@/lib/prisma";
 import ProductCard from "@/components/product/ProductCard";
 import ProductFilters from "@/components/product/ProductFilters";
@@ -94,9 +96,37 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<PageProps["
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   if (products.length === 0) {
+    const hasActiveFilter =
+      searchParams.search ||
+      searchParams.category ||
+      searchParams.minPrice ||
+      searchParams.maxPrice ||
+      searchParams.sizes ||
+      searchParams.isFeatured ||
+      searchParams.isNewArrival ||
+      searchParams.isBestSeller;
+
     return (
-      <div className="text-center py-20">
-        <p className="text-brand-gray-400 text-sm">Tidak ada produk ditemukan</p>
+      <div className="text-center py-24 space-y-4">
+        <div className="flex justify-center">
+          <ShoppingBag className="w-16 h-16 text-brand-gray-700" strokeWidth={1.5} />
+        </div>
+        <h2 className="text-xl font-bold uppercase tracking-widest">
+          Tidak ada produk ditemukan
+        </h2>
+        <p className="text-sm text-brand-gray-400 max-w-xs mx-auto">
+          {searchParams.search
+            ? "Coba kata kunci lain atau hapus filter"
+            : "Semua produk sedang habis. Kunjungi lagi nanti."}
+        </p>
+        {hasActiveFilter && (
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-2 btn-secondary text-xs uppercase tracking-widest mt-2"
+          >
+            Lihat Semua Produk
+          </Link>
+        )}
       </div>
     );
   }

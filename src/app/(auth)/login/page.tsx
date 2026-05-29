@@ -45,24 +45,35 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-brand-black flex">
       {/* Left side — branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-brand-gray-900 items-center justify-center p-16">
-        <div>
-          <Link href="/" className="text-4xl font-display tracking-widest">
+      <div
+        className="hidden lg:flex lg:w-1/2 bg-cover bg-center relative"
+        style={{ backgroundImage: "url(https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=1200&q=80)" }}
+      >
+        {/* Dark gradient overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+
+        {/* Content pinned to bottom-left */}
+        <div className="relative z-10 flex flex-col justify-end items-start p-12 pb-16 w-full">
+          <Link href="/" className="text-5xl font-display tracking-widest text-white">
             DUTCH.IND
           </Link>
-          <p className="mt-6 text-brand-gray-400 text-sm leading-relaxed max-w-sm">
-            Masuk ke akun kamu untuk akses koleksi eksklusif, lacak pesanan,
-            dan nikmati pengalaman belanja yang lebih personal.
+          <p className="text-sm text-white/70 mt-3 leading-relaxed">
+            Streetwear premium untuk generasi urban Indonesia
           </p>
-          <div className="mt-10 space-y-4">
-            {["Akses koleksi eksklusif member", "Lacak pesanan real-time", "Wishlist & riwayat belanja"].map(
-              (item) => (
-                <div key={item} className="flex items-center gap-3">
-                  <div className="w-1 h-1 bg-white rounded-full" />
-                  <p className="text-xs text-brand-gray-400 uppercase tracking-wider">{item}</p>
-                </div>
-              )
-            )}
+
+          <div className="grid grid-cols-3 gap-6 mt-8 pt-8 border-t border-white/20">
+            <div>
+              <p className="text-2xl font-bold text-white">500+</p>
+              <p className="text-xs text-white/60 uppercase tracking-wider mt-1">Produk Premium</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">10K+</p>
+              <p className="text-xs text-white/60 uppercase tracking-wider mt-1">Member Aktif</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-white">4.9★</p>
+              <p className="text-xs text-white/60 uppercase tracking-wider mt-1">Rating Produk</p>
+            </div>
           </div>
         </div>
       </div>

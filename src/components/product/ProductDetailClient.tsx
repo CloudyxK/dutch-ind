@@ -42,6 +42,20 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
   const [notifySubmitting, setNotifySubmitting] = useState(false);
   const [notifyDone,       setNotifyDone]       = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
+  const buyButtonRef = useRef<HTMLDivElement>(null);
+  const [showStickyBar, setShowStickyBar] = useState(false);
+
+  // IntersectionObserver: show sticky bar when buy button scrolls out of view
+  useEffect(() => {
+    const el = buyButtonRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Close share dropdown on outside click
   useEffect(() => {
@@ -405,7 +419,7 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
             )}
 
             {/* Actions */}
-            <div className="flex gap-3 mt-6">
+            <div ref={buyButtonRef} className="flex gap-3 mt-6">
               <button
                 onClick={handleAddToCart}
                 disabled={product.totalStock === 0}
@@ -737,36 +751,44 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
         </div>
       )}
 
-      {/* ── Sticky Add to Cart (mobile only) ────────────── */}
+      {/* ── Sticky Buy Bar (mobile only, appears when main buy button scrolls out of view) ── */}
       {product.totalStock > 0 && (
-        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-black border-t border-brand-gray-800">
-          <div className="flex items-stretch h-14">
-            {/* Size selector compact */}
-            <div className="flex items-center gap-1 px-3 overflow-x-auto flex-shrink-0 border-r border-brand-gray-800">
+        <div
+          className={cn(
+            "lg:hidden fixed bottom-0 inset-x-0 z-40 bg-brand-gray-900 border-t border-brand-gray-700 transition-transform duration-300 ease-in-out",
+            showStickyBar ? "translate-y-0" : "translate-y-full"
+          )}
+          style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+        >
+          <div className="flex items-center gap-3 px-4 py-3">
+            {/* Product info */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider truncate">{product.name}</p>
+              <p className="text-sm font-bold text-white mt-0.5">{formatPrice(product.price)}</p>
+            </div>
+            {/* Beli button */}
+            <button
+              onClick={handleAddToCart}
+              className="flex-shrink-0 flex items-center gap-2 bg-white text-black text-xs font-bold uppercase tracking-widest px-5 py-3 hover:bg-white/90 active:scale-[0.98] transition-all"
+            >
+              <ShoppingBag className="w-4 h-4" />
+              {selectedVariant ? "Beli" : "Pilih Ukuran"}
+            </button>
+          </div>
+          {/* Compact size chips shown only when no size is selected */}
+          {!selectedVariant && (
+            <div className="flex items-center gap-1.5 px-4 pb-3 overflow-x-auto">
               {product.variants.filter(v => v.stock > 0).map((v) => (
                 <button
                   key={v.id}
                   onClick={() => setSelectedVariant(v.id)}
-                  className={cn(
-                    "w-9 h-9 text-xs font-bold border flex-shrink-0 transition-all",
-                    selectedVariant === v.id
-                      ? "border-white bg-white text-black"
-                      : "border-brand-gray-600 hover:border-white"
-                  )}
+                  className="w-9 h-9 text-xs font-bold border border-brand-gray-600 hover:border-white flex-shrink-0 transition-all"
                 >
                   {v.size}
                 </button>
               ))}
             </div>
-            {/* Add to cart button */}
-            <button
-              onClick={handleAddToCart}
-              className="flex-1 flex items-center justify-center gap-2 bg-white text-black text-xs font-bold uppercase tracking-widest hover:bg-white/90 active:scale-[0.98] transition-all"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              {selectedVariant ? "Tambah ke Keranjang" : "Pilih Ukuran"}
-            </button>
-          </div>
+          )}
         </div>
       )}
     </div>

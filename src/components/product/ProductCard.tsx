@@ -118,12 +118,13 @@ export default function ProductCard({ product, className, rank }: Props) {
             {isOutOfStock                   && <span className="badge-sold-out text-[10px]">Habis</span>}
           </div>
 
-          {/* Wishlist */}
+          {/* Wishlist — always visible on mobile, hover-only on desktop */}
           <motion.button
             onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
-            className="absolute top-3 right-3 z-10 w-8 h-8 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            className="absolute top-3 right-3 z-10 w-9 h-9 sm:w-8 sm:h-8 flex items-center justify-center bg-black/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: wishlisted || hovered ? 1 : 0 }}
+            style={{ opacity: undefined }}
             whileTap={{ scale: 0.85 }}
             aria-label={wishlisted ? "Hapus wishlist" : "Tambah wishlist"}
           >
@@ -131,6 +132,16 @@ export default function ProductCard({ product, className, rank }: Props) {
               className={cn("w-4 h-4 transition-colors", wishlisted ? "fill-white text-white" : "text-white")}
             />
           </motion.button>
+          {/* Mobile-only permanent wishlist button (not affected by hover animation) */}
+          <button
+            onClick={(e) => { e.preventDefault(); toggleWishlist(product.id); }}
+            className="sm:hidden absolute top-3 right-3 z-20 w-9 h-9 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+            aria-label={wishlisted ? "Hapus wishlist" : "Tambah wishlist"}
+          >
+            <Heart
+              className={cn("w-4 h-4 transition-colors", wishlisted ? "fill-white text-white" : "text-white")}
+            />
+          </button>
 
           {/* Add to cart — slides up on desktop hover, always visible on mobile */}
           {!isOutOfStock && (
@@ -257,7 +268,7 @@ export default function ProductCard({ product, className, rank }: Props) {
           {(product.averageRating ?? 0) > 0 && (
             <div className="flex items-center gap-1 mt-0.5">
               {[1, 2, 3, 4, 5].map((star) => (
-                <svg key={star} className={`w-2.5 h-2.5 ${star <= Math.round(product.averageRating ?? 0) ? 'text-yellow-400' : 'text-white/15'}`} fill="currentColor" viewBox="0 0 20 20">
+                <svg key={star} className={`w-3 h-3 ${star <= Math.round(product.averageRating ?? 0) ? 'text-yellow-400' : 'text-white/15'}`} fill="currentColor" viewBox="0 0 20 20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>
               ))}

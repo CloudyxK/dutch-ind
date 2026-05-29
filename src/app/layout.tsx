@@ -50,7 +50,7 @@ export default async function RootLayout({
           <Analytics />
           {children}
           <Toaster
-            position="bottom-center"
+            position="top-right"
             toastOptions={{
               style: {
                 background: "#171717",

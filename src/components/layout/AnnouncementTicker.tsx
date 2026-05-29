@@ -1,7 +1,7 @@
-"use client";
+import prisma from "@/lib/prisma";
 
-// Teks ticker bisa diubah sesuai promo aktif
-const TICKER_ITEMS = [
+// Default ticker items (used as fallback when no DB setting exists)
+const DEFAULT_TICKER_ITEMS = [
   "NEW COLLECTION AVAILABLE",
   "GRATIS ONGKIR BELANJA DI ATAS RP500.000",
   "GUNAKAN KODE WELCOME10 UNTUK DISKON 10%",
@@ -13,9 +13,31 @@ const TICKER_ITEMS = [
 
 const SEP = "  ✦  ";
 
-export default function AnnouncementTicker() {
+export default async function AnnouncementTicker() {
+  // Fetch ticker setting from DB
+  let tickerItems = DEFAULT_TICKER_ITEMS;
+
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: "announcement_ticker" },
+    });
+
+    if (setting?.value) {
+      const parsed = setting.value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+
+      if (parsed.length > 0) {
+        tickerItems = parsed;
+      }
+    }
+  } catch {
+    // Fall back to defaults on DB error
+  }
+
   // Duplikat untuk seamless loop
-  const text = [...TICKER_ITEMS, ...TICKER_ITEMS].join(SEP) + SEP;
+  const text = [...tickerItems, ...tickerItems].join(SEP) + SEP;
 
   return (
     <div className="relative overflow-hidden bg-white text-black py-2 border-b border-white/10">

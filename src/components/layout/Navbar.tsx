@@ -322,17 +322,28 @@ export default function Navbar() {
                 ))}
 
                 {/* Category sub-links */}
-                <div className="grid grid-cols-2 gap-x-4 py-3 border-b border-white/[0.04]">
-                  {shopLinks.slice(1).map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className="py-3 text-sm font-semibold uppercase tracking-widest text-brand-gray-500 hover:text-white transition-colors active:text-white"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                <div className="border-b border-white/[0.04] pb-4">
+                  <p className="text-[10px] uppercase tracking-widest text-brand-gray-600 pt-4 pb-2">Kategori</p>
+                  <Link
+                    href="/products"
+                    onClick={() => setMobileOpen(false)}
+                    className="block py-2.5 text-sm font-bold uppercase tracking-widest text-brand-gray-400 hover:text-white transition-colors active:text-white"
+                  >
+                    Lihat Semua →
+                  </Link>
+                  <div className="grid grid-cols-2 gap-x-4 mt-1">
+                    {shopLinks.slice(1).map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className="py-3 text-sm font-semibold uppercase tracking-widest text-brand-gray-400 hover:text-white transition-colors active:text-white flex items-center gap-2"
+                      >
+                        <span className="w-1 h-1 bg-brand-gray-600 rounded-full flex-shrink-0" />
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Account links (mobile only) */}

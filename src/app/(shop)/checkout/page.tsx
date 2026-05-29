@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -61,6 +61,15 @@ export default function CheckoutPage() {
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [loading, setLoading] = useState(false);
   const orderPlaced = useRef(false);
+
+  const currentStep = useMemo(() => {
+    if (loading) return 4;
+    const addressFilled = form.recipientName && form.city && form.street;
+    const shippingFilled = addressFilled && form.shippingMethod;
+    if (shippingFilled) return 3;
+    if (addressFilled) return 2;
+    return 1;
+  }, [form.recipientName, form.city, form.street, form.shippingMethod, loading]);
 
   // Distance-based shipping estimate
   const [shippingEst, setShippingEst] = useState<{
@@ -313,16 +322,16 @@ export default function CheckoutPage() {
                 <div key={step.n} className="flex items-center flex-1 last:flex-none">
                   <div className="flex flex-col items-center">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
-                      i === 0 ? "bg-white text-black border-white"
-                      : i <= 3 ? "border-brand-gray-700 text-brand-gray-600"
-                      : "border-brand-gray-700 text-brand-gray-600"
+                      step.n < currentStep ? "bg-white text-black border-white" :
+                      step.n === currentStep ? "bg-white text-black border-white" :
+                      "border-brand-gray-700 text-brand-gray-600"
                     }`}>
-                      {step.n}
+                      {step.n < currentStep ? <Check className="w-3.5 h-3.5" /> : step.n}
                     </div>
-                    <span className="text-[9px] uppercase tracking-wider mt-1 hidden sm:block text-brand-gray-500">{step.label}</span>
+                    <span className={`text-[9px] uppercase tracking-wider mt-1 hidden sm:block transition-colors ${step.n <= currentStep ? "text-brand-gray-300" : "text-brand-gray-500"}`}>{step.label}</span>
                   </div>
                   {i < arr.length - 1 && (
-                    <div className="flex-1 h-px bg-brand-gray-800 mx-1" />
+                    <div className={`flex-1 h-px mx-1 transition-colors ${step.n < currentStep ? "bg-white" : "bg-brand-gray-800"}`} />
                   )}
                 </div>
               ))}
