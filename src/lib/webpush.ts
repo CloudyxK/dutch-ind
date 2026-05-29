@@ -1,11 +1,18 @@
 import webpush from "web-push";
 import prisma from "@/lib/prisma";
 
-webpush.setVapidDetails(
-  process.env.VAPID_EMAIL!,
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!
-);
+// Only configure VAPID if all keys are present (prevents build crash on projects without push notifications)
+if (
+  process.env.VAPID_EMAIL &&
+  process.env.VAPID_PUBLIC_KEY &&
+  process.env.VAPID_PRIVATE_KEY
+) {
+  webpush.setVapidDetails(
+    process.env.VAPID_EMAIL,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+}
 
 const SETTING_KEY = "admin_push_subscriptions";
 
