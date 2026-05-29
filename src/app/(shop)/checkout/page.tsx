@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck, QrCode, Wallet } from "lucide-react";
+import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck, QrCode, Wallet, Star } from "lucide-react";
 
 type SavedAddress = {
   id: string;
@@ -60,6 +60,10 @@ export default function CheckoutPage() {
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  // Points redemption
+  const [userPoints, setUserPoints] = useState(0);
+  const [usePoints, setUsePoints] = useState(false);
   const orderPlaced = useRef(false);
 
   const currentStep = useMemo(() => {
@@ -117,7 +121,13 @@ export default function CheckoutPage() {
   const codBlocked     = cityFilled && !isSamarinda;
   const discountAmount = couponData?.discountAmount || 0;
   const effectiveShippingCost = isCodAntar ? 0 : shippingCost;
-  const total = subtotal + effectiveShippingCost - discountAmount;
+  // Points: 1 point = Rp 100; cap at 50% of (subtotal + shipping - coupon)
+  const baseBeforePoints = subtotal + effectiveShippingCost - discountAmount;
+  const maxPointsToUse = userPoints >= 10
+    ? Math.min(userPoints, Math.floor((baseBeforePoints * 0.5) / 100))
+    : 0;
+  const pointsDiscount = usePoints ? maxPointsToUse * 100 : 0;
+  const total = Math.max(0, baseBeforePoints - pointsDiscount);
 
   // Persist chosen payment method
   useEffect(() => {
@@ -139,6 +149,15 @@ export default function CheckoutPage() {
         setSelectedAddressId(def.id);
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session]);
+
+  // Fetch user points
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/user/points")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.points === "number") setUserPoints(d.points); })
+      .catch(() => {});
   }, [session]);
 
   useEffect(() => {
@@ -311,8 +330,9 @@ export default function CheckoutPage() {
           notes: [
             isCodAntar ? `[COD] Titik pertemuan: ${codMeetingPoint}` : "",
             form.notes,
-            isGift && giftNote ? `[HADIAH] ${giftNote}` : "",
           ].filter(Boolean).join("\n"),
+          giftNote: isGift ? giftNote : undefined,
+          pointsUsed: usePoints ? maxPointsToUse : 0,
           paymentMethod,
         }),
       });
@@ -824,6 +844,36 @@ export default function CheckoutPage() {
                     )}
                   </div>
 
+                  {/* Points redemption toggle */}
+                  {userPoints >= 10 && (
+                    <div className="border-t border-brand-gray-700 pt-4">
+                      <div className="flex items-start gap-2 mb-2">
+                        <Star className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold uppercase tracking-widest">Poin Reward</p>
+                          <p className="text-[11px] text-brand-gray-400 mt-0.5">
+                            Kamu punya <span className="text-white font-semibold">{userPoints} poin</span>{" "}
+                            (senilai {formatPrice(userPoints * 100)})
+                          </p>
+                        </div>
+                      </div>
+                      <label className="flex items-center gap-3 cursor-pointer select-none group">
+                        <div
+                          onClick={() => setUsePoints((v) => !v)}
+                          className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-colors ${usePoints ? "bg-amber-400 border-amber-400" : "border-brand-gray-600 group-hover:border-amber-400"}`}
+                        >
+                          {usePoints && <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                        </div>
+                        <span className="text-xs">
+                          Gunakan poin
+                          {usePoints && maxPointsToUse > 0 && (
+                            <span className="ml-1 text-amber-400 font-semibold">— hemat {formatPrice(pointsDiscount)}</span>
+                          )}
+                        </span>
+                      </label>
+                    </div>
+                  )}
+
                   {/* Totals */}
                   <div className="border-t border-brand-gray-700 pt-4 space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -864,6 +914,12 @@ export default function CheckoutPage() {
                       <div className="flex justify-between text-green-400">
                         <span>Diskon Kupon</span>
                         <span>-{formatPrice(discountAmount)}</span>
+                      </div>
+                    )}
+                    {usePoints && pointsDiscount > 0 && (
+                      <div className="flex justify-between text-amber-400">
+                        <span>Diskon Poin ({maxPointsToUse} poin)</span>
+                        <span>-{formatPrice(pointsDiscount)}</span>
                       </div>
                     )}
                     <div className="border-t border-brand-gray-700 pt-2 flex justify-between font-bold text-base">

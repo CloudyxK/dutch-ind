@@ -153,9 +153,10 @@ export default async function OrderDetailPage({ params }: Props) {
             <div className="flex gap-2 flex-wrap justify-end">
               <Link
                 href={`/profile/orders/${order.id}/invoice`}
+                target="_blank"
                 className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-brand-gray-400 hover:text-white border border-brand-gray-700 hover:border-white px-3 py-1.5 transition-colors"
               >
-                <Printer className="w-3 h-3" />
+                <Printer className="w-3.5 h-3.5" />
                 Invoice
               </Link>
               {["AWAITING_PAYMENT", "PROCESSING"].includes(order.status) && (
@@ -444,6 +445,16 @@ export default async function OrderDetailPage({ params }: Props) {
                 orderId={order.id}
                 existingReturn={returnRequest as any}
               />
+            </div>
+          )}
+
+          {/* Gift Note */}
+          {(order as any).giftNote && (
+            <div className="bg-brand-gray-900 border border-amber-800/50 p-5">
+              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-amber-400 flex items-center gap-2">
+                🎁 Pesan Hadiah
+              </p>
+              <p className="text-sm text-brand-gray-300 italic">&ldquo;{(order as any).giftNote}&rdquo;</p>
             </div>
           )}
 

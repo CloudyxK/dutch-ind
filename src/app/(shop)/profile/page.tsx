@@ -7,6 +7,7 @@ import { Package, Heart, MapPin, ShoppingBag, Star } from "lucide-react";
 import ProfileCard from "@/components/profile/ProfileCard";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
 import RankIcon from "@/components/profile/RankIcon";
+import PushNotificationToggle from "@/components/profile/PushNotificationToggle";
 import { RANKS, RANK_MAP, nextRank, rankProgress, type RankKey } from "@/lib/rank";
 import { formatPrice } from "@/lib/utils";
 
@@ -67,6 +68,11 @@ export default async function ProfilePage() {
                 <LoyaltyBadge size="md" />
               </div>
             )}
+
+            {/* Push notification toggle */}
+            <div className="flex items-center">
+              <PushNotificationToggle />
+            </div>
 
             {/* Stats — 2x2 on mobile, 4 columns on sm+ */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">

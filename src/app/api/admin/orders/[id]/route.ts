@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { fetchTracking, mapToOrderStatus, carrierCodeFromMethod, CarrierCode } from "@/lib/tracking";
 import { sendShippingEmail } from "@/lib/email";
+import { sendPushToUser } from "@/lib/webpush";
 
 async function requireAdmin() {
   const session = await auth();
@@ -88,6 +89,24 @@ export async function PATCH(
           });
         }
       } catch { /* jangan blokir response */ }
+    }
+
+    // Send push notification to user about their order status
+    if (updateData.status) {
+      try {
+        const newStatus = updateData.status;
+        const statusMessages: Record<string, { title: string; body: string }> = {
+          CONFIRMED:  { title: "Pesanan Dikonfirmasi ✅", body: `Pesanan #${order.orderNumber} sudah dikonfirmasi dan sedang diproses.` },
+          PROCESSING: { title: "Sedang Diproses 📦", body: `Pesanan #${order.orderNumber} sedang dikemas.` },
+          SHIPPED:    { title: "Pesanan Dikirim 🚚", body: `Pesanan #${order.orderNumber} sedang dalam perjalanan!` },
+          DELIVERED:  { title: "Pesanan Tiba! 🎉", body: `Pesanan #${order.orderNumber} sudah diterima. Jangan lupa beri ulasan!` },
+          CANCELLED:  { title: "Pesanan Dibatalkan", body: `Pesanan #${order.orderNumber} telah dibatalkan.` },
+        };
+        const msg = statusMessages[newStatus];
+        if (msg) {
+          await sendPushToUser(order.userId, { ...msg, url: `/profile/orders/${order.id}`, tag: `order-${order.id}` });
+        }
+      } catch { /* non-fatal */ }
     }
 
     // Kirim email notifikasi jika status berubah ke SHIPPED

@@ -44,6 +44,55 @@ export async function removeSubscription(endpoint: string) {
   });
 }
 
+// ── User push subscriptions ──────────────────────────────────────────────────
+
+const USER_SUB_PREFIX = "user_push_sub_";
+
+export async function getUserSubscriptions(userId: string): Promise<webpush.PushSubscription[]> {
+  const row = await prisma.setting.findUnique({ where: { key: `${USER_SUB_PREFIX}${userId}` } });
+  if (!row?.value) return [];
+  try { return JSON.parse(row.value); } catch { return []; }
+}
+
+export async function saveUserSubscription(userId: string, sub: webpush.PushSubscription) {
+  const existing = await getUserSubscriptions(userId);
+  const filtered = existing.filter(s => s.endpoint !== sub.endpoint);
+  const updated = [...filtered, sub];
+  await prisma.setting.upsert({
+    where: { key: `${USER_SUB_PREFIX}${userId}` },
+    create: { key: `${USER_SUB_PREFIX}${userId}`, value: JSON.stringify(updated) },
+    update: { value: JSON.stringify(updated) },
+  });
+}
+
+export async function removeUserSubscription(userId: string, endpoint: string) {
+  const existing = await getUserSubscriptions(userId);
+  const updated = existing.filter(s => s.endpoint !== endpoint);
+  await prisma.setting.upsert({
+    where: { key: `${USER_SUB_PREFIX}${userId}` },
+    create: { key: `${USER_SUB_PREFIX}${userId}`, value: JSON.stringify(updated) },
+    update: { value: JSON.stringify(updated) },
+  });
+}
+
+export async function sendPushToUser(userId: string, payload: { title: string; body: string; url?: string; tag?: string }) {
+  const subs = await getUserSubscriptions(userId);
+  if (subs.length === 0) return;
+  const results = await Promise.allSettled(
+    subs.map(sub => webpush.sendNotification(sub, JSON.stringify(payload)))
+  );
+  const toRemove: string[] = [];
+  results.forEach((result, i) => {
+    if (result.status === "rejected") {
+      const err = result.reason as any;
+      if (err?.statusCode === 410 || err?.statusCode === 404) toRemove.push(subs[i].endpoint);
+    }
+  });
+  for (const ep of toRemove) await removeUserSubscription(userId, ep);
+}
+
+// ── Admin push subscriptions ──────────────────────────────────────────────────
+
 export async function sendPushToAdmins(payload: {
   title: string;
   body: string;

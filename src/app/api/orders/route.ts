@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     if (!parsed.ok) return parsed.response;
 
     const body = parsed.data;
-    const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes, paymentMethod } = body;
+    const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes, paymentMethod, pointsUsed, giftNote } = body;
     const isManual = paymentMethod === "MANUAL";
     const isCod    = paymentMethod === "COD";
 
@@ -42,8 +42,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Terlalu banyak item" }, { status: 400 });
     }
 
-    // Sanitize notes
-    const cleanNotes = notes ? sanitize(String(notes)).slice(0, 500) : undefined;
+    // Sanitize notes and giftNote
+    const cleanNotes    = notes    ? sanitize(String(notes)).slice(0, 500)    : undefined;
+    const cleanGiftNote = giftNote ? sanitize(String(giftNote)).slice(0, 300) : undefined;
 
     // Validasi stok dan hitung subtotal
     let subtotal = 0;
@@ -120,7 +121,18 @@ export async function POST(request: NextRequest) {
     const rankDiscount = rankDisPct > 0 ? Math.round((afterCoupon * rankDisPct) / 100) : 0;
     const totalDiscount = discountAmount + rankDiscount;
 
-    const total = subtotal + finalShipping - totalDiscount;
+    // Points redemption: 1 point = Rp 100 discount, minimum 10 points
+    let pointsDiscount = 0;
+    const pointsToRedeem = typeof pointsUsed === "number" && pointsUsed >= 10 ? Math.floor(pointsUsed) : 0;
+
+    if (pointsToRedeem > 0) {
+      const userForPoints = await prisma.user.findUnique({ where: { id: session.user.id }, select: { points: true } });
+      const availablePoints = userForPoints?.points ?? 0;
+      const actualPointsToRedeem = Math.min(pointsToRedeem, availablePoints);
+      pointsDiscount = actualPointsToRedeem * 100;
+    }
+
+    const total = Math.max(0, subtotal + finalShipping - totalDiscount - pointsDiscount);
 
     // Use existing saved address or create a new one
     let savedAddress;
@@ -148,6 +160,7 @@ export async function POST(request: NextRequest) {
           shippingCost: finalShipping,
           total,
           notes: cleanNotes,
+          giftNote: cleanGiftNote ?? null,
           shippingMethod,
           // Set payment deadline for manual payment orders (24 hours)
           paymentDeadline: isManual ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined,
@@ -215,6 +228,18 @@ export async function POST(request: NextRequest) {
 
       return newOrder;
     });
+
+    // Deduct redeemed points from user
+    if (pointsToRedeem > 0) {
+      const userForDeduct = await prisma.user.findUnique({ where: { id: session.user.id }, select: { points: true } });
+      const safeDeduct = Math.min(pointsToRedeem, userForDeduct?.points ?? 0);
+      if (safeDeduct > 0) {
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: { points: { decrement: safeDeduct } },
+        });
+      }
+    }
 
     // Generate Midtrans Snap token (skip for manual/COD)
     let snapToken: string | null = null;
