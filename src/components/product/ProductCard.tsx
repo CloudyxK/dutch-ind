@@ -4,10 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Heart, ShoppingBag } from "lucide-react";
 import ImageWithShimmer from "@/components/ui/ImageWithShimmer";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore, useWishlistStore } from "@/store/useCartStore";
 import { formatPrice, calculateDiscount } from "@/lib/utils";
+import { getEffectivePrice } from "@/lib/salePrice";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +26,27 @@ export default function ProductCard({ product, className, rank }: Props) {
   const [showSizes, setShowSizes]          = useState(false);
   const [added, setAdded]                  = useState(false);
 
+  const { price: effectivePrice, originalPrice, isSale, saleEndsAt } = getEffectivePrice(product as any);
   const discount    = product.comparePrice ? calculateDiscount(product.price, product.comparePrice) : 0;
   const isOutOfStock = product.totalStock === 0;
   const wishlisted   = isWishlisted(product.id);
+
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
+  useEffect(() => {
+    if (!saleEndsAt) return;
+    const end = new Date(saleEndsAt).getTime();
+    if (end - Date.now() > 48 * 3600 * 1000) return;
+    function tick() {
+      const diff = end - Date.now();
+      if (diff <= 0) { setTimeLeft(null); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setTimeLeft(h > 0 ? `${h}j ${m}m` : `${m}m`);
+    }
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, [saleEndsAt]);
 
   const primaryImage   = product.images[0]?.url || "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600";
   const secondaryImage = product.images[1]?.url || primaryImage;
@@ -114,7 +133,8 @@ export default function ProductCard({ product, className, rank }: Props) {
           <div className="absolute top-3 left-3 flex flex-col gap-1 z-10" style={{ left: rank ? "auto" : "12px", right: rank ? "auto" : "auto" }}>
             {!rank && product.isNewArrival  && <span className="badge-new text-[10px]">Baru</span>}
             {!rank && product.isBestSeller  && <span className="badge bg-brand-gray-800/90 text-white text-[10px]">Terlaris</span>}
-            {discount > 0                   && <span className="badge-sale text-[10px]">-{discount}%</span>}
+            {isSale                         && <span className="badge-sale text-[10px]">SALE</span>}
+            {!isSale && discount > 0        && <span className="badge-sale text-[10px]">-{discount}%</span>}
             {isOutOfStock                   && <span className="badge-sold-out text-[10px]">Habis</span>}
           </div>
 
@@ -259,11 +279,16 @@ export default function ProductCard({ product, className, rank }: Props) {
           <h3 className="text-xs font-semibold mt-0.5 truncate group-hover:text-white/80 transition-colors">
             {product.name}
           </h3>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <span className="text-xs font-bold">{formatPrice(product.price)}</span>
-            {product.comparePrice && (
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            {isSale && <span className="badge-sale text-[9px]">SALE</span>}
+            <span className="text-xs font-bold">{formatPrice(effectivePrice)}</span>
+            {originalPrice && (
+              <span className="text-[10px] text-white/30 line-through">{formatPrice(originalPrice)}</span>
+            )}
+            {!originalPrice && product.comparePrice && (
               <span className="text-[10px] text-white/30 line-through">{formatPrice(product.comparePrice)}</span>
             )}
+            {timeLeft && <span className="text-[10px] text-amber-400">&#x23F1; {timeLeft}</span>}
           </div>
           {(product.averageRating ?? 0) > 0 && (
             <div className="flex items-center gap-1 mt-0.5">

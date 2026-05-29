@@ -28,6 +28,31 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotalPrice, clearCart } = useCartStore();
 
+  const [quickBuyItem, setQuickBuyItem] = useState<null | {
+    productId: string; variantId: string; quantity: number;
+    price: number; name: string; image: string;
+  }>(null);
+
+  useEffect(() => {
+    const raw = sessionStorage.getItem("quickBuyItem");
+    if (raw) {
+      try {
+        setQuickBuyItem(JSON.parse(raw));
+        sessionStorage.removeItem("quickBuyItem");
+      } catch {}
+    }
+  }, []);
+
+  const effectiveItems = quickBuyItem
+    ? [{
+        productId: quickBuyItem.productId,
+        variantId: quickBuyItem.variantId,
+        quantity: quickBuyItem.quantity,
+        product: { price: quickBuyItem.price, name: quickBuyItem.name, images: [{ url: quickBuyItem.image }] },
+        variant: { size: "" },
+      }]
+    : items;
+
   const [form, setForm] = useState({
     recipientName: session?.user?.name || "",
     phone: "",
@@ -93,7 +118,9 @@ export default function CheckoutPage() {
   const [calculatingShipping, setCalculatingShipping] = useState(false);
   const [rajaOngkirEtd, setRajaOngkirEtd] = useState<string | null>(null);
 
-  const subtotal = getTotalPrice();
+  const subtotal = quickBuyItem
+    ? quickBuyItem.price * quickBuyItem.quantity
+    : getTotalPrice();
 
   // Dynamic costs from estimate, fallback to defaults
   const regulerCost = shippingEst
@@ -161,10 +188,10 @@ export default function CheckoutPage() {
   }, [session]);
 
   useEffect(() => {
-    if (items.length === 0 && !orderPlaced.current) {
+    if (items.length === 0 && !orderPlaced.current && !quickBuyItem && typeof window !== "undefined" && !sessionStorage.getItem("quickBuyItem")) {
       router.push("/cart");
     }
-  }, [items, router]);
+  }, [items, router, quickBuyItem]);
 
   // Auto-switch away from sameday / cod-antar if city is not Samarinda
   useEffect(() => {
@@ -211,7 +238,7 @@ export default function CheckoutPage() {
       return;
     }
     setCalculatingShipping(true);
-    const totalWeight = items.reduce((sum, item) => sum + item.quantity * 300, 0); // 300g default per item
+    const totalWeight = effectiveItems.reduce((sum, item) => sum + item.quantity * 300, 0); // 300g default per item
     fetch("/api/shipping/cost", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -314,7 +341,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          items: items.map((item) => ({
+          items: effectiveItems.map((item) => ({
             productId: item.productId,
             variantId: item.variantId,
             quantity: item.quantity,
@@ -351,7 +378,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (!session || items.length === 0) return null;
+  if (!session || (items.length === 0 && !quickBuyItem)) return null;
 
   return (
     <>
@@ -790,9 +817,23 @@ export default function CheckoutPage() {
                     Ringkasan Pesanan
                   </h2>
 
+                  {/* Quick buy banner */}
+                  {quickBuyItem && (
+                    <div className="bg-brand-gray-900 border border-brand-gray-700 p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {quickBuyItem.image && <img src={quickBuyItem.image} alt={quickBuyItem.name} className="w-10 h-10 object-cover" />}
+                        <div>
+                          <p className="text-xs font-bold">{quickBuyItem.name}</p>
+                          <p className="text-xs text-brand-gray-400">Qty: {quickBuyItem.quantity} · {formatPrice(quickBuyItem.price)}</p>
+                        </div>
+                      </div>
+                      <a href="/products" className="text-xs text-brand-gray-400 hover:text-white">Lanjut belanja</a>
+                    </div>
+                  )}
+
                   {/* Items */}
                   <ul className="space-y-3 max-h-48 overflow-y-auto">
-                    {items.map((item) => (
+                    {effectiveItems.map((item) => (
                       <li key={item.variantId} className="flex gap-3 text-xs">
                         <div className="relative w-12 h-14 bg-brand-gray-800 flex-shrink-0">
                           <Image
@@ -808,7 +849,9 @@ export default function CheckoutPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{item.product.name}</p>
-                          <p className="text-brand-gray-500">Ukuran: {item.variant.size}</p>
+                          {"variant" in item && (item as any).variant?.size && (
+                            <p className="text-brand-gray-500">Ukuran: {(item as any).variant.size}</p>
+                          )}
                           <p className="font-bold mt-0.5">
                             {formatPrice(item.product.price * item.quantity)}
                           </p>

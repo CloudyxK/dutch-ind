@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, ShoppingBag, ArrowLeft } from "lucide-react";
+import { Heart, ShoppingBag, ArrowLeft, Share2, Copy, Check, X } from "lucide-react";
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
 import ProductCardSkeleton from "@/components/ui/ProductCardSkeleton";
@@ -15,6 +15,30 @@ export default function WishlistPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingAll, setAddingAll] = useState(false);
+  const [shareToken, setShareToken] = useState<string | null>(null);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  async function generateShareLink() {
+    setShareLoading(true);
+    try {
+      const r = await fetch("/api/wishlist/share", { method: "POST" });
+      const d = await r.json();
+      setShareToken(d.token);
+    } finally { setShareLoading(false); }
+  }
+
+  async function copyShareLink() {
+    const url = `${window.location.origin}/wishlist/shared/${shareToken}`;
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function deleteShareLink() {
+    await fetch("/api/wishlist/share", { method: "DELETE" });
+    setShareToken(null);
+  }
 
   async function addAllToCart() {
     if (products.length === 0) return;
@@ -83,19 +107,43 @@ export default function WishlistPage() {
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Lanjut Belanja
         </Link>
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="section-title">Wishlist ({wishlistIds.length})</h1>
-          {products.length > 0 && (
-            <button
-              onClick={addAllToCart}
-              disabled={addingAll}
-              className="btn-secondary flex items-center gap-2 text-xs"
-            >
-              <ShoppingBag className="w-3.5 h-3.5" />
-              {addingAll ? "Menambahkan..." : "Tambah Semua ke Keranjang"}
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {products.length > 0 && (
+              <button
+                onClick={generateShareLink}
+                disabled={shareLoading}
+                className="flex items-center gap-2 text-xs border border-brand-gray-700 hover:border-white px-3 py-1.5 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5" />
+                {shareLoading ? "..." : "Bagikan Wishlist"}
+              </button>
+            )}
+            {products.length > 0 && (
+              <button
+                onClick={addAllToCart}
+                disabled={addingAll}
+                className="btn-secondary flex items-center gap-2 text-xs"
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                {addingAll ? "Menambahkan..." : "Tambah Semua ke Keranjang"}
+              </button>
+            )}
+          </div>
         </div>
+
+        {shareToken && (
+          <div className="mb-6 p-3 bg-brand-gray-900 border border-brand-gray-700 flex items-center gap-2">
+            <input readOnly value={`${typeof window !== "undefined" ? window.location.origin : ""}/wishlist/shared/${shareToken}`} className="flex-1 text-xs bg-transparent text-brand-gray-400 outline-none truncate" />
+            <button onClick={copyShareLink} className="text-xs font-bold text-white hover:text-brand-gray-300 flex items-center gap-1.5">
+              {copied ? <><Check className="w-3.5 h-3.5 text-green-400" /> Disalin</> : <><Copy className="w-3.5 h-3.5" /> Salin</>}
+            </button>
+            <button onClick={deleteShareLink} title="Hapus link" className="text-brand-gray-600 hover:text-red-400 transition-colors">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {products.length === 0 ? (
           <div className="text-center py-20">

@@ -37,6 +37,11 @@ export default function AdminProductForm({ categories, initialData }: Props) {
     isNewArrival: initialData?.isNewArrival || false,
     isBestSeller: initialData?.isBestSeller || false,
     tags: initialData?.tags?.join(", ") || "",
+    salePrice: initialData?.salePrice ?? null as number | null,
+    saleStartAt: initialData?.saleStartAt ?? null as string | null,
+    saleEndAt: initialData?.saleEndAt ?? null as string | null,
+    bulkDiscountQty: initialData?.bulkDiscountQty ?? null as number | null,
+    bulkDiscountPct: initialData?.bulkDiscountPct ?? null as number | null,
   });
 
   const [images, setImages] = useState<string[]>(
@@ -139,6 +144,11 @@ export default function AdminProductForm({ categories, initialData }: Props) {
           .filter(Boolean),
         images: images.filter(Boolean),
         variants: variants.filter((v) => v.size),
+        salePrice: form.salePrice,
+        saleStartAt: form.saleStartAt,
+        saleEndAt: form.saleEndAt,
+        bulkDiscountQty: form.bulkDiscountQty,
+        bulkDiscountPct: form.bulkDiscountPct,
       };
 
       const url = isEdit ? `/api/admin/products/${initialData.id}` : "/api/admin/products";
@@ -246,6 +256,56 @@ export default function AdminProductForm({ categories, initialData }: Props) {
                 placeholder="300"
               />
             </div>
+          </div>
+
+          {/* Sale Schedule */}
+          <div className="border border-brand-gray-700 p-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-400">Jadwal Diskon</p>
+            <div>
+              <label className="input-label">Harga Sale (Rp)</label>
+              <input type="number" min="0" className="input-field w-full mt-1"
+                placeholder="Kosongkan jika tidak ada"
+                value={form.salePrice ?? ""}
+                onChange={e => setForm(f => ({ ...f, salePrice: e.target.value ? Number(e.target.value) : null }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="input-label">Mulai</label>
+                <input type="datetime-local" className="input-field w-full mt-1"
+                  value={form.saleStartAt ? new Date(form.saleStartAt).toISOString().slice(0,16) : ""}
+                  onChange={e => setForm(f => ({ ...f, saleStartAt: e.target.value || null }))} />
+              </div>
+              <div>
+                <label className="input-label">Berakhir</label>
+                <input type="datetime-local" className="input-field w-full mt-1"
+                  value={form.saleEndAt ? new Date(form.saleEndAt).toISOString().slice(0,16) : ""}
+                  onChange={e => setForm(f => ({ ...f, saleEndAt: e.target.value || null }))} />
+              </div>
+            </div>
+          </div>
+
+          {/* Bulk Discount */}
+          <div className="border border-brand-gray-700 p-4 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-400">Diskon Beli Banyak</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="input-label">Min. Qty</label>
+                <input type="number" min="2" className="input-field w-full mt-1"
+                  placeholder="cth: 2"
+                  value={form.bulkDiscountQty ?? ""}
+                  onChange={e => setForm(f => ({ ...f, bulkDiscountQty: e.target.value ? Number(e.target.value) : null }))} />
+              </div>
+              <div>
+                <label className="input-label">Diskon (%)</label>
+                <input type="number" min="1" max="100" className="input-field w-full mt-1"
+                  placeholder="cth: 10"
+                  value={form.bulkDiscountPct ?? ""}
+                  onChange={e => setForm(f => ({ ...f, bulkDiscountPct: e.target.value ? Number(e.target.value) : null }))} />
+              </div>
+            </div>
+            {form.bulkDiscountQty && form.bulkDiscountPct && (
+              <p className="text-[11px] text-green-400">Beli {form.bulkDiscountQty}+ item → hemat {form.bulkDiscountPct}%</p>
+            )}
           </div>
 
           <div>

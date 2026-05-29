@@ -140,6 +140,11 @@ model Product {
   totalStock   Int      @default(0)
   soldCount    Int      @default(0)
   viewCount    Int      @default(0)
+  salePrice       Float?
+  saleStartAt     DateTime?
+  saleEndAt       DateTime?
+  bulkDiscountQty Int?
+  bulkDiscountPct Float?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -162,6 +167,7 @@ model Product {
 model StockNotification {
   id        String   @id @default(cuid())
   email     String
+  phone     String?
   productId String
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())

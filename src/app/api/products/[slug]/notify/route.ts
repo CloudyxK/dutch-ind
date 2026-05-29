@@ -11,6 +11,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const { slug } = await params;
   const body = await request.json().catch(() => ({}));
   const email = sanitize(String(body.email ?? "")).toLowerCase().trim();
+  const phone = body.phone ? sanitize(String(body.phone)).trim() : null;
 
   if (!email || !isValidEmail(email))
     return NextResponse.json({ error: "Email tidak valid" }, { status: 400 });
@@ -26,8 +27,8 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   await prisma.stockNotification.upsert({
     where:  { email_productId: { email, productId: product.id } },
-    create: { email, productId: product.id },
-    update: {},
+    create: { email, phone: phone || null, productId: product.id },
+    update: { phone: phone || null },
   });
 
   return NextResponse.json({ success: true });

@@ -43,6 +43,11 @@ export default async function EditProductPage({ params }: Props) {
     tags: (() => { try { return JSON.parse(product.tags || "[]"); } catch { return []; } })(),
     images: product.images.map((img) => ({ url: img.url })),
     variants: product.variants.map((v) => ({ size: v.size, stock: v.stock })),
+    salePrice: product.salePrice,
+    saleStartAt: product.saleStartAt,
+    saleEndAt: product.saleEndAt,
+    bulkDiscountQty: product.bulkDiscountQty,
+    bulkDiscountPct: product.bulkDiscountPct,
   };
 
   return (

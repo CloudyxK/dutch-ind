@@ -13,10 +13,15 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
     const { id } = await params;
     const body = await request.json();
-    const { images, variants, tags, ...rest } = body;
+    const { images, variants, tags, salePrice, saleStartAt, saleEndAt, bulkDiscountQty, bulkDiscountPct, ...rest } = body;
     const data = {
       ...rest,
       tags: Array.isArray(tags) ? JSON.stringify(tags) : (tags ?? "[]"),
+      salePrice:       salePrice       != null ? Number(salePrice) : null,
+      saleStartAt:     saleStartAt     ? new Date(saleStartAt) : null,
+      saleEndAt:       saleEndAt       ? new Date(saleEndAt)   : null,
+      bulkDiscountQty: bulkDiscountQty != null ? Number(bulkDiscountQty) : null,
+      bulkDiscountPct: bulkDiscountPct != null ? Number(bulkDiscountPct) : null,
     };
 
     const totalStock = variants?.reduce((sum: number, v: any) => sum + (v.stock || 0), 0) ?? undefined;
@@ -113,7 +118,14 @@ export async function PATCH(request: NextRequest, { params }: Params) {
 
     const { id } = await params;
     const body = await request.json();
-    const product = await prisma.product.update({ where: { id }, data: body });
+    const { salePrice, saleStartAt, saleEndAt, bulkDiscountQty, bulkDiscountPct, ...rest } = body;
+    const patchData: any = { ...rest };
+    if ("salePrice" in body)       patchData.salePrice       = salePrice       != null ? Number(salePrice) : null;
+    if ("saleStartAt" in body)     patchData.saleStartAt     = saleStartAt     ? new Date(saleStartAt) : null;
+    if ("saleEndAt" in body)       patchData.saleEndAt       = saleEndAt       ? new Date(saleEndAt)   : null;
+    if ("bulkDiscountQty" in body) patchData.bulkDiscountQty = bulkDiscountQty != null ? Number(bulkDiscountQty) : null;
+    if ("bulkDiscountPct" in body) patchData.bulkDiscountPct = bulkDiscountPct != null ? Number(bulkDiscountPct) : null;
+    const product = await prisma.product.update({ where: { id }, data: patchData });
     return NextResponse.json({ success: true, data: product });
   } catch (error) {
     return NextResponse.json({ error: "Gagal memperbarui produk" }, { status: 500 });

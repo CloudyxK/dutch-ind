@@ -26,7 +26,7 @@ export default async function StockNotificationsPage() {
       string,
       {
         product: { id: string; name: string; slug: string; price: number; totalStock: number };
-        subscribers: { id: string; email: string; createdAt: Date }[];
+        subscribers: { id: string; email: string; phone: string | null; createdAt: Date }[];
       }
     >
   >((acc, n) => {
@@ -36,6 +36,7 @@ export default async function StockNotificationsPage() {
     acc[n.productId].subscribers.push({
       id: n.id,
       email: n.email,
+      phone: (n as any).phone ?? null,
       createdAt: n.createdAt,
     });
     return acc;
@@ -93,6 +94,9 @@ export default async function StockNotificationsPage() {
                         Email
                       </th>
                       <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-widest text-brand-gray-500">
+                        WA
+                      </th>
+                      <th className="text-left px-5 py-3 text-xs font-medium uppercase tracking-widest text-brand-gray-500">
                         Tanggal Daftar
                       </th>
                     </tr>
@@ -109,6 +113,17 @@ export default async function StockNotificationsPage() {
                       >
                         <td className="px-5 py-3 text-brand-gray-300 font-mono text-xs">
                           {sub.email}
+                        </td>
+                        <td className="px-5 py-3 text-xs">
+                          {sub.phone && (
+                            <a
+                              href={`https://wa.me/${sub.phone.replace(/\D/g,'').replace(/^0/,'62')}?text=${encodeURIComponent(`Halo! Produk "${product.name}" yang kamu tunggu sudah tersedia kembali di DUTCH.IND! Segera order sebelum kehabisan 🔥`)}`}
+                              target="_blank" rel="noopener noreferrer"
+                              className="text-xs text-green-400 hover:text-green-300 font-medium"
+                            >
+                              WA
+                            </a>
+                          )}
                         </td>
                         <td className="px-5 py-3 text-brand-gray-500 text-xs">
                           {formatDateTime(sub.createdAt)}

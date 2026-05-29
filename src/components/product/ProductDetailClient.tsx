@@ -7,6 +7,7 @@ import { ShoppingBag, Heart, Star, Share2, ChevronDown, Minus, Plus, X, ZoomIn, 
 import { useCartStore, useWishlistStore } from "@/store/useCartStore";
 import { useSession } from "next-auth/react";
 import { formatPrice, calculateDiscount, formatDate } from "@/lib/utils";
+import { getEffectivePrice } from "@/lib/salePrice";
 import ProductCard from "./ProductCard";
 import ReviewForm from "./ReviewForm";
 import RecentlyViewedSection from "./RecentlyViewedSection";
@@ -19,7 +20,14 @@ import "swiper/css";
 import "swiper/css/pagination";
 
 interface Props {
-  product: Product & { averageRating: number };
+  product: Product & {
+    averageRating: number;
+    salePrice?: number | null;
+    saleStartAt?: Date | string | null;
+    saleEndAt?: Date | string | null;
+    bulkDiscountQty?: number | null;
+    bulkDiscountPct?: number | null;
+  };
   related: Product[];
   hasPurchased?: boolean;
 }
@@ -39,6 +47,7 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
   const [copied, setCopied] = useState(false);
   const [sizeGuideOpen,    setSizeGuideOpen]    = useState(false);
   const [notifyEmail,      setNotifyEmail]      = useState("");
+  const [notifyPhone,      setNotifyPhone]      = useState("");
   const [notifySubmitting, setNotifySubmitting] = useState(false);
   const [notifyDone,       setNotifyDone]       = useState(false);
   const shareRef = useRef<HTMLDivElement>(null);
@@ -98,6 +107,24 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
     ? calculateDiscount(product.price, product.comparePrice)
     : 0;
 
+  const { price: effectivePrice, originalPrice: saleOriginalPrice, isSale, saleEndsAt } = getEffectivePrice(product);
+  const [saleTimeLeft, setSaleTimeLeft] = useState<string | null>(null);
+  useEffect(() => {
+    if (!saleEndsAt) return;
+    const end = new Date(saleEndsAt).getTime();
+    if (end - Date.now() > 48 * 3600 * 1000) return;
+    function tick() {
+      const diff = end - Date.now();
+      if (diff <= 0) { setSaleTimeLeft(null); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      setSaleTimeLeft(h > 0 ? `${h}j ${m}m` : `${m}m`);
+    }
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, [saleEndsAt]);
+
   const selectedVariantObj = product.variants.find((v) => v.id === selectedVariant);
 
   const productUrl = typeof window !== "undefined"
@@ -118,7 +145,7 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
       const res = await fetch(`/api/products/${product.slug}/notify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: notifyEmail }),
+        body: JSON.stringify({ email: notifyEmail, phone: notifyPhone.trim() || undefined }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Gagal mendaftar");
@@ -148,6 +175,22 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
     if (!selectedVariantObj) return;
     addItem(product, selectedVariantObj, quantity);
   };
+
+  function handleQuickBuy() {
+    if (!selectedVariant) { toast.error("Pilih ukuran terlebih dahulu"); return; }
+    if (!selectedVariantObj || selectedVariantObj.stock === 0) { toast.error("Stok habis"); return; }
+
+    const item = {
+      productId: product.id,
+      variantId: selectedVariantObj.id,
+      quantity,
+      price: product.price,
+      name: product.name,
+      image: product.images[0]?.url ?? "",
+    };
+    sessionStorage.setItem("quickBuyItem", JSON.stringify(item));
+    window.location.href = "/checkout?quick=1";
+  }
 
   const sections = [
     {
@@ -311,15 +354,24 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
             )}
 
             {/* Price */}
-            <div className="flex items-center gap-3 mt-4">
-              <span className="text-2xl font-bold">{formatPrice(product.price)}</span>
-              {product.comparePrice && (
+            <div className="flex items-center gap-3 mt-4 flex-wrap">
+              {isSale && <span className="badge-sale">SALE</span>}
+              <span className="text-2xl font-bold">{formatPrice(effectivePrice)}</span>
+              {isSale && saleOriginalPrice && (
+                <span className="text-brand-gray-500 line-through text-sm">
+                  {formatPrice(saleOriginalPrice)}
+                </span>
+              )}
+              {!isSale && product.comparePrice && (
                 <>
                   <span className="text-brand-gray-500 line-through text-sm">
                     {formatPrice(product.comparePrice)}
                   </span>
                   <span className="badge-sale">Hemat {discount}%</span>
                 </>
+              )}
+              {saleTimeLeft && (
+                <span className="text-sm text-amber-400 font-medium">&#x23F1; Berakhir dalam {saleTimeLeft}</span>
               )}
             </div>
 
@@ -395,6 +447,15 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
               </div>
             </div>
 
+            {/* Bulk Discount Badge */}
+            {product.bulkDiscountQty && product.bulkDiscountPct && (
+              <div className={`mt-2 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold border ${quantity >= product.bulkDiscountQty ? "border-green-700 text-green-400 bg-green-900/20" : "border-brand-gray-700 text-brand-gray-400"}`}>
+                {quantity >= product.bulkDiscountQty
+                  ? `✓ Diskon ${product.bulkDiscountPct}% aktif!`
+                  : `Beli ${product.bulkDiscountQty}+ item → hemat ${product.bulkDiscountPct}%`}
+              </div>
+            )}
+
             {/* Out of stock — notify form */}
             {product.totalStock === 0 && (
               <div className="mt-6 border border-brand-gray-700 p-4 space-y-3">
@@ -404,22 +465,31 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                 ) : (
                   <>
                     <p className="text-xs text-brand-gray-400">Masukkan email kamu — kami akan beritahu saat stok kembali.</p>
-                    <form onSubmit={handleNotifySubmit} className="flex gap-2">
+                    <form onSubmit={handleNotifySubmit} className="space-y-2">
+                      <div className="flex gap-2">
+                        <input
+                          type="email"
+                          value={notifyEmail}
+                          onChange={(e) => setNotifyEmail(e.target.value)}
+                          placeholder="email@kamu.com"
+                          className="input-field flex-1 text-sm"
+                          required
+                        />
+                        <button
+                          type="submit"
+                          disabled={notifySubmitting}
+                          className="btn-primary px-4 text-xs disabled:opacity-50 whitespace-nowrap"
+                        >
+                          {notifySubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Beritahu Saya"}
+                        </button>
+                      </div>
                       <input
-                        type="email"
-                        value={notifyEmail}
-                        onChange={(e) => setNotifyEmail(e.target.value)}
-                        placeholder="email@kamu.com"
-                        className="input-field flex-1 text-sm"
-                        required
+                        type="tel"
+                        className="input-field"
+                        placeholder="No. WA (opsional)"
+                        value={notifyPhone}
+                        onChange={e => setNotifyPhone(e.target.value)}
                       />
-                      <button
-                        type="submit"
-                        disabled={notifySubmitting}
-                        className="btn-primary px-4 text-xs disabled:opacity-50 whitespace-nowrap"
-                      >
-                        {notifySubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Beritahu Saya"}
-                      </button>
                     </form>
                   </>
                 )}
@@ -427,7 +497,8 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
             )}
 
             {/* Actions */}
-            <div ref={buyButtonRef} className="flex gap-3 mt-6">
+            <div ref={buyButtonRef} className="mt-6 space-y-2">
+              <div className="flex gap-3">
               <button
                 onClick={handleAddToCart}
                 disabled={product.totalStock === 0}
@@ -478,6 +549,14 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                   </div>
                 )}
               </div>
+              </div>
+              <button
+                onClick={handleQuickBuy}
+                disabled={!selectedVariantObj || selectedVariantObj.stock === 0}
+                className="w-full py-3.5 bg-white text-black text-sm font-bold uppercase tracking-widest hover:bg-brand-gray-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Beli Sekarang
+              </button>
             </div>
 
             {/* SKU */}

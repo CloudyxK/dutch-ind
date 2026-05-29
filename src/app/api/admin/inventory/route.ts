@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     try {
       const subscribers = await prisma.stockNotification.findMany({
         where: { productId: variant.productId },
-        select: { email: true },
+        select: { email: true, phone: true },
       });
       if (subscribers.length > 0) {
         // Kirim email ke semua subscriber (fire-and-forget)
@@ -104,6 +104,21 @@ export async function POST(request: NextRequest) {
             where: { productId: variant.productId },
           }).catch(() => {});
         }).catch(() => {});
+
+        // Store WA notification links for admin review
+        const phoneSubscribers = subscribers.filter(s => (s as any).phone);
+        if (phoneSubscribers.length > 0) {
+          const waData = phoneSubscribers.map(s => ({
+            phone: (s as any).phone,
+            productName: variant.product.name,
+            productSlug: variant.product.slug,
+          }));
+          prisma.setting.upsert({
+            where: { key: `restock_wa_${variant.productId}` },
+            create: { key: `restock_wa_${variant.productId}`, value: JSON.stringify(waData) },
+            update: { value: JSON.stringify(waData) },
+          }).catch(() => {});
+        }
       }
     } catch {}
   }
