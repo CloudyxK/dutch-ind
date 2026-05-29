@@ -130,9 +130,14 @@
   /* Input styles */
   .input-field {
     @apply w-full bg-brand-gray-900 border border-brand-gray-700 text-white
-           px-4 py-3 text-sm placeholder:text-brand-gray-500
+           px-4 py-3 text-base sm:text-sm placeholder:text-brand-gray-500
            focus:outline-none focus:border-white focus:ring-1 focus:ring-white
            transition-colors duration-200;
+    /* Prevent iOS Safari auto-zoom on focus (requires font-size >= 16px) */
+    font-size: max(1rem, 16px);
+  }
+  @media (min-width: 640px) {
+    .input-field { font-size: 0.875rem; }
   }
 
   .input-label {
@@ -182,6 +187,29 @@
   .px-safe  {
     padding-left:  max(1rem, var(--safe-left));
     padding-right: max(1rem, var(--safe-right));
+  }
+
+  /* Floating contact — lift above sticky buy bar when active */
+  body.sticky-buy-bar-open .floating-contact {
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 6.5rem) !important;
+  }
+
+  /* Prevent long-press context menu on product images */
+  @media (pointer: coarse) {
+    img { -webkit-touch-callout: none; user-select: none; }
+  }
+
+  /* Swiper pagination dots — larger on mobile */
+  .swiper-pagination-bullet {
+    width: 8px !important;
+    height: 8px !important;
+    opacity: 0.5 !important;
+    background: #fff !important;
+  }
+  .swiper-pagination-bullet-active {
+    opacity: 1 !important;
+    width: 20px !important;
+    border-radius: 4px !important;
   }
 
   /* Marquee container */

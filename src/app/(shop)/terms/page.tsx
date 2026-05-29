@@ -1,4 +1,6 @@
 ﻿import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Syarat & Ketentuan â€” DUTCH.IND",
@@ -20,6 +22,10 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen py-16">
       <div className="container-main max-w-3xl">
+        <Link href="/" className="inline-flex items-center gap-2 text-xs text-brand-gray-400 hover:text-white transition-colors mb-6 group">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Beranda
+        </Link>
         {/* Header */}
         <div className="mb-12">
           <p className="text-xs uppercase tracking-[.3em] text-brand-gray-500 mb-3">Legal</p>

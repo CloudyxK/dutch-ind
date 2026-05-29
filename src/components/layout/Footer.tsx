@@ -222,7 +222,10 @@ export default async function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-6 pt-4 md:mt-10 md:pt-6 border-t border-brand-gray-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div
+          className="mt-6 pt-4 md:mt-10 md:pt-6 border-t border-brand-gray-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))" }}
+        >
           <p className="text-xs text-brand-gray-600">© {new Date().getFullYear()} DUTCH.IND. Hak Cipta Dilindungi.</p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="text-xs text-brand-gray-600">Metode Pembayaran:</span>

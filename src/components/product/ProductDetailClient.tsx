@@ -50,11 +50,19 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
     const el = buyButtonRef.current;
     if (!el) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyBar(!entry.isIntersecting),
+      ([entry]) => {
+        const visible = !entry.isIntersecting;
+        setShowStickyBar(visible);
+        // Lift floating WA button above sticky bar via CSS class on body
+        document.body.classList.toggle("sticky-buy-bar-open", visible);
+      },
       { threshold: 0 }
     );
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      document.body.classList.remove("sticky-buy-bar-open");
+    };
   }, []);
 
   // Close share dropdown on outside click

@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 export const metadata = {
   title: "Lacak Pesanan — DUTCH.IND",
@@ -19,6 +21,10 @@ export default async function TrackPage({
   return (
     <main className="min-h-screen bg-black flex items-center justify-center px-4 py-20">
       <div className="w-full max-w-md">
+        <Link href="/" className="inline-flex items-center gap-2 text-xs text-brand-gray-400 hover:text-white transition-colors mb-6 group">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Beranda
+        </Link>
         {/* Heading */}
         <div className="text-center mb-10">
           <p className="text-[10px] uppercase tracking-[0.5em] text-brand-gray-500 mb-3">

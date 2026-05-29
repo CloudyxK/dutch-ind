@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, ShoppingBag } from "lucide-react";
+import { Heart, ShoppingBag, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
 import ProductCardSkeleton from "@/components/ui/ProductCardSkeleton";
@@ -79,6 +79,10 @@ export default function WishlistPage() {
   return (
     <div className="min-h-screen py-10">
       <div className="container-main">
+        <Link href="/products" className="inline-flex items-center gap-2 text-xs text-brand-gray-400 hover:text-white transition-colors mb-6 group">
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Lanjut Belanja
+        </Link>
         <div className="flex items-center justify-between mb-8">
           <h1 className="section-title">Wishlist ({wishlistIds.length})</h1>
           {products.length > 0 && (

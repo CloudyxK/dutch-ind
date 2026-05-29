@@ -68,22 +68,22 @@ export default async function ProfilePage() {
               </div>
             )}
 
-            {/* Stats — 3 columns */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-brand-gray-900 border border-brand-gray-700 p-4 text-center">
-                <Package className="w-5 h-5 mx-auto mb-2 text-brand-gray-400" />
-                <p className="text-2xl font-bold">{user._count.orders}</p>
-                <p className="text-xs text-brand-gray-400 mt-0.5">Total Pesanan</p>
+            {/* Stats — 3 columns (compact on small screens) */}
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="bg-brand-gray-900 border border-brand-gray-700 p-3 sm:p-4 text-center">
+                <Package className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-brand-gray-400" />
+                <p className="text-xl sm:text-2xl font-bold">{user._count.orders}</p>
+                <p className="text-[10px] sm:text-xs text-brand-gray-400 mt-0.5 leading-tight">Total Pesanan</p>
               </div>
-              <div className="bg-brand-gray-900 border border-brand-gray-700 p-4 text-center">
-                <Heart className="w-5 h-5 mx-auto mb-2 text-brand-gray-400" />
-                <p className="text-2xl font-bold">{user._count.wishlist}</p>
-                <p className="text-xs text-brand-gray-400 mt-0.5">Wishlist</p>
+              <div className="bg-brand-gray-900 border border-brand-gray-700 p-3 sm:p-4 text-center">
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-brand-gray-400" />
+                <p className="text-xl sm:text-2xl font-bold">{user._count.wishlist}</p>
+                <p className="text-[10px] sm:text-xs text-brand-gray-400 mt-0.5 leading-tight">Wishlist</p>
               </div>
-              <div className="bg-brand-gray-900 border border-brand-gray-700 p-4 text-center">
-                <ShoppingBag className="w-5 h-5 mx-auto mb-2 text-brand-gray-400" />
-                <p className="text-lg font-bold leading-tight">{formatPrice(user.totalSpend ?? 0)}</p>
-                <p className="text-xs text-brand-gray-400 mt-0.5">Total Belanja</p>
+              <div className="bg-brand-gray-900 border border-brand-gray-700 p-3 sm:p-4 text-center">
+                <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-brand-gray-400" />
+                <p className="text-sm sm:text-base font-bold leading-tight">{formatPrice(user.totalSpend ?? 0)}</p>
+                <p className="text-[10px] sm:text-xs text-brand-gray-400 mt-0.5 leading-tight">Total Belanja</p>
               </div>
             </div>
 
