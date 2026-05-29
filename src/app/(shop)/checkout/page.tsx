@@ -858,7 +858,7 @@ export default function CheckoutPage() {
                       /* Ekspedisi — pilih salah satu */
                       <>
                         {([
-                          { value: "TRANSFER", label: "Transfer Bank",  desc: "BCA, Mandiri, BNI, BRI — upload bukti",  Icon: Banknote },
+                          { value: "TRANSFER", label: "Transfer Bank",  desc: "Via virtual account BCA, Mandiri, BNI, BRI",  Icon: Banknote },
                           { value: "QRIS",     label: "QRIS",           desc: "Scan QR dengan e-wallet / m-banking apapun", Icon: QrCode  },
                           { value: "EWALLET",  label: "E-Wallet",       desc: "DANA, GoPay, OVO, ShopeePay — upload bukti", Icon: Wallet  },
                         ] as const).map(({ value, label, desc, Icon }) => (
@@ -881,6 +881,17 @@ export default function CheckoutPage() {
                       </>
                     )}
                   </div>
+
+                  {/* Notice: Transfer Bank hanya via Virtual Account */}
+                  {!isCodAntar && manualMethod === "TRANSFER" && (
+                    <div className="flex gap-3 p-3 bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                      <Banknote className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                      <p className="text-[11px] leading-relaxed">
+                        <span className="font-bold block mb-0.5">Perhatian: Transfer Bank hanya via Virtual Account</span>
+                        Pembayaran transfer bank dilakukan melalui nomor virtual account yang akan diberikan setelah pesanan dibuat. Tidak bisa transfer langsung ke rekening biasa.
+                      </p>
+                    </div>
+                  )}
 
                   <button
                     type="submit"
