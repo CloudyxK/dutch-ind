@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, ShoppingBag } from "lucide-react";
+import ImageWithShimmer from "@/components/ui/ImageWithShimmer";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore, useWishlistStore } from "@/store/useCartStore";
@@ -70,7 +71,7 @@ export default function ProductCard({ product, className, rank }: Props) {
           onMouseLeave={() => { setHovered(false); setShowSizes(false); }}
         >
           {/* Primary image */}
-          <Image
+          <ImageWithShimmer
             src={primaryImage}
             alt={product.name}
             fill

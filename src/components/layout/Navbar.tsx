@@ -4,9 +4,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { ShoppingBag, Search, User, Menu, X, Heart, ChevronDown } from "lucide-react";
+import { ShoppingBag, Search, User, Menu, X, Heart, ChevronDown, Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCartStore } from "@/store/useCartStore";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import NotificationBell from "@/components/layout/NotificationBell";
 
@@ -28,8 +29,10 @@ const navLinks = [
 export default function Navbar() {
   const { data: session }            = useSession();
   const { getTotalItems, toggleCart } = useCartStore();
+  const pathname                       = usePathname();
   const [scrolled, setScrolled]        = useState(false);
   const [mobileOpen, setMobileOpen]    = useState(false);
+  const [notifCount, setNotifCount]    = useState(0);
   const [searchOpen, setSearchOpen]    = useState(false);
   const [searchQuery, setSearchQuery]  = useState("");
   const [shopOpen, setShopOpen]        = useState(false);
@@ -43,14 +46,26 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Fetch notif count for mobile badge
+  useEffect(() => {
+    if (!session) return;
+    fetch("/api/notifications")
+      .then(r => r.json())
+      .then(d => setNotifCount(d.count ?? 0))
+      .catch(() => {});
+  }, [session]);
+
   function handleLogoClick() {
     if (logoSpinning) return;
     setLogoSpinning(true);
     setTimeout(() => setLogoSpinning(false), 800);
   }
 
-  const linkClass =
-    "text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-gray-400 hover:text-white transition-colors duration-200";
+  const linkClass = (href: string) =>
+    cn(
+      "text-[11px] font-semibold uppercase tracking-[0.22em] transition-colors duration-200",
+      pathname === href ? "text-white" : "text-brand-gray-400 hover:text-white"
+    );
 
   return (
     <>
@@ -95,7 +110,7 @@ export default function Navbar() {
             {/* Desktop nav */}
             <nav className="hidden lg:flex items-center gap-8">
               {navLinks.map((link) => (
-                <Link key={link.href} href={link.href} className={linkClass}>
+                <Link key={link.href} href={link.href} className={linkClass(link.href)}>
                   {link.label}
                 </Link>
               ))}
@@ -106,7 +121,7 @@ export default function Navbar() {
                 onMouseEnter={() => setShopOpen(true)}
                 onMouseLeave={() => setShopOpen(false)}
               >
-                <button className={cn(linkClass, "flex items-center gap-1")}>
+                <button className={cn(linkClass("/products"), "flex items-center gap-1")}>
                   Toko
                   <ChevronDown
                     className={cn(
@@ -325,8 +340,13 @@ export default function Navbar() {
                   <div className="py-4 border-b border-white/[0.04] space-y-1">
                     <p className="text-[10px] uppercase tracking-widest text-brand-gray-600 mb-3">Akun</p>
                     <Link href="/profile"        onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><User className="w-4 h-4" /> Profil Saya</Link>
-                    <Link href="/profile/orders" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><ShoppingBag className="w-4 h-4" /> Pesanan Saya</Link>
-                    <Link href="/wishlist"        onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><Heart className="w-4 h-4" /> Wishlist</Link>
+                    <Link href="/profile/orders" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors">
+                      <ShoppingBag className="w-4 h-4" /> Pesanan Saya
+                      {notifCount > 0 && (
+                        <span className="ml-auto w-5 h-5 bg-red-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full">{notifCount > 9 ? "9+" : notifCount}</span>
+                      )}
+                    </Link>
+                    <Link href="/wishlist" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><Heart className="w-4 h-4" /> Wishlist</Link>
                     {(session.user as any)?.role === "ADMIN" && (
                       <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-yellow-400 hover:text-yellow-300 transition-colors">
                         Dashboard Admin

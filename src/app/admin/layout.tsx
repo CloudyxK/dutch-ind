@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminShell from "@/components/admin/AdminShell";
 import CustomCursor from "@/components/ui/CustomCursor";
 
 export default async function AdminLayout({
@@ -15,7 +15,7 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="min-h-screen flex" style={{ background: "#060608" }}>
+    <div className="min-h-screen" style={{ background: "#060608" }}>
       {/* Custom cursor — same as storefront */}
       <CustomCursor />
 
@@ -31,11 +31,7 @@ export default async function AdminLayout({
         }}
       />
 
-      <AdminSidebar />
-
-      <main className="admin-main flex-1 overflow-auto relative z-10">
-        <div className="p-6 md:p-8">{children}</div>
-      </main>
+      <AdminShell>{children}</AdminShell>
     </div>
   );
 }

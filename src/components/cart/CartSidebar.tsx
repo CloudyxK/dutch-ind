@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
+import ImageWithShimmer from "@/components/ui/ImageWithShimmer";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
@@ -73,7 +73,7 @@ export default function CartSidebar() {
                 <li key={item.variantId} className="flex gap-3 p-4">
                   {/* Image */}
                   <div className="relative w-20 h-24 bg-brand-gray-800 flex-shrink-0 overflow-hidden">
-                    <Image
+                    <ImageWithShimmer
                       src={item.product.images[0]?.url || "/placeholder.jpg"}
                       alt={item.product.name}
                       fill

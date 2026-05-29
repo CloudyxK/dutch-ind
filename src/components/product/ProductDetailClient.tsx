@@ -13,6 +13,10 @@ import RecentlyViewedSection from "./RecentlyViewedSection";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
 
 interface Props {
   product: Product & { averageRating: number };
@@ -147,69 +151,110 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
       {/* Breadcrumb */}
       <div className="border-b border-brand-gray-800 py-3">
         <div className="container-main">
-          <nav className="flex items-center gap-2 text-xs text-brand-gray-500">
+          <nav className="flex items-center gap-1.5 text-xs text-brand-gray-500">
             <Link href="/" className="hover:text-white transition-colors">Beranda</Link>
-            <span>/</span>
-            <Link href="/products" className="hover:text-white transition-colors">Produk</Link>
-            <span>/</span>
+            <span className="text-brand-gray-600">›</span>
             <Link
               href={`/products?category=${product.category.slug}`}
               className="hover:text-white transition-colors"
             >
               {product.category.name}
             </Link>
-            <span>/</span>
-            <span className="text-white truncate max-w-[200px]">{product.name}</span>
+            <span className="text-brand-gray-600">›</span>
+            <span className="text-white truncate max-w-[160px] sm:max-w-[280px]">{product.name}</span>
           </nav>
         </div>
       </div>
 
-      <div className="container-main py-10">
+      <div className="container-main py-10 scroll-mt-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16">
           {/* Images */}
           <div className="space-y-3">
-            {/* Main image */}
-            <div
-              className="relative aspect-square bg-brand-gray-800 overflow-hidden cursor-zoom-in group"
-              onClick={() => setZoomOpen(true)}
-            >
-              <Image
-                src={product.images[activeImage]?.url || ""}
-                alt={product.name}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-              />
-              {discount > 0 && (
-                <div className="absolute top-4 left-4">
-                  <span className="badge-sale">-{discount}%</span>
-                </div>
-              )}
-              {/* Zoom hint */}
-              <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm px-2 py-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                <ZoomIn className="w-3 h-3 text-white/70" />
-                <span className="text-[10px] text-white/70 uppercase tracking-wider">Zoom</span>
-              </div>
+            {/* Mobile: Swiper touch gallery */}
+            <div className="lg:hidden">
+              <Swiper
+                modules={[Pagination]}
+                pagination={{ clickable: true }}
+                loop={product.images.length > 1}
+                onSlideChange={(swiper) => setActiveImage(swiper.realIndex)}
+                style={{
+                  // @ts-ignore css variables
+                  "--swiper-pagination-color": "#fff",
+                  "--swiper-pagination-bullet-inactive-color": "rgba(255,255,255,0.3)",
+                  "--swiper-pagination-bullet-inactive-opacity": "1",
+                } as React.CSSProperties}
+                className="w-full aspect-square bg-brand-gray-800 overflow-hidden"
+              >
+                {product.images.map((img, i) => (
+                  <SwiperSlide key={img.id}>
+                    <div
+                      className="relative w-full aspect-square cursor-zoom-in group"
+                      onClick={() => setZoomOpen(true)}
+                    >
+                      <Image
+                        src={img.url}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
+                        sizes="100vw"
+                        priority={i === 0}
+                      />
+                      {discount > 0 && i === 0 && (
+                        <div className="absolute top-4 left-4">
+                          <span className="badge-sale">-{discount}%</span>
+                        </div>
+                      )}
+                    </div>
+                  </SwiperSlide>
+                ))}
+              </Swiper>
             </div>
 
-            {/* Thumbnails */}
-            {product.images.length > 1 && (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {product.images.map((img, i) => (
-                  <button
-                    key={img.id}
-                    onClick={() => setActiveImage(i)}
-                    className={cn(
-                      "relative w-20 h-20 flex-shrink-0 overflow-hidden bg-brand-gray-800 border-2 transition-colors",
-                      activeImage === i ? "border-white" : "border-transparent hover:border-brand-gray-500"
-                    )}
-                  >
-                    <Image src={img.url} alt="" fill className="object-cover" sizes="80px" />
-                  </button>
-                ))}
+            {/* Desktop: click-based thumbnail + main image */}
+            <div className="hidden lg:block space-y-3">
+              {/* Main image */}
+              <div
+                className="relative aspect-square bg-brand-gray-800 overflow-hidden cursor-zoom-in group"
+                onClick={() => setZoomOpen(true)}
+              >
+                <Image
+                  src={product.images[activeImage]?.url || ""}
+                  alt={product.name}
+                  fill
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  sizes="50vw"
+                  priority
+                />
+                {discount > 0 && (
+                  <div className="absolute top-4 left-4">
+                    <span className="badge-sale">-{discount}%</span>
+                  </div>
+                )}
+                {/* Zoom hint */}
+                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-sm px-2 py-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <ZoomIn className="w-3 h-3 text-white/70" />
+                  <span className="text-[10px] text-white/70 uppercase tracking-wider">Zoom</span>
+                </div>
               </div>
-            )}
+
+              {/* Thumbnails */}
+              {product.images.length > 1 && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {product.images.map((img, i) => (
+                    <button
+                      key={img.id}
+                      onClick={() => setActiveImage(i)}
+                      className={cn(
+                        "relative w-20 h-20 flex-shrink-0 overflow-hidden bg-brand-gray-800 border-2 transition-colors",
+                        activeImage === i ? "border-white" : "border-transparent hover:border-brand-gray-500"
+                      )}
+                    >
+                      <Image src={img.url} alt="" fill className="object-cover" sizes="80px" />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Product Info */}
@@ -288,7 +333,7 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                     onClick={() => setSelectedVariant(variant.id)}
                     disabled={variant.stock === 0}
                     className={cn(
-                      "w-12 h-12 text-sm font-bold border-2 transition-all duration-200",
+                      "h-11 min-w-[44px] px-3 text-sm font-bold border-2 transition-all duration-200",
                       variant.stock === 0
                         ? "border-brand-gray-700 text-brand-gray-600 cursor-not-allowed line-through"
                         : selectedVariant === variant.id

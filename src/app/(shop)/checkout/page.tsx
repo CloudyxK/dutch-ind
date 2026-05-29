@@ -210,6 +210,12 @@ export default function CheckoutPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  function handleFocus(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 300); // wait for iOS keyboard to appear
+  }
+
   const applyCoupon = async () => {
     if (!couponCode.trim()) return;
     setCheckingCoupon(true);
@@ -415,6 +421,7 @@ export default function CheckoutPage() {
                         name="recipientName"
                         value={form.recipientName}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field"
                         placeholder="Nama lengkap penerima"
                         required
@@ -427,6 +434,7 @@ export default function CheckoutPage() {
                         type="tel"
                         value={form.phone}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field"
                         placeholder="08xxxxxxxxxx"
                         required
@@ -438,6 +446,7 @@ export default function CheckoutPage() {
                         name="province"
                         value={form.province}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field"
                         placeholder="Contoh: DKI Jakarta"
                         required
@@ -449,6 +458,7 @@ export default function CheckoutPage() {
                         name="city"
                         value={form.city}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field"
                         placeholder="Contoh: Jakarta Selatan"
                         required
@@ -460,6 +470,7 @@ export default function CheckoutPage() {
                         name="district"
                         value={form.district}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field"
                         placeholder="Contoh: Kebayoran Baru"
                         required
@@ -471,6 +482,7 @@ export default function CheckoutPage() {
                         name="postalCode"
                         value={form.postalCode}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field"
                         placeholder="12345"
                         required
@@ -482,6 +494,7 @@ export default function CheckoutPage() {
                         name="street"
                         value={form.street}
                         onChange={handleChange}
+                        onFocus={handleFocus}
                         className="input-field resize-none h-20"
                         placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan"
                         required
@@ -686,6 +699,7 @@ export default function CheckoutPage() {
                     name="notes"
                     value={form.notes}
                     onChange={handleChange}
+                    onFocus={handleFocus}
                     className="input-field resize-none h-20"
                     placeholder="Tambahkan catatan untuk penjual..."
                   />

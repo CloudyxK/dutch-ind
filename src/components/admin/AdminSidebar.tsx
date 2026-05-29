@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import PushNotificationSetup from "./PushNotificationSetup";
 import {
   LayoutDashboard,
@@ -69,17 +70,44 @@ const navGroups = [
   },
 ];
 
-export default function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
 
+  // Close drawer on route change (mobile nav)
+  useEffect(() => {
+    if (onClose) onClose();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   return (
-    <aside
-      className="w-56 min-h-screen flex flex-col relative z-10 flex-shrink-0"
-      style={{
-        background: "#050507",
-        borderRight: "1px solid rgba(255,255,255,0.06)",
-      }}
-    >
+    <>
+      {/* Mobile overlay — shown when drawer is open */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-30 bg-black/60 lg:hidden"
+          onClick={onClose}
+          aria-hidden
+        />
+      )}
+
+      <aside
+        className={cn(
+          // Desktop: always visible fixed sidebar
+          "fixed top-0 left-0 h-full w-56 flex flex-col z-40 flex-shrink-0 transition-transform duration-300",
+          // Mobile: slide in/out
+          "lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        )}
+        style={{
+          background: "#050507",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
       {/* Logo */}
       <div
         className="px-5 py-6"
@@ -182,5 +210,6 @@ export default function AdminSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

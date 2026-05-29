@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import ProductCard from "@/components/product/ProductCard";
 import ProductFilters from "@/components/product/ProductFilters";
+import SortDropdown from "@/components/product/SortDropdown";
 import { ProductGridSkeleton } from "@/components/ui/LoadingSkeleton";
 import type { Metadata } from "next";
 
@@ -162,6 +163,13 @@ export default async function ProductsPage({ searchParams }: PageProps) {
 
           {/* Main Content */}
           <div className="flex-1">
+            {/* Sort bar */}
+            <div className="flex items-center justify-between mb-4 min-h-[36px]">
+              <span className="text-[10px] uppercase tracking-widest text-brand-gray-500">Urutkan</span>
+              <Suspense fallback={<div className="w-28 h-9 bg-brand-gray-800 animate-pulse" />}>
+                <SortDropdown />
+              </Suspense>
+            </div>
             <Suspense fallback={<ProductGridSkeleton />}>
               <ProductGrid searchParams={params} />
             </Suspense>

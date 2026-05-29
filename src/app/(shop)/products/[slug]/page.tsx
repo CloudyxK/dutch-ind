@@ -14,31 +14,34 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const product = await prisma.product.findUnique({
     where: { slug },
-    select: { name: true, description: true, images: true, price: true, category: { select: { name: true } } },
+    include: {
+      images: { take: 1, orderBy: { sortOrder: "asc" } },
+      category: true,
+    },
   });
-  if (!product) return { title: "Produk Tidak Ditemukan" };
+  if (!product) return { title: "Produk tidak ditemukan" };
 
-  const imageUrl = product.images[0]?.url ?? null;
-  const description = `${product.description.slice(0, 130)} — Rp${product.price.toLocaleString("id-ID")}`;
+  const description =
+    product.description?.slice(0, 160) || `Beli ${product.name} di DUTCH.IND`;
 
   return {
     title: `${product.name} — DUTCH.IND`,
     description,
     openGraph: {
-      title: `${product.name} — DUTCH.IND`,
+      title: product.name,
       description,
       type: "website",
       url: `${APP_URL}/products/${slug}`,
-      images: imageUrl
-        ? [{ url: imageUrl, width: 1200, height: 1200, alt: product.name }]
+      images: product.images[0]
+        ? [{ url: product.images[0].url, width: 1200, height: 630, alt: product.name }]
         : [],
       siteName: "DUTCH.IND",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${product.name} — DUTCH.IND`,
+      title: product.name,
       description,
-      images: imageUrl ? [imageUrl] : [],
+      images: product.images[0] ? [product.images[0].url] : [],
     },
   };
 }
