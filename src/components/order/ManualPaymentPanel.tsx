@@ -11,14 +11,15 @@ type EWallet = { name: string; number: string; holder: string };
 type PaymentConfig = { banks: Bank[]; ewallets?: EWallet[]; qrisImageUrl: string; instructions: string } | null;
 
 type Props = {
-  orderId:       string;
-  amount:        number;
-  status:        string; // MANUAL_PENDING | WAITING_CONFIRMATION | SUCCESS | REJECTED
-  paymentMethod?: string; // TRANSFER | QRIS | EWALLET | MANUAL (legacy)
-  rejectedReason?: string | null;
+  orderId:          string;
+  amount:           number;
+  status:           string; // MANUAL_PENDING | WAITING_CONFIRMATION | SUCCESS | REJECTED
+  paymentMethod?:   string; // TRANSFER | QRIS | EWALLET | MANUAL (legacy)
+  rejectedReason?:  string | null;
+  paymentDeadline?: string | null; // ISO string
 };
 
-export default function ManualPaymentPanel({ orderId, amount, status, paymentMethod, rejectedReason }: Props) {
+export default function ManualPaymentPanel({ orderId, amount, status, paymentMethod, rejectedReason, paymentDeadline }: Props) {
   const router = useRouter();
   const [config, setConfig] = useState<PaymentConfig>(null);
   const [loading, setLoading] = useState(true);
@@ -156,6 +157,14 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
           {formatPrice(amount)}
         </span>
       </div>
+
+      {/* Payment deadline warning */}
+      {paymentDeadline && (
+        <div className="p-3 bg-red-500/10 border border-red-500/30 text-center">
+          <p className="text-xs text-red-400">⏰ Bayar sebelum <strong>{new Date(paymentDeadline).toLocaleString("id-ID")}</strong></p>
+          <p className="text-[10px] text-red-400/70 mt-0.5">Pesanan otomatis dibatalkan jika melewati batas waktu</p>
+        </div>
+      )}
 
       {/* Peringatan utama sebelum bayar */}
       <div className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/40">

@@ -557,6 +557,15 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                       {review.comment}
                     </p>
                   )}
+                  {review.imageUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={review.imageUrl}
+                      alt="Foto review"
+                      className="mt-2 rounded w-24 h-24 object-cover cursor-pointer"
+                      onClick={() => window.open(review.imageUrl, "_blank")}
+                    />
+                  )}
                   {review.isVerified && (
                     <p className="mt-2 text-[10px] text-green-500 uppercase tracking-wider">
                       ✓ Pembelian Terverifikasi

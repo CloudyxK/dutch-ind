@@ -68,7 +68,27 @@ export async function PATCH(
       }
     }
 
+    // Fetch current order before update to check previous status
+    const orderBefore = await prisma.order.findUnique({ where: { id } });
     const order = await prisma.order.update({ where: { id }, data: updateData });
+
+    // Award reward points when order is confirmed/delivered (first time only)
+    if (
+      updateData.status &&
+      ["CONFIRMED", "DELIVERED", "COMPLETED"].includes(updateData.status) &&
+      orderBefore &&
+      !["CONFIRMED", "DELIVERED", "COMPLETED"].includes(orderBefore.status)
+    ) {
+      try {
+        const pointsEarned = Math.floor(order.total / 1000);
+        if (pointsEarned > 0) {
+          await prisma.user.update({
+            where: { id: order.userId },
+            data: { points: { increment: pointsEarned } },
+          });
+        }
+      } catch { /* jangan blokir response */ }
+    }
 
     // Kirim email notifikasi jika status berubah ke SHIPPED
     if (updateData.status === "SHIPPED" || (trackingNumber && order.status === "SHIPPED")) {

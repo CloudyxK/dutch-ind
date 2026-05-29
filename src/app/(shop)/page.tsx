@@ -7,6 +7,9 @@ import BestSellers from "@/components/home/BestSellers";
 import BrandFeatures from "@/components/home/BrandFeatures";
 import MarqueeTicker from "@/components/home/MarqueeTicker";
 import RevealSection from "@/components/ui/RevealSection";
+import InstagramSection from "@/components/home/InstagramSection";
+import { Suspense } from "react";
+import BundleSection from "@/components/home/BundleSection";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
 
@@ -195,6 +198,13 @@ export default async function HomePage() {
         <BestSellers products={bestSellers as any} />
       </RevealSection>
 
+      {/* Bundle Outfit */}
+      <RevealSection direction="up">
+        <Suspense fallback={null}>
+          <BundleSection />
+        </Suspense>
+      </RevealSection>
+
       {/* Customer reviews */}
       {recentReviews.length > 0 && (
         <RevealSection direction="up">
@@ -259,6 +269,11 @@ export default async function HomePage() {
           </section>
         </RevealSection>
       )}
+
+      {/* Instagram feed */}
+      <RevealSection direction="up">
+        <InstagramSection />
+      </RevealSection>
 
       {/* Brand features */}
       <RevealSection direction="up">

@@ -1,6 +1,7 @@
 import prisma from "@/lib/prisma";
 import { formatPrice, formatDate } from "@/lib/utils";
-import { ShoppingCart, Users, Package, TrendingUp, AlertCircle, Crown } from "lucide-react";
+import { ShoppingCart, Users, Package, TrendingUp, AlertCircle, Crown, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import RecentOrdersWidget from "@/components/admin/RecentOrdersWidget";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
 import RankIcon from "@/components/profile/RankIcon";
@@ -19,6 +20,8 @@ async function getDashboardStats() {
     recentOrders,
     lowStockProducts,
     topMembers,
+    lowStockVariantCount,
+    outOfStockVariantCount,
   ] = await Promise.all([
     prisma.payment.aggregate({ where: { status: "SUCCESS" }, _sum: { amount: true } }),
     prisma.order.count(),
@@ -50,6 +53,8 @@ async function getDashboardStats() {
         rank: true, totalSpend: true, orderCount: true, createdAt: true,
       },
     }),
+    prisma.productVariant.count({ where: { stock: { lte: 5, gt: 0 } } }),
+    prisma.productVariant.count({ where: { stock: 0 } }),
   ]);
 
   return {
@@ -61,6 +66,8 @@ async function getDashboardStats() {
     recentOrders,
     lowStockProducts,
     topMembers,
+    lowStockVariantCount,
+    outOfStockVariantCount,
   };
 }
 
@@ -157,6 +164,38 @@ export default async function AdminDashboard() {
           </div>
         ))}
       </div>
+
+      {/* ── Low Stock Warning Banner ── */}
+      {(stats.lowStockVariantCount > 0 || stats.outOfStockVariantCount > 0) && (
+        <Link href="/admin/low-stock" className="block group">
+          <div className="flex items-center gap-4 p-4 border transition-colors duration-200"
+               style={{
+                 background: "rgba(245,158,11,0.06)",
+                 borderColor: "rgba(245,158,11,0.25)",
+               }}>
+            <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-bold uppercase tracking-widest text-amber-400">
+                Alert Stok
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
+                {stats.lowStockVariantCount > 0 && (
+                  <span>{stats.lowStockVariantCount} varian stok kritis</span>
+                )}
+                {stats.lowStockVariantCount > 0 && stats.outOfStockVariantCount > 0 && (
+                  <span className="mx-2 text-brand-gray-600">·</span>
+                )}
+                {stats.outOfStockVariantCount > 0 && (
+                  <span>{stats.outOfStockVariantCount} varian habis</span>
+                )}
+              </p>
+            </div>
+            <span className="text-[10px] uppercase tracking-widest text-amber-400/60 group-hover:text-amber-400 transition-colors flex-shrink-0">
+              Lihat Detail →
+            </span>
+          </div>
+        </Link>
+      )}
 
       {/* ── Orders + Low Stock ── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">

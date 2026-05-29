@@ -84,6 +84,11 @@ export default function CheckoutPage() {
   const [estimating, setEstimating] = useState(false);
   const estimateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // RajaOngkir shipping cost state
+  const [rajaOngkirCost, setRajaOngkirCost] = useState<number | null>(null);
+  const [calculatingShipping, setCalculatingShipping] = useState(false);
+  const [rajaOngkirEtd, setRajaOngkirEtd] = useState<string | null>(null);
+
   const subtotal = getTotalPrice();
 
   // Dynamic costs from estimate, fallback to defaults
@@ -178,6 +183,30 @@ export default function CheckoutPage() {
     }, 800);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.city, form.district, form.province]);
+
+  // RajaOngkir shipping cost calculation when city changes
+  useEffect(() => {
+    if (!form.city || isCodAntar) {
+      setRajaOngkirCost(null);
+      setRajaOngkirEtd(null);
+      return;
+    }
+    setCalculatingShipping(true);
+    const totalWeight = items.reduce((sum, item) => sum + item.quantity * 300, 0); // 300g default per item
+    fetch("/api/shipping/cost", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ destination: form.city, weight: Math.max(totalWeight, 300), courier: "jne" }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        setRajaOngkirCost(d.cost ?? null);
+        setRajaOngkirEtd(d.etd ?? null);
+      })
+      .catch(() => setRajaOngkirCost(null))
+      .finally(() => setCalculatingShipping(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.city, isCodAntar]);
 
   function applyAddress(addr: SavedAddress) {
     setForm((prev) => ({
@@ -807,6 +836,30 @@ export default function CheckoutPage() {
                         {effectiveShippingCost === 0 ? (isCodAntar ? "Gratis (COD Antar)" : "Gratis") : formatPrice(effectiveShippingCost)}
                       </span>
                     </div>
+                    {/* RajaOngkir shipping cost estimate */}
+                    {!isCodAntar && (
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <span className="text-brand-gray-500 text-xs">Est. Ongkir JNE</span>
+                          <p className="text-[10px] text-brand-gray-500">
+                            {calculatingShipping
+                              ? "Menghitung ongkir..."
+                              : rajaOngkirCost != null
+                              ? `Estimasi via JNE REG${rajaOngkirEtd ? ` (${rajaOngkirEtd} hari)` : ""}`
+                              : "Masukkan kota untuk kalkulasi ongkir"}
+                          </p>
+                        </div>
+                        <span className="text-xs text-brand-gray-400">
+                          {calculatingShipping ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : rajaOngkirCost != null ? (
+                            formatPrice(rajaOngkirCost)
+                          ) : (
+                            "—"
+                          )}
+                        </span>
+                      </div>
+                    )}
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-green-400">
                         <span>Diskon Kupon</span>

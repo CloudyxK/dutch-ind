@@ -3,6 +3,13 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { reviewLimiter, getIp } from "@/lib/rateLimit";
 import { parseJsonSafe, verifySameOrigin, rateLimitResponse, sanitize } from "@/lib/security";
+import { v2 as cloudinary } from "cloudinary";
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -23,7 +30,7 @@ export async function POST(request: NextRequest, { params }: Params) {
   const parsed = await parseJsonSafe(request, 10_000);
   if (!parsed.ok) return parsed.response;
 
-  const { rating, comment } = parsed.data;
+  const { rating, comment, imageUrl: rawImageUrl } = parsed.data;
 
   const ratingNum = parseInt(rating);
   if (!ratingNum || ratingNum < 1 || ratingNum > 5) {
@@ -34,6 +41,21 @@ export async function POST(request: NextRequest, { params }: Params) {
 
   const { slug } = await params;
   const cleanSlug = sanitize(slug).slice(0, 200);
+
+  // Upload image to Cloudinary if provided
+  let savedImageUrl: string | null = null;
+  if (rawImageUrl && typeof rawImageUrl === "string" && rawImageUrl.startsWith("data:image/")) {
+    try {
+      const uploaded = await cloudinary.uploader.upload(rawImageUrl, {
+        folder: "reviews",
+        max_bytes: 3_000_000,
+        transformation: [{ width: 800, crop: "limit", quality: "auto" }],
+      });
+      savedImageUrl = uploaded.secure_url;
+    } catch {
+      // image upload failure doesn't block review submission
+    }
+  }
 
   try {
     const product = await prisma.product.findUnique({ where: { slug: cleanSlug } });
@@ -69,6 +91,7 @@ export async function POST(request: NextRequest, { params }: Params) {
         productId: product.id,
         rating: ratingNum,
         comment: cleanComment,
+        imageUrl: savedImageUrl,
         isVerified: true,
       },
       include: { user: { select: { id: true, name: true, avatar: true } } },

@@ -33,5 +33,11 @@ export function useRecentlyViewed() {
     });
   }
 
-  return { items, addProduct };
+  // Alias: add by ID only — used by RecentlyViewed component (Feature #6)
+  function addViewed(productId: string) {
+    // No-op when called without full product data; tracking is handled via addProduct
+    void productId;
+  }
+
+  return { items, addProduct, addViewed };
 }

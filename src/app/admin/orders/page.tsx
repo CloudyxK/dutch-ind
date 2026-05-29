@@ -117,6 +117,9 @@ export default async function AdminOrdersPage() {
                         currentTrackingNumber={order.trackingNumber}
                         currentTrackingCarrier={order.trackingCarrier}
                         currentNotes={order.notes}
+                        orderNumber={order.orderNumber}
+                        buyerName={order.user.name}
+                        buyerPhone={order.address?.phone}
                       />
                               {/* Manual payment confirm/reject */}
                       {order.payment &&

@@ -149,6 +149,8 @@ export async function POST(request: NextRequest) {
           total,
           notes: cleanNotes,
           shippingMethod,
+          // Set payment deadline for manual payment orders (24 hours)
+          paymentDeadline: isManual ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined,
           // COD: langsung PROCESSING (tidak perlu bayar duluan)
           status: isCod ? "PROCESSING" : "AWAITING_PAYMENT",
           items: {

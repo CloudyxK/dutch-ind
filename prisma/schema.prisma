@@ -37,6 +37,7 @@ model User {
   rank          String    @default("BRONZE")
   totalSpend    Float     @default(0)
   orderCount    Int       @default(0)
+  points        Int       @default(0)
 
   addresses          Address[]
   orders             Order[]
@@ -151,6 +152,7 @@ model Product {
   reviews            Review[]
   inventoryLogs      InventoryLog[]
   stockNotifications StockNotification[]
+  bundleItems        BundleItem[]
 
   @@index([slug])
   @@index([categoryId])
@@ -269,6 +271,8 @@ model Order {
   trackingNumber  String?
   trackingCarrier String?
   shippingMethod  String?
+  paymentDeadline DateTime?
+  giftNote        String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -351,6 +355,7 @@ model Review {
   rating     Int
   comment    String?
   isVerified Boolean  @default(false)
+  imageUrl   String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -436,4 +441,34 @@ model DropWaitlist {
 
   @@unique([dropId, email])
   @@map("drop_waitlist")
+}
+
+model Bundle {
+  id          String       @id @default(cuid())
+  name        String
+  slug        String       @unique
+  description String?
+  imageUrl    String?
+  discount    Float        @default(0)
+  isActive    Boolean      @default(true)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  items BundleItem[]
+
+  @@map("bundles")
+}
+
+model BundleItem {
+  id        String  @id @default(cuid())
+  bundleId  String
+  productId String
+  sortOrder Int     @default(0)
+
+  bundle  Bundle  @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([bundleId, productId])
+  @@map("bundle_items")
 }

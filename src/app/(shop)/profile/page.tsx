@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { Package, Heart, MapPin, ShoppingBag } from "lucide-react";
+import { Package, Heart, MapPin, ShoppingBag, Star } from "lucide-react";
 import ProfileCard from "@/components/profile/ProfileCard";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
 import RankIcon from "@/components/profile/RankIcon";
@@ -68,8 +68,8 @@ export default async function ProfilePage() {
               </div>
             )}
 
-            {/* Stats — 3 columns (compact on small screens) */}
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            {/* Stats — 2x2 on mobile, 4 columns on sm+ */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               <div className="bg-brand-gray-900 border border-brand-gray-700 p-3 sm:p-4 text-center">
                 <Package className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-brand-gray-400" />
                 <p className="text-xl sm:text-2xl font-bold">{user._count.orders}</p>
@@ -84,6 +84,11 @@ export default async function ProfilePage() {
                 <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-brand-gray-400" />
                 <p className="text-sm sm:text-base font-bold leading-tight">{formatPrice(user.totalSpend ?? 0)}</p>
                 <p className="text-[10px] sm:text-xs text-brand-gray-400 mt-0.5 leading-tight">Total Belanja</p>
+              </div>
+              <div className="bg-brand-gray-900 border border-brand-gray-700 p-3 sm:p-4 text-center">
+                <Star className="w-4 h-4 sm:w-5 sm:h-5 mx-auto mb-1.5 text-yellow-400" />
+                <p className="text-xl sm:text-2xl font-bold">{user.points ?? 0}</p>
+                <p className="text-[10px] sm:text-xs text-brand-gray-400 mt-0.5 leading-tight">Poin Reward</p>
               </div>
             </div>
 

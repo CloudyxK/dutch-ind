@@ -7,6 +7,7 @@ import PushNotificationSetup from "./PushNotificationSetup";
 import {
   LayoutDashboard,
   Package,
+  Package2,
   ShoppingCart,
   Users,
   Tag,
@@ -25,6 +26,8 @@ import {
   RotateCcw,
   Mail,
   Bell,
+  AlertTriangle,
+  ShoppingBag,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -46,14 +49,17 @@ const navGroups = [
       { href: "/admin/coupons",    label: "Kupon",     icon: Tag },
       { href: "/admin/flashsale",  label: "Flash Sale",icon: Zap },
       { href: "/admin/drops",               label: "Drops",           icon: Rocket },
+      { href: "/admin/bundles",             label: "Bundle Outfit",   icon: Package2 },
       { href: "/admin/stock-notifications", label: "Notifikasi Stok", icon: Bell },
+      { href: "/admin/low-stock",           label: "Alert Stok",      icon: AlertTriangle },
     ],
   },
   {
     label: "Operasional",
     items: [
-      { href: "/admin/orders",    label: "Pesanan",    icon: ShoppingCart },
-      { href: "/admin/returns",   label: "Returns",    icon: RotateCcw },
+      { href: "/admin/orders",           label: "Pesanan",         icon: ShoppingCart },
+      { href: "/admin/abandoned-carts", label: "Abandoned Carts", icon: ShoppingBag },
+      { href: "/admin/returns",         label: "Returns",         icon: RotateCcw },
       { href: "/admin/shipping",  label: "Pengiriman", icon: Truck },
       { href: "/admin/users",     label: "Pengguna",   icon: Users },
       { href: "/admin/reviews",    label: "Ulasan",      icon: Star },
