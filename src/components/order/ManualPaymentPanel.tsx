@@ -157,6 +157,19 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
         </span>
       </div>
 
+      {/* Peringatan utama sebelum bayar */}
+      <div className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/40">
+        <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+        <div className="space-y-1">
+          <p className="text-[11px] font-bold text-red-400 uppercase tracking-wider">Perhatikan Sebelum Transfer!</p>
+          <ul className="text-[11px] text-red-300/80 space-y-0.5 leading-relaxed">
+            <li>• Pastikan <strong>nomor tujuan</strong> sesuai dengan yang tertera di bawah</li>
+            <li>• Pastikan <strong>nominal transfer tepat</strong> — lebih atau kurang 1 rupiah pun akan ditolak sistem</li>
+            <li>• Kesalahan transfer adalah <strong>tanggung jawab pembeli</strong></li>
+          </ul>
+        </div>
+      </div>
+
       {/* Rejected banner */}
       {status === "REJECTED" && (
         <div className="flex items-start gap-3 p-3 border border-red-800 bg-red-900/20">
