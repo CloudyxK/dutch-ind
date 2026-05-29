@@ -1,16 +1,38 @@
 "use client";
 
-import { Heart } from "lucide-react";
+import { Heart, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
-import { useWishlistStore } from "@/store/useCartStore";
+import { useWishlistStore, useCartStore } from "@/store/useCartStore";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import type { Product } from "@/types";
 
 export default function WishlistPage() {
   const { items: wishlistIds } = useWishlistStore();
+  const { addItem, openCart } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addingAll, setAddingAll] = useState(false);
+
+  async function addAllToCart() {
+    if (products.length === 0) return;
+    setAddingAll(true);
+    let added = 0;
+    for (const product of products) {
+      const variant = product.variants?.find((v) => v.stock > 0);
+      if (variant) {
+        addItem(product, variant, 1);
+        added++;
+      }
+    }
+    setAddingAll(false);
+    if (added > 0) {
+      toast.success(`${added} produk ditambahkan ke keranjang`);
+    } else {
+      toast.error("Semua produk sedang habis stok");
+    }
+  }
 
   useEffect(() => {
     const fetchWishlistProducts = async () => {
@@ -47,7 +69,19 @@ export default function WishlistPage() {
   return (
     <div className="min-h-screen py-10">
       <div className="container-main">
-        <h1 className="section-title mb-8">Wishlist ({wishlistIds.length})</h1>
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="section-title">Wishlist ({wishlistIds.length})</h1>
+          {products.length > 0 && (
+            <button
+              onClick={addAllToCart}
+              disabled={addingAll}
+              className="btn-secondary flex items-center gap-2 text-xs"
+            >
+              <ShoppingBag className="w-3.5 h-3.5" />
+              {addingAll ? "Menambahkan..." : "Tambah Semua ke Keranjang"}
+            </button>
+          )}
+        </div>
 
         {products.length === 0 ? (
           <div className="text-center py-20">

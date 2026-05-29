@@ -5,6 +5,9 @@ import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import type { Product } from "@/types";
+import ProductCard from "@/components/product/ProductCard";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
@@ -12,6 +15,24 @@ export default function CartPage() {
   const shippingThreshold = 500000;
   const freeShipping = total >= shippingThreshold;
   const remaining = shippingThreshold - total;
+
+  const [upsellProducts, setUpsellProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    fetch("/api/products?isFeatured=true&limit=8")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          const cartProductIds = new Set(items.map((item) => item.product.id));
+          const filtered = (data.data as Product[])
+            .filter((p) => !cartProductIds.has(p.id))
+            .slice(0, 4);
+          setUpsellProducts(filtered);
+        }
+      })
+      .catch(() => {});
+  }, [items]);
 
   if (items.length === 0) {
     return (
@@ -170,6 +191,18 @@ export default function CartPage() {
             </div>
           </div>
         </div>
+
+        {/* Upsell Section */}
+        {upsellProducts.length > 0 && (
+          <div className="mt-16 border-t border-brand-gray-800 pt-12">
+            <h2 className="section-title mb-8">Lengkapi Koleksimu</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {upsellProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

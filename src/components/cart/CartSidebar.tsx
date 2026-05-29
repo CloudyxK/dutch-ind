@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { X, Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
@@ -11,6 +11,7 @@ export default function CartSidebar() {
   const { items, isOpen, closeCart, removeItem, updateQuantity, getTotalPrice } =
     useCartStore();
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   // Close on overlay click
   useEffect(() => {
@@ -113,13 +114,30 @@ export default function CartSidebar() {
                       </div>
 
                       {/* Remove */}
-                      <button
-                        onClick={() => removeItem(item.variantId)}
-                        className="p-2.5 text-brand-gray-500 hover:text-red-400 transition-colors"
-                        aria-label="Hapus item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                      {confirmDelete === item.variantId ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => { removeItem(item.variantId); setConfirmDelete(null); }}
+                            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                          >
+                            Hapus
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider border border-brand-gray-600 hover:border-white transition-colors"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDelete(item.variantId)}
+                          className="p-2.5 text-brand-gray-500 hover:text-red-400 transition-colors"
+                          aria-label="Hapus item"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </li>

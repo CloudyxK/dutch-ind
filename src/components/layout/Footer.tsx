@@ -39,6 +39,7 @@ const footerLinks = {
     { href: "/products?category=aksesori",   label: "Aksesori"   },
   ],
   bantuan: [
+    { label: "Lacak Pesanan",        href: "/track"             },
     { label: "Panduan Ukuran",       href: "/help#ukuran"       },
     { label: "Informasi Pengiriman", href: "/help#pengiriman"   },
     { label: "Pengembalian Barang",  href: "/help#pengembalian" },

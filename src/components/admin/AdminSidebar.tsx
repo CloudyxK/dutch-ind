@@ -22,6 +22,8 @@ import {
   Boxes,
   Rocket,
   RotateCcw,
+  Mail,
+  Bell,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -42,7 +44,8 @@ const navGroups = [
       { href: "/admin/inventory",  label: "Inventori", icon: Boxes },
       { href: "/admin/coupons",    label: "Kupon",     icon: Tag },
       { href: "/admin/flashsale",  label: "Flash Sale",icon: Zap },
-      { href: "/admin/drops",      label: "Drops",     icon: Rocket },
+      { href: "/admin/drops",               label: "Drops",           icon: Rocket },
+      { href: "/admin/stock-notifications", label: "Notifikasi Stok", icon: Bell },
     ],
   },
   {
@@ -52,8 +55,9 @@ const navGroups = [
       { href: "/admin/returns",   label: "Returns",    icon: RotateCcw },
       { href: "/admin/shipping",  label: "Pengiriman", icon: Truck },
       { href: "/admin/users",     label: "Pengguna",   icon: Users },
-      { href: "/admin/reviews",   label: "Ulasan",     icon: Star },
-      { href: "/admin/membership",label: "Membership", icon: Crown },
+      { href: "/admin/reviews",    label: "Ulasan",      icon: Star },
+      { href: "/admin/newsletter", label: "Newsletter",  icon: Mail },
+      { href: "/admin/membership", label: "Membership",  icon: Crown },
     ],
   },
   {

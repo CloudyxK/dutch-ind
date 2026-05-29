@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, X, ImagePlus, Loader2, Link as LinkIcon } from "lucide-react";
+import { Plus, X, ImagePlus, Loader2, Link as LinkIcon, GripVertical } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import Image from "next/image";
 
@@ -52,6 +52,7 @@ export default function AdminProductForm({ categories, initialData }: Props) {
   const [urlInput, setUrlInput] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const handleNameChange = (name: string) => {
     setForm((prev) => ({
@@ -332,7 +333,25 @@ export default function AdminProductForm({ categories, initialData }: Props) {
           {images.filter(Boolean).length > 0 && (
             <div className="mt-4 grid grid-cols-3 sm:grid-cols-4 gap-2">
               {images.filter(Boolean).map((url, index) => (
-                <div key={url + index} className="relative aspect-square group">
+                <div
+                  key={url + index}
+                  className={`relative aspect-square group cursor-grab active:cursor-grabbing transition-opacity ${dragIndex === index ? "opacity-50" : "opacity-100"}`}
+                  draggable
+                  onDragStart={() => setDragIndex(index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragIndex === null || dragIndex === index) return;
+                    setImages((prev) => {
+                      const filtered = prev.filter(Boolean);
+                      const reordered = [...filtered];
+                      const [moved] = reordered.splice(dragIndex, 1);
+                      reordered.splice(index, 0, moved);
+                      return reordered;
+                    });
+                    setDragIndex(null);
+                  }}
+                  onDragEnd={() => setDragIndex(null)}
+                >
                   <Image
                     src={url}
                     alt={`Gambar ${index + 1}`}
@@ -340,6 +359,12 @@ export default function AdminProductForm({ categories, initialData }: Props) {
                     className="object-cover"
                     sizes="150px"
                   />
+                  {/* Drag handle */}
+                  <div className="absolute top-1 left-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-5 h-5 bg-black/70 flex items-center justify-center">
+                      <GripVertical className="w-3 h-3 text-white/80" />
+                    </div>
+                  </div>
                   {index === 0 && (
                     <span className="absolute bottom-0 left-0 right-0 bg-black/70 text-[9px] text-center py-0.5 text-brand-gray-300 uppercase tracking-widest">
                       Utama

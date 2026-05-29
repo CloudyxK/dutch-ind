@@ -47,7 +47,13 @@ export default function CheckoutPage() {
 
   const [codMeetingPoint, setCodMeetingPoint] = useState("");
   const [codPayment, setCodPayment] = useState<"COD" | "MANUAL">("COD");
-  const [manualMethod, setManualMethod] = useState<"TRANSFER" | "QRIS" | "EWALLET">("TRANSFER");
+  const [manualMethod, setManualMethod] = useState<"TRANSFER" | "QRIS" | "EWALLET">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("dutch_ind_payment_method") as "TRANSFER" | "QRIS" | "EWALLET" | null;
+      if (saved && ["TRANSFER", "QRIS", "EWALLET"].includes(saved)) return saved;
+    }
+    return "TRANSFER";
+  });
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
@@ -96,6 +102,11 @@ export default function CheckoutPage() {
   const discountAmount = couponData?.discountAmount || 0;
   const effectiveShippingCost = isCodAntar ? 0 : shippingCost;
   const total = subtotal + effectiveShippingCost - discountAmount;
+
+  // Persist chosen payment method
+  useEffect(() => {
+    localStorage.setItem("dutch_ind_payment_method", manualMethod);
+  }, [manualMethod]);
 
   useEffect(() => {
     if (!session) {
