@@ -220,22 +220,73 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
 
       {/* E-Wallet */}
       {activeTab === "ewallet" && hasEWallet && (
-        <div className="space-y-3">
-          {config!.ewallets!.map((ew, i) => (
-            <div key={i} className="flex items-center justify-between p-3 bg-brand-gray-800">
-              <div>
-                <p className="text-xs text-brand-gray-500 uppercase tracking-widest font-bold">{ew.name}</p>
-                <p className="font-mono font-bold text-lg tracking-widest mt-0.5">{ew.number}</p>
-                <p className="text-xs text-brand-gray-400">{ew.holder}</p>
-              </div>
-              <button onClick={() => copyToClipboard(ew.number, `No. ${ew.name}`)}
-                      className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
-                <Copy className="w-3 h-3" /> Salin
-              </button>
+        <div className="space-y-4">
+          {/* Step-by-step guide */}
+          <div className="flex items-start gap-3 p-3 bg-brand-gray-800 border border-brand-gray-700">
+            <Wallet className="w-4 h-4 text-brand-gray-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1.5 text-[11px] text-brand-gray-400 leading-relaxed">
+              <p><span className="text-white font-bold">1.</span> Buka aplikasi e-wallet kamu (GoPay, DANA, OVO, dll)</p>
+              <p><span className="text-white font-bold">2.</span> Pilih "Transfer" → masukkan nomor di bawah</p>
+              <p><span className="text-white font-bold">3.</span> Masukkan nominal <span className="text-white font-bold font-mono">{formatPrice(amount)}</span> (harus tepat)</p>
+              <p><span className="text-white font-bold">4.</span> Screenshot bukti transfer → upload di bawah</p>
             </div>
-          ))}
-          <p className="text-[10px] text-brand-gray-600 text-center">
-            Buka aplikasi e-wallet → kirim ke nomor di atas → upload bukti pembayaran
+          </div>
+
+          {/* Wallet cards */}
+          {config!.ewallets!.map((ew, i) => {
+            const walletColor: Record<string, string> = {
+              gopay:     "bg-green-500",
+              goPay:     "bg-green-500",
+              GoPay:     "bg-green-500",
+              dana:      "bg-blue-500",
+              Dana:      "bg-blue-500",
+              DANA:      "bg-blue-500",
+              ovo:       "bg-purple-600",
+              OVO:       "bg-purple-600",
+              shopee:    "bg-orange-500",
+              shopeepay: "bg-orange-500",
+              ShopeePay: "bg-orange-500",
+              linkaja:   "bg-red-500",
+              LinkAja:   "bg-red-500",
+            };
+            const color = walletColor[ew.name] ?? walletColor[ew.name.toLowerCase()] ?? "bg-brand-gray-700";
+            return (
+              <div key={i} className="border border-brand-gray-700 overflow-hidden">
+                {/* Wallet header */}
+                <div className={`${color} px-4 py-2 flex items-center gap-2`}>
+                  <Wallet className="w-3.5 h-3.5 text-white" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-white">{ew.name}</span>
+                </div>
+                {/* Wallet body */}
+                <div className="p-4 bg-brand-gray-800">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-brand-gray-500 uppercase tracking-widest">Nomor {ew.name}</p>
+                      <p className="font-mono font-bold text-xl tracking-widest mt-0.5">{ew.number}</p>
+                      <p className="text-xs text-brand-gray-400 mt-0.5">a.n. {ew.holder}</p>
+                    </div>
+                    <div className="flex flex-col gap-1.5 flex-shrink-0">
+                      <button onClick={() => copyToClipboard(ew.number, `No. ${ew.name}`)}
+                              className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
+                        <Copy className="w-3 h-3" /> Salin No.
+                      </button>
+                      <button onClick={() => copyToClipboard(String(amount), `Nominal`)}
+                              className="flex items-center gap-1.5 text-xs text-brand-gray-400 hover:text-white border border-brand-gray-600 hover:border-white px-3 py-1.5 transition-colors">
+                        <Copy className="w-3 h-3" /> Salin Nominal
+                      </button>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-brand-gray-700 flex items-center justify-between">
+                    <p className="text-[10px] text-brand-gray-500">Nominal transfer</p>
+                    <p className="font-mono font-bold text-white">{formatPrice(amount)}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          <p className="text-[10px] text-amber-400/80 text-center flex items-center justify-center gap-1">
+            ⚠ Transfer harus tepat sesuai nominal — pembayaran tidak akan terkonfirmasi jika berbeda
           </p>
         </div>
       )}

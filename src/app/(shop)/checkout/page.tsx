@@ -860,7 +860,7 @@ export default function CheckoutPage() {
                         {([
                           { value: "TRANSFER", label: "Transfer Bank",  desc: "Via virtual account BCA, Mandiri, BNI, BRI",  Icon: Banknote },
                           { value: "QRIS",     label: "QRIS",           desc: "Scan QR dengan e-wallet / m-banking apapun", Icon: QrCode  },
-                          { value: "EWALLET",  label: "E-Wallet",       desc: "DANA, GoPay, OVO, ShopeePay — upload bukti", Icon: Wallet  },
+                          { value: "EWALLET",  label: "E-Wallet",       desc: "Transfer via GoPay, DANA, OVO, ShopeePay ke nomor tujuan", Icon: Wallet  },
                         ] as const).map(({ value, label, desc, Icon }) => (
                           <button
                             key={value}
