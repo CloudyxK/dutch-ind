@@ -80,13 +80,22 @@ export default async function AdminOrdersPage() {
                           {order.payment.status === "SUCCESS"              ? "Lunas"               :
                            order.payment.status === "WAITING_CONFIRMATION" ? "⚡ Bukti Masuk"       :
                            order.payment.status === "REJECTED"             ? "Ditolak"              :
-                           order.payment.status === "MANUAL_PENDING"       ? "Belum Transfer"       :
+                           order.payment.status === "MANUAL_PENDING"       ? "Belum Bayar"          :
                            order.payment.status === "COD_PENDING"          ? "COD — Belum Lunas"    :
                            order.payment.status === "FAILED"               ? "Gagal"                :
                                                                              "Pending"}
                         </span>
+                        {order.payment.method === "TRANSFER" && (
+                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">Transfer Bank</span>
+                        )}
+                        {order.payment.method === "QRIS" && (
+                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">QRIS</span>
+                        )}
+                        {order.payment.method === "EWALLET" && (
+                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">E-Wallet</span>
+                        )}
                         {order.payment.method === "MANUAL" && (
-                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">Transfer</span>
+                          <span className="text-[9px] text-brand-gray-600 uppercase tracking-wider">Transfer/QRIS</span>
                         )}
                         {order.payment.method === "COD" && (
                           <span className="text-[9px] text-amber-600 uppercase tracking-wider font-bold">COD</span>
@@ -110,7 +119,8 @@ export default async function AdminOrdersPage() {
                         currentNotes={order.notes}
                       />
                               {/* Manual payment confirm/reject */}
-                      {order.payment?.method === "MANUAL" &&
+                      {order.payment &&
+                       ["MANUAL", "TRANSFER", "QRIS", "EWALLET"].includes(order.payment.method) &&
                        (order.payment.status === "WAITING_CONFIRMATION" || order.payment.status === "MANUAL_PENDING") && (
                         <AdminManualPaymentActions
                           orderId={order.id}

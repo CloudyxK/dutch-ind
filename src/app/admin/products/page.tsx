@@ -77,7 +77,7 @@ export default async function AdminProductsPage() {
                   </div>
                 </td>
                 <td className="p-4 text-sm text-brand-gray-400 hidden md:table-cell">
-                  {product.category.name}
+                  {product.category?.name ?? <span className="text-brand-gray-600 italic">Tanpa kategori</span>}
                 </td>
                 <td className="p-4">
                   <div>

@@ -12,6 +12,9 @@ async function getAnalytics() {
     ordersByStatus,
     topProducts,
     salesByDay,
+    totalUsers,
+    totalOrders,
+    newUsersThisMonth,
   ] = await Promise.all([
     // Pendapatan bulan ini
     prisma.payment.aggregate({

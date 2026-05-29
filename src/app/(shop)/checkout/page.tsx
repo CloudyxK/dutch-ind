@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck } from "lucide-react";
+import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck, QrCode, Wallet } from "lucide-react";
 
 type SavedAddress = {
   id: string;
@@ -47,6 +47,7 @@ export default function CheckoutPage() {
 
   const [codMeetingPoint, setCodMeetingPoint] = useState("");
   const [codPayment, setCodPayment] = useState<"COD" | "MANUAL">("COD");
+  const [manualMethod, setManualMethod] = useState<"TRANSFER" | "QRIS" | "EWALLET">("TRANSFER");
   const [couponCode, setCouponCode] = useState("");
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
@@ -85,7 +86,7 @@ export default function CheckoutPage() {
 
   // Derived state
   const isCodAntar    = form.shippingMethod === "cod-antar";
-  const paymentMethod = isCodAntar ? codPayment : "MANUAL";
+  const paymentMethod = isCodAntar ? codPayment : manualMethod;
 
   // Same Day & COD Antar hanya tersedia di Samarinda
   const cityFilled     = form.city.trim().length > 0;
@@ -280,6 +281,32 @@ export default function CheckoutPage() {
           <h1 className="section-title mb-8">Checkout</h1>
 
           <form onSubmit={handleSubmit}>
+            {/* Checkout progress */}
+            <div className="flex items-center mb-8 gap-0">
+              {[
+                { n: 1, label: "Alamat" },
+                { n: 2, label: "Pengiriman" },
+                { n: 3, label: "Pembayaran" },
+                { n: 4, label: "Konfirmasi" },
+              ].map((step, i, arr) => (
+                <div key={step.n} className="flex items-center flex-1 last:flex-none">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
+                      i === 0 ? "bg-white text-black border-white"
+                      : i <= 3 ? "border-brand-gray-700 text-brand-gray-600"
+                      : "border-brand-gray-700 text-brand-gray-600"
+                    }`}>
+                      {step.n}
+                    </div>
+                    <span className="text-[9px] uppercase tracking-wider mt-1 hidden sm:block text-brand-gray-500">{step.label}</span>
+                  </div>
+                  {i < arr.length - 1 && (
+                    <div className="flex-1 h-px bg-brand-gray-800 mx-1" />
+                  )}
+                </div>
+              ))}
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               {/* Left — form */}
               <div className="lg:col-span-2 space-y-6">
@@ -771,17 +798,30 @@ export default function CheckoutPage() {
                         </div>
                       </>
                     ) : (
-                      /* Ekspedisi — hanya Transfer/QRIS */
-                      <div className="flex items-center gap-3 p-3 border border-white bg-brand-gray-800/30">
-                        <div className="w-4 h-4 border-2 border-white rounded-full flex items-center justify-center flex-shrink-0">
-                          <div className="w-2 h-2 bg-white rounded-full" />
-                        </div>
-                        <Banknote className="w-4 h-4 text-brand-gray-400 flex-shrink-0" />
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold">Transfer / QRIS / E-Wallet</p>
-                          <p className="text-[10px] text-brand-gray-500">Transfer Bank, QRIS, DANA, GoPay — upload bukti</p>
-                        </div>
-                      </div>
+                      /* Ekspedisi — pilih salah satu */
+                      <>
+                        {([
+                          { value: "TRANSFER", label: "Transfer Bank",  desc: "BCA, Mandiri, BNI, BRI — upload bukti",  Icon: Banknote },
+                          { value: "QRIS",     label: "QRIS",           desc: "Scan QR dengan e-wallet / m-banking apapun", Icon: QrCode  },
+                          { value: "EWALLET",  label: "E-Wallet",       desc: "DANA, GoPay, OVO, ShopeePay — upload bukti", Icon: Wallet  },
+                        ] as const).map(({ value, label, desc, Icon }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setManualMethod(value)}
+                            className={`w-full flex items-center gap-3 p-3 border text-left transition-colors ${manualMethod === value ? "border-white bg-brand-gray-800/30" : "border-brand-gray-700 hover:border-brand-gray-500"}`}
+                          >
+                            <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${manualMethod === value ? "border-white" : "border-brand-gray-600"}`}>
+                              {manualMethod === value && <div className="w-2 h-2 bg-white rounded-full" />}
+                            </div>
+                            <Icon className="w-4 h-4 text-brand-gray-400 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold">{label}</p>
+                              <p className="text-[10px] text-brand-gray-500">{desc}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </>
                     )}
                   </div>
 

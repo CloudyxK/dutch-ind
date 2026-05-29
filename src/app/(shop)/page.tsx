@@ -62,7 +62,40 @@ async function getHomeData() {
     } catch { /* ignore */ }
   }
 
-  return { allProducts, featured, bestSellers, categories, flashSale };
+  // Collect all unique product IDs across sections and fetch review stats once
+  const allIds = Array.from(new Set([
+    ...allProducts.map((p) => p.id),
+    ...featured.map((p) => p.id),
+    ...bestSellers.map((p) => p.id),
+  ]));
+
+  const reviewStats = allIds.length > 0
+    ? await prisma.review.groupBy({
+        by: ["productId"],
+        _avg: { rating: true },
+        _count: { rating: true },
+        where: { productId: { in: allIds } },
+      })
+    : [];
+
+  const statsMap = Object.fromEntries(
+    reviewStats.map((s) => [s.productId, { avg: s._avg.rating ?? 0, count: s._count.rating }])
+  );
+
+  function enrichProducts(products: typeof allProducts) {
+    return products.map((p) => {
+      const stats = statsMap[p.id];
+      return { ...p, averageRating: stats?.avg ?? 0, _count: { reviews: stats?.count ?? 0 } };
+    });
+  }
+
+  return {
+    allProducts: enrichProducts(allProducts),
+    featured: enrichProducts(featured),
+    bestSellers: enrichProducts(bestSellers),
+    categories,
+    flashSale,
+  };
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://dutch-indd.vercel.app";

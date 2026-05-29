@@ -84,7 +84,7 @@ export default function StoreHeader() {
               height={180}
               className="w-auto object-contain mx-auto"
               style={{
-                height: "clamp(48px, 8vw, 76px)",
+                height: "clamp(56px, 12vw, 76px)",
                 mixBlendMode: "screen",
                 filter:
                   "brightness(2) contrast(2.8) drop-shadow(0 0 48px rgba(255,255,255,0.16))",
@@ -109,11 +109,11 @@ export default function StoreHeader() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6"
+            className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto px-4 sm:px-0"
           >
             <Link
               href="/products"
-              className="group inline-flex items-center gap-3 bg-white text-black px-8 py-3.5 text-[11px] font-black uppercase tracking-[0.22em] hover:bg-white/90 transition-colors"
+              className="group inline-flex items-center justify-center gap-3 bg-white text-black w-full sm:w-auto px-8 py-3.5 text-[11px] font-black uppercase tracking-[0.22em] hover:bg-white/90 transition-colors"
             >
               Belanja Sekarang
               <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />

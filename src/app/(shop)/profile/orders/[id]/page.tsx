@@ -273,9 +273,12 @@ export default async function OrderDetailPage({ params }: Props) {
                   <p className="text-xs text-brand-gray-500">
                     Metode:{" "}
                     <span className="text-white">
-                      {order.payment.method === "MANUAL" ? "Transfer / QRIS / E-Wallet" :
-                       order.payment.method === "COD"    ? "COD — Bayar di Tempat"       :
-                                                           "Midtrans"}
+                      {order.payment.method === "TRANSFER" ? "Transfer Bank" :
+                       order.payment.method === "QRIS"     ? "QRIS"              :
+                       order.payment.method === "EWALLET"  ? "E-Wallet"          :
+                       order.payment.method === "MANUAL"   ? "Transfer / QRIS / E-Wallet" :
+                       order.payment.method === "COD"      ? "COD — Bayar di Tempat"      :
+                                                             "Midtrans"}
                     </span>
                   </p>
                   <p className="text-xs text-brand-gray-500 mt-0.5">
@@ -307,14 +310,15 @@ export default async function OrderDetailPage({ params }: Props) {
           </div>
 
           {/* Manual payment panel */}
-          {order.payment?.method === "MANUAL" &&
+          {["MANUAL", "TRANSFER", "QRIS", "EWALLET"].includes(order.payment?.method ?? "") &&
            !["SHIPPED", "DELIVERED", "COMPLETED"].includes(order.status) &&
-           order.payment.status !== "SUCCESS" && (
+           order.payment?.status !== "SUCCESS" && (
             <ManualPaymentPanel
               orderId={order.id}
               amount={order.total}
-              status={order.payment.status}
-              rejectedReason={order.payment.rejectedReason}
+              status={order.payment!.status}
+              paymentMethod={order.payment!.method}
+              rejectedReason={order.payment!.rejectedReason}
             />
           )}
 

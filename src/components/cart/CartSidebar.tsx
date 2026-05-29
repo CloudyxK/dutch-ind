@@ -40,7 +40,7 @@ export default function CartSidebar() {
     >
       <div className="absolute right-0 top-0 h-full w-[92vw] sm:w-full max-w-sm sm:max-w-md bg-brand-gray-900 border-l border-brand-gray-700 flex flex-col animate-slide-left">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-brand-gray-700">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-brand-gray-700">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5" />
             <h2 className="text-sm font-bold uppercase tracking-widest">
@@ -49,7 +49,8 @@ export default function CartSidebar() {
           </div>
           <button
             onClick={closeCart}
-            className="p-1 hover:bg-brand-gray-700 transition-colors"
+            className="p-2.5 hover:bg-brand-gray-700 transition-colors"
+            aria-label="Tutup keranjang"
           >
             <X className="w-5 h-5" />
           </button>
@@ -68,7 +69,7 @@ export default function CartSidebar() {
           ) : (
             <ul className="divide-y divide-brand-gray-800">
               {items.map((item) => (
-                <li key={item.variantId} className="flex gap-4 p-4">
+                <li key={item.variantId} className="flex gap-3 p-4">
                   {/* Image */}
                   <div className="relative w-20 h-24 bg-brand-gray-800 flex-shrink-0 overflow-hidden">
                     <Image
@@ -95,24 +96,27 @@ export default function CartSidebar() {
                       <div className="flex items-center border border-brand-gray-700">
                         <button
                           onClick={() => updateQuantity(item.variantId, item.quantity - 1)}
-                          className="w-7 h-7 flex items-center justify-center hover:bg-brand-gray-700 transition-colors"
+                          className="w-10 h-10 flex items-center justify-center hover:bg-brand-gray-700 transition-colors"
+                          aria-label="Kurangi"
                         >
-                          <Minus className="w-3 h-3" />
+                          <Minus className="w-3.5 h-3.5" />
                         </button>
                         <span className="w-8 text-center text-sm">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.variantId, item.quantity + 1)}
                           disabled={item.quantity >= item.variant.stock}
-                          className="w-7 h-7 flex items-center justify-center hover:bg-brand-gray-700 transition-colors disabled:opacity-30"
+                          className="w-10 h-10 flex items-center justify-center hover:bg-brand-gray-700 transition-colors disabled:opacity-30"
+                          aria-label="Tambah"
                         >
-                          <Plus className="w-3 h-3" />
+                          <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
 
                       {/* Remove */}
                       <button
                         onClick={() => removeItem(item.variantId)}
-                        className="p-1 text-brand-gray-500 hover:text-red-400 transition-colors"
+                        className="p-2.5 text-brand-gray-500 hover:text-red-400 transition-colors"
+                        aria-label="Hapus item"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -126,7 +130,7 @@ export default function CartSidebar() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div className="border-t border-brand-gray-700 p-6 space-y-4">
+          <div className="border-t border-brand-gray-700 p-4 sm:p-6 space-y-3 sm:space-y-4 pb-safe">
             <div className="flex justify-between text-sm">
               <span className="text-brand-gray-400">Subtotal</span>
               <span className="font-bold">{formatPrice(totalPrice)}</span>

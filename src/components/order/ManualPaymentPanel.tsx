@@ -11,13 +11,14 @@ type EWallet = { name: string; number: string; holder: string };
 type PaymentConfig = { banks: Bank[]; ewallets?: EWallet[]; qrisImageUrl: string; instructions: string } | null;
 
 type Props = {
-  orderId:    string;
-  amount:     number;
-  status:     string; // MANUAL_PENDING | WAITING_CONFIRMATION | SUCCESS | REJECTED
+  orderId:       string;
+  amount:        number;
+  status:        string; // MANUAL_PENDING | WAITING_CONFIRMATION | SUCCESS | REJECTED
+  paymentMethod?: string; // TRANSFER | QRIS | EWALLET | MANUAL (legacy)
   rejectedReason?: string | null;
 };
 
-export default function ManualPaymentPanel({ orderId, amount, status, rejectedReason }: Props) {
+export default function ManualPaymentPanel({ orderId, amount, status, paymentMethod, rejectedReason }: Props) {
   const router = useRouter();
   const [config, setConfig] = useState<PaymentConfig>(null);
   const [loading, setLoading] = useState(true);
@@ -32,14 +33,22 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
       .then(r => r.json())
       .then(({ data }) => {
         setConfig(data);
-        // Set default tab berdasarkan apa yang tersedia
-        if (data) {
+        // Auto-select tab sesuai metode pembayaran yang dipilih customer
+        if (paymentMethod === "QRIS") {
+          setActiveTab("qris");
+        } else if (paymentMethod === "EWALLET") {
+          setActiveTab("ewallet");
+        } else if (paymentMethod === "TRANSFER") {
+          setActiveTab("bank");
+        } else if (data) {
+          // Fallback: pilih tab pertama yang tersedia
           if (data.banks?.length > 0) setActiveTab("bank");
           else if (data.ewallets?.length > 0) setActiveTab("ewallet");
           else if (data.qrisImageUrl) setActiveTab("qris");
         }
       })
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const copyToClipboard = (text: string, label: string) => {
@@ -253,7 +262,7 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
 
       {/* Upload proof */}
       <div className="border-t border-brand-gray-700 pt-4 space-y-3">
-        <p className="text-xs font-bold uppercase tracking-widest">Upload Bukti Transfer</p>
+        <p className="text-xs font-bold uppercase tracking-widest">Upload Bukti Pembayaran</p>
 
         <input ref={fileRef} type="file" accept="image/*" className="hidden"
                onChange={handleFileChange} />
@@ -272,7 +281,7 @@ export default function ManualPaymentPanel({ orderId, amount, status, rejectedRe
               <button onClick={submitProof} disabled={uploading}
                       className="flex-1 btn-primary flex items-center justify-center gap-2 disabled:opacity-50">
                 {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                {uploading ? "Mengirim..." : "Kirim Bukti Transfer"}
+                {uploading ? "Mengirim..." : "Kirim Bukti Pembayaran"}
               </button>
             </div>
           </div>

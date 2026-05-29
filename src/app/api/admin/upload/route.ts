@@ -57,6 +57,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ url: result.secure_url });
   } catch (err: any) {
     console.error("[upload] Cloudinary error:", err);
-    return NextResponse.json({ error: "Gagal mengupload gambar" }, { status: 500 });
+    const msg = err?.message || "Gagal mengupload gambar";
+    return NextResponse.json({ error: msg.includes("cloud_name") || msg.includes("Invalid") ? `Cloudinary error: ${msg}` : "Gagal mengupload gambar" }, { status: 500 });
   }
 }

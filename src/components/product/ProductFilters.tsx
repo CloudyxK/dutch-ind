@@ -94,7 +94,17 @@ export default function ProductFilters({ categories }: Props) {
         <ul className="space-y-0.5">
           <li>
             <button
-              onClick={() => setCategory("")}
+              onClick={() => {
+                setCategory("");
+                const p = new URLSearchParams();
+                if (search) p.set("search", search);
+                if (sort && sort !== "newest") p.set("sort", sort);
+                if (minPrice) p.set("minPrice", minPrice);
+                if (maxPrice) p.set("maxPrice", maxPrice);
+                if (sizes.length) p.set("sizes", sizes.join(","));
+                router.push(`/products${p.toString() ? `?${p.toString()}` : ""}`);
+                setShowMobileFilter(false);
+              }}
               className={cn("block w-full text-left text-sm py-1.5 px-2 transition-colors",
                 !category ? "text-white bg-white/5 font-semibold" : "text-brand-gray-400 hover:text-white hover:bg-white/3"
               )}
@@ -105,7 +115,17 @@ export default function ProductFilters({ categories }: Props) {
           {categories.map((cat) => (
             <li key={cat.id}>
               <button
-                onClick={() => setCategory(cat.slug)}
+                onClick={() => {
+                  setCategory(cat.slug);
+                  const p = new URLSearchParams();
+                  p.set("category", cat.slug);
+                  if (sort && sort !== "newest") p.set("sort", sort);
+                  if (minPrice) p.set("minPrice", minPrice);
+                  if (maxPrice) p.set("maxPrice", maxPrice);
+                  if (sizes.length) p.set("sizes", sizes.join(","));
+                  router.push(`/products?${p.toString()}`);
+                  setShowMobileFilter(false);
+                }}
                 className={cn("block w-full text-left text-sm py-1.5 px-2 transition-colors",
                   category === cat.slug ? "text-white bg-white/5 font-semibold" : "text-brand-gray-400 hover:text-white hover:bg-white/3"
                 )}

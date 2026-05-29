@@ -6,6 +6,13 @@
   :root {
     --font-inter: "Inter", system-ui, sans-serif;
     --font-bebas: "Bebas Neue", Impact, sans-serif;
+    /* Safe area insets for notched devices */
+    --safe-top:    env(safe-area-inset-top,    0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left:   env(safe-area-inset-left,   0px);
+    --safe-right:  env(safe-area-inset-right,  0px);
+    /* Navbar height token — used by sticky elements */
+    --navbar-h: 48px;
   }
 
   * {
@@ -18,12 +25,26 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-size: 90%;
+    /* Full font size on all screens — 90% made mobile text too small */
+    font-size: 100%;
+    /* Use dynamic viewport height to avoid iOS browser chrome issues */
+    height: -webkit-fill-available;
   }
 
   body {
     @apply bg-brand-black text-brand-white;
     font-family: var(--font-inter);
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    /* Prevent horizontal scroll on mobile */
+    overflow-x: hidden;
+  }
+
+  /* Larger tap targets on mobile for all interactive elements */
+  @media (max-width: 768px) {
+    button, a, [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+    }
   }
 
   /* Custom cursor hides native via JS in CustomCursor.tsx */
@@ -153,6 +174,14 @@
   /* Container */
   .container-main {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Safe area utilities */
+  .pb-safe  { padding-bottom:  max(1rem, var(--safe-bottom)); }
+  .pt-safe  { padding-top:     max(0px,  var(--safe-top));    }
+  .px-safe  {
+    padding-left:  max(1rem, var(--safe-left));
+    padding-right: max(1rem, var(--safe-right));
   }
 
   /* Marquee container */

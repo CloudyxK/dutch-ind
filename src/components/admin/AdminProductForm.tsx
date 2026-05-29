@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, X, ImagePlus, Loader2 } from "lucide-react";
+import { Plus, X, ImagePlus, Loader2, Link as LinkIcon } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import Image from "next/image";
 
@@ -27,11 +27,11 @@ export default function AdminProductForm({ categories, initialData }: Props) {
     name: initialData?.name || "",
     slug: initialData?.slug || "",
     description: initialData?.description || "",
-    price: initialData?.price || "",
-    comparePrice: initialData?.comparePrice || "",
+    price: initialData?.price != null ? String(initialData.price) : "",
+    comparePrice: initialData?.comparePrice != null ? String(initialData.comparePrice) : "",
     sku: initialData?.sku || "",
     categoryId: initialData?.categoryId || "",
-    weight: initialData?.weight || 300,
+    weight: initialData?.weight != null ? String(initialData.weight) : "300",
     isActive: initialData?.isActive ?? true,
     isFeatured: initialData?.isFeatured || false,
     isNewArrival: initialData?.isNewArrival || false,
@@ -49,6 +49,8 @@ export default function AdminProductForm({ categories, initialData }: Props) {
 
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleNameChange = (name: string) => {
@@ -75,7 +77,15 @@ export default function AdminProductForm({ categories, initialData }: Props) {
       try {
         const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Upload gagal");
+        if (!res.ok) {
+          if (data.error?.includes("dikonfigurasi")) {
+            toast.error("Cloudinary belum dikonfigurasi. Gunakan 'Tambah via URL' untuk sementara.", { duration: 5000 });
+            setShowUrlInput(true);
+          } else {
+            toast.error(data.error || "Upload gagal");
+          }
+          continue;
+        }
         uploaded.push(data.url);
       } catch (err: any) {
         toast.error(err.message);
@@ -87,6 +97,18 @@ export default function AdminProductForm({ categories, initialData }: Props) {
       const cleaned = prev.filter(Boolean);
       return [...cleaned, ...uploaded];
     });
+  };
+
+  const handleAddUrl = () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    if (!trimmed.startsWith("http")) {
+      toast.error("URL gambar harus dimulai dengan http");
+      return;
+    }
+    setImages((prev) => [...prev.filter(Boolean), trimmed]);
+    setUrlInput("");
+    toast.success("Gambar ditambahkan");
   };
 
   const addVariant = () => {
@@ -238,7 +260,38 @@ export default function AdminProductForm({ categories, initialData }: Props) {
 
         {/* Images */}
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-          <h2 className="text-xs font-bold uppercase tracking-widest mb-4">Gambar Produk</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-bold uppercase tracking-widest">Gambar Produk</h2>
+            <button
+              type="button"
+              onClick={() => setShowUrlInput((v) => !v)}
+              className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-brand-gray-400 hover:text-white transition-colors"
+            >
+              <LinkIcon className="w-3 h-3" />
+              {showUrlInput ? "Tutup URL" : "Tambah via URL"}
+            </button>
+          </div>
+
+          {/* URL input option */}
+          {showUrlInput && (
+            <div className="mb-4 flex gap-2">
+              <input
+                type="url"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddUrl())}
+                placeholder="https://res.cloudinary.com/... atau URL gambar lainnya"
+                className="input-field flex-1 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleAddUrl}
+                className="btn-secondary px-4 text-xs whitespace-nowrap"
+              >
+                Tambah
+              </button>
+            </div>
+          )}
 
           {/* Upload area */}
           <input
@@ -268,7 +321,7 @@ export default function AdminProductForm({ categories, initialData }: Props) {
                     Klik untuk pilih foto
                   </p>
                   <p className="text-xs text-brand-gray-500 mt-1">
-                    Dari galeri atau kamera · maks. 10 MB per foto
+                    Upload ke Cloudinary · maks. 10 MB per foto
                   </p>
                 </div>
               </>

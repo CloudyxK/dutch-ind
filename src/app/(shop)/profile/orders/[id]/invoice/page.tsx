@@ -31,9 +31,12 @@ export default async function InvoicePage({ params }: Props) {
   if (!order) notFound();
 
   const paymentLabel =
-    order.payment?.method === "MANUAL" ? "Transfer / QRIS / E-Wallet" :
-    order.payment?.method === "COD"    ? "COD — Bayar di Tempat"      :
-                                         "Midtrans (Online)";
+    order.payment?.method === "TRANSFER" ? "Transfer Bank" :
+    order.payment?.method === "QRIS"     ? "QRIS"          :
+    order.payment?.method === "EWALLET"  ? "E-Wallet"      :
+    order.payment?.method === "MANUAL"   ? "Transfer / QRIS / E-Wallet" :
+    order.payment?.method === "COD"      ? "COD — Bayar di Tempat"      :
+                                           "Midtrans (Online)";
 
   const statusLabel: Record<string, string> = {
     AWAITING_PAYMENT: "Menunggu Pembayaran",

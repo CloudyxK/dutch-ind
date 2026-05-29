@@ -62,7 +62,7 @@ export default function Navbar() {
         )}
       >
         <div className="container-main">
-          <div className="flex items-center justify-between h-12">
+          <div className="flex items-center justify-between h-14 sm:h-12">
 
             {/* Logo */}
             <Link href="/" className="flex-shrink-0" style={{ perspective: "600px" }}>
@@ -145,32 +145,32 @@ export default function Navbar() {
               {/* Search */}
               <button
                 onClick={() => setSearchOpen(!searchOpen)}
-                className="p-2.5 hover:bg-white/[0.06] transition-colors rounded-none"
+                className="p-3 hover:bg-white/[0.06] transition-colors rounded-none"
                 aria-label="Cari"
               >
-                <Search className="w-4 h-4" />
+                <Search className="w-[18px] h-[18px]" />
               </button>
 
-              {/* Wishlist */}
+              {/* Wishlist — hidden on mobile to reduce clutter */}
               {session && (
                 <Link
                   href="/wishlist"
-                  className="p-2.5 hover:bg-white/[0.06] transition-colors"
+                  className="hidden sm:flex p-3 hover:bg-white/[0.06] transition-colors items-center"
                   aria-label="Wishlist"
                 >
-                  <Heart className="w-4 h-4" />
+                  <Heart className="w-[18px] h-[18px]" />
                 </Link>
               )}
 
-              {/* User */}
+              {/* User — hidden on mobile (in hamburger menu instead) */}
               {session ? (
-                <div className="relative">
+                <div className="relative hidden sm:block">
                   <button
                     onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="p-2.5 hover:bg-white/[0.06] transition-colors"
+                    className="p-3 hover:bg-white/[0.06] transition-colors"
                     aria-label="Akun"
                   >
-                    <User className="w-4 h-4" />
+                    <User className="w-[18px] h-[18px]" />
                   </button>
                   <AnimatePresence>
                     {userMenuOpen && (
@@ -186,16 +186,16 @@ export default function Navbar() {
                           <div className="px-4 py-2 text-[10px] text-brand-gray-500 border-b border-white/[0.06] uppercase tracking-widest truncate">
                             {session.user?.name}
                           </div>
-                          <Link href="/profile"        onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors">Profil Saya</Link>
-                          <Link href="/profile/orders" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors">Pesanan Saya</Link>
+                          <Link href="/profile"        onClick={() => setUserMenuOpen(false)} className="block px-4 py-3 text-xs hover:bg-white/[0.04] transition-colors">Profil Saya</Link>
+                          <Link href="/profile/orders" onClick={() => setUserMenuOpen(false)} className="block px-4 py-3 text-xs hover:bg-white/[0.04] transition-colors">Pesanan Saya</Link>
                           {(session.user as any)?.role === "ADMIN" && (
-                            <Link href="/admin" onClick={() => setUserMenuOpen(false)} className="block px-4 py-2.5 text-xs hover:bg-white/[0.04] transition-colors text-yellow-400">
+                            <Link href="/admin" onClick={() => setUserMenuOpen(false)} className="block px-4 py-3 text-xs hover:bg-white/[0.04] transition-colors text-yellow-400">
                               Dashboard Admin
                             </Link>
                           )}
                           <button
                             onClick={() => { setUserMenuOpen(false); signOut({ callbackUrl: "/" }); }}
-                            className="block w-full text-left px-4 py-2.5 text-xs text-red-400 hover:bg-white/[0.04] transition-colors"
+                            className="block w-full text-left px-4 py-3 text-xs text-red-400 hover:bg-white/[0.04] transition-colors"
                           >
                             Keluar
                           </button>
@@ -205,18 +205,18 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link href="/login" className="p-2.5 hover:bg-white/[0.06] transition-colors" aria-label="Login">
-                  <User className="w-4 h-4" />
+                <Link href="/login" className="hidden sm:flex p-3 hover:bg-white/[0.06] transition-colors items-center" aria-label="Login">
+                  <User className="w-[18px] h-[18px]" />
                 </Link>
               )}
 
               {/* Cart */}
               <button
                 onClick={toggleCart}
-                className="relative p-2.5 hover:bg-white/[0.06] transition-colors"
+                className="relative p-3 hover:bg-white/[0.06] transition-colors"
                 aria-label="Keranjang"
               >
-                <ShoppingBag className="w-4 h-4" />
+                <ShoppingBag className="w-[18px] h-[18px]" />
                 <AnimatePresence>
                   {totalItems > 0 && (
                     <motion.span
@@ -224,7 +224,7 @@ export default function Navbar() {
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       exit={{ scale: 0 }}
-                      className="absolute top-1 right-1 w-3.5 h-3.5 bg-white text-black text-[9px] font-bold flex items-center justify-center rounded-full"
+                      className="absolute top-1.5 right-1.5 w-4 h-4 bg-white text-black text-[9px] font-bold flex items-center justify-center rounded-full"
                     >
                       {totalItems > 9 ? "9+" : totalItems}
                     </motion.span>
@@ -235,9 +235,10 @@ export default function Navbar() {
               {/* Mobile menu toggle */}
               <button
                 onClick={() => setMobileOpen(!mobileOpen)}
-                className="lg:hidden p-2.5 hover:bg-white/[0.06] transition-colors ml-1"
+                className="lg:hidden p-3 hover:bg-white/[0.06] transition-colors"
+                aria-label={mobileOpen ? "Tutup menu" : "Buka menu"}
               >
-                {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+                {mobileOpen ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
               </button>
             </div>
           </div>
@@ -281,39 +282,68 @@ export default function Navbar() {
         <AnimatePresence>
           {mobileOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-              className="lg:hidden overflow-hidden border-t border-white/[0.06] bg-brand-black"
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="lg:hidden border-t border-white/[0.06] bg-brand-black"
+              style={{ maxHeight: "calc(100dvh - 56px)", overflowY: "auto" }}
             >
-              <nav className="container-main py-6 flex flex-col gap-1">
+              <nav className="container-main py-5 flex flex-col">
+                {/* Main links */}
                 {[...navLinks, { href: "/products", label: "Toko" }].map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={() => setMobileOpen(false)}
-                    className="py-3 text-sm font-bold uppercase tracking-[0.25em] text-brand-gray-300 hover:text-white border-b border-white/[0.04] transition-colors"
+                    className="py-4 text-base font-bold uppercase tracking-[0.2em] text-brand-gray-300 hover:text-white border-b border-white/[0.04] transition-colors active:text-white"
                   >
                     {link.label}
                   </Link>
                 ))}
-                {shopLinks.slice(1).map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setMobileOpen(false)}
-                    className="py-2 pl-4 text-xs font-semibold uppercase tracking-widest text-brand-gray-500 hover:text-white border-b border-white/[0.03] transition-colors"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
-                {!session && (
-                  <div className="flex gap-3 mt-5">
-                    <Link href="/login"    className="btn-secondary flex-1 text-center" onClick={() => setMobileOpen(false)}>Masuk</Link>
-                    <Link href="/register" className="btn-primary  flex-1 text-center" onClick={() => setMobileOpen(false)}>Daftar</Link>
+
+                {/* Category sub-links */}
+                <div className="grid grid-cols-2 gap-x-4 py-3 border-b border-white/[0.04]">
+                  {shopLinks.slice(1).map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className="py-3 text-sm font-semibold uppercase tracking-widest text-brand-gray-500 hover:text-white transition-colors active:text-white"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
+
+                {/* Account links (mobile only) */}
+                {session ? (
+                  <div className="py-4 border-b border-white/[0.04] space-y-1">
+                    <p className="text-[10px] uppercase tracking-widest text-brand-gray-600 mb-3">Akun</p>
+                    <Link href="/profile"        onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><User className="w-4 h-4" /> Profil Saya</Link>
+                    <Link href="/profile/orders" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><ShoppingBag className="w-4 h-4" /> Pesanan Saya</Link>
+                    <Link href="/wishlist"        onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-brand-gray-300 hover:text-white transition-colors"><Heart className="w-4 h-4" /> Wishlist</Link>
+                    {(session.user as any)?.role === "ADMIN" && (
+                      <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-3 py-3 text-sm text-yellow-400 hover:text-yellow-300 transition-colors">
+                        Dashboard Admin
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => { setMobileOpen(false); signOut({ callbackUrl: "/" }); }}
+                      className="flex items-center gap-3 py-3 text-sm text-red-400 hover:text-red-300 transition-colors w-full text-left"
+                    >
+                      Keluar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex gap-3 py-5">
+                    <Link href="/login"    className="btn-secondary flex-1 text-center py-3.5" onClick={() => setMobileOpen(false)}>Masuk</Link>
+                    <Link href="/register" className="btn-primary  flex-1 text-center py-3.5" onClick={() => setMobileOpen(false)}>Daftar</Link>
                   </div>
                 )}
+
+                {/* Safe area bottom padding */}
+                <div style={{ height: "var(--safe-bottom, 0px)" }} />
               </nav>
             </motion.div>
           )}

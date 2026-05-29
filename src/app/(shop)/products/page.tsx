@@ -76,6 +76,20 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<PageProps["
     prisma.product.count({ where }),
   ]);
 
+  const productIds = products.map((p) => p.id);
+  const reviewStats = productIds.length > 0
+    ? await prisma.review.groupBy({
+        by: ["productId"],
+        _avg: { rating: true },
+        _count: { rating: true },
+        where: { productId: { in: productIds } },
+      })
+    : [];
+
+  const statsMap = Object.fromEntries(
+    reviewStats.map((s) => [s.productId, { avg: s._avg.rating ?? 0, count: s._count.rating }])
+  );
+
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   if (products.length === 0) {
@@ -93,9 +107,11 @@ async function ProductGrid({ searchParams }: { searchParams: Awaited<PageProps["
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {products.map((product) => (
-          <ProductCard key={product.id} product={product as any} />
-        ))}
+        {products.map((product) => {
+          const stats = statsMap[product.id];
+          const enriched = { ...product, averageRating: stats?.avg ?? 0, _count: { reviews: stats?.count ?? 0 } };
+          return <ProductCard key={product.id} product={enriched as any} />;
+        })}
       </div>
 
       {/* Pagination */}

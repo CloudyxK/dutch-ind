@@ -43,13 +43,14 @@ export default async function RootLayout({
       <head>
         <meta name="theme-color" content="#050507" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
       </head>
       <body className="font-sans antialiased">
         <SessionProvider session={session}>
           <Analytics />
           {children}
           <Toaster
-            position="top-right"
+            position="bottom-center"
             toastOptions={{
               style: {
                 background: "#171717",

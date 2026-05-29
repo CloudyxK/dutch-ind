@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Instagram } from "lucide-react";
 import prisma from "@/lib/prisma";
+import NewsletterForm from "./NewsletterForm";
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -38,11 +39,11 @@ const footerLinks = {
     { href: "/products?category=aksesori",   label: "Aksesori"   },
   ],
   bantuan: [
-    { label: "Panduan Ukuran",       href: "#" },
-    { label: "Informasi Pengiriman", href: "#" },
-    { label: "Pengembalian Barang",  href: "#" },
-    { label: "Cara Pemesanan",       href: "#" },
-    { label: "Hubungi Kami",         href: "#" },
+    { label: "Panduan Ukuran",       href: "/help#ukuran"       },
+    { label: "Informasi Pengiriman", href: "/help#pengiriman"   },
+    { label: "Pengembalian Barang",  href: "/help#pengembalian" },
+    { label: "Cara Pemesanan",       href: "/help#cara-pemesanan" },
+    { label: "Hubungi Kami",         href: "/contact"           },
   ],
   perusahaan: [
     { href: "/about",   label: "Tentang Kami"       },
@@ -92,8 +93,8 @@ export default async function Footer() {
         </div>
       </div>
 
-      <div className="container-main py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+      <div className="container-main py-10 md:py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-10">
 
           {/* Brand */}
           <div className="lg:col-span-2">
@@ -171,9 +172,9 @@ export default async function Footer() {
             <ul className="space-y-2">
               {footerLinks.bantuan.map(link => (
                 <li key={link.label}>
-                  <a href={link.href} className="text-sm text-brand-gray-400 hover:text-white transition-colors">
+                  <Link href={link.href} className="text-sm text-brand-gray-400 hover:text-white transition-colors">
                     {link.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -207,7 +208,7 @@ export default async function Footer() {
         </div>
 
         {/* Newsletter */}
-        <div className="mt-12 pt-10 border-t border-brand-gray-800">
+        <div className="mt-8 pt-6 md:mt-12 md:pt-10 border-t border-brand-gray-800">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
             <div>
               <h3 className="text-sm font-bold uppercase tracking-widest">Dapatkan Info Terbaru</h3>
@@ -215,15 +216,12 @@ export default async function Footer() {
                 Daftarkan email kamu untuk mendapatkan info drop terbaru dan promo eksklusif.
               </p>
             </div>
-            <form className="flex gap-0 w-full md:w-80">
-              <input type="email" placeholder="Email kamu" className="input-field flex-1 py-2 min-w-0" />
-              <button type="submit" className="btn-primary px-4 py-2 whitespace-nowrap flex-shrink-0">Daftar</button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-10 pt-6 border-t border-brand-gray-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="mt-6 pt-4 md:mt-10 md:pt-6 border-t border-brand-gray-800 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <p className="text-xs text-brand-gray-600">© {new Date().getFullYear()} DUTCH.IND. Hak Cipta Dilindungi.</p>
           <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <span className="text-xs text-brand-gray-600">Metode Pembayaran:</span>

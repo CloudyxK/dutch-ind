@@ -9,6 +9,7 @@ import { useSession } from "next-auth/react";
 import { formatPrice, calculateDiscount, formatDate } from "@/lib/utils";
 import ProductCard from "./ProductCard";
 import ReviewForm from "./ReviewForm";
+import RecentlyViewedSection from "./RecentlyViewedSection";
 import type { Product } from "@/types";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
@@ -533,6 +534,20 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
             </div>
           </div>
         )}
+
+        {/* Recently viewed */}
+        <RecentlyViewedSection
+          currentProductId={product.id}
+          current={{
+            id: product.id,
+            slug: product.slug,
+            name: product.name,
+            price: product.price,
+            comparePrice: product.comparePrice,
+            imageUrl: product.images[0]?.url || "",
+            category: product.category?.name,
+          }}
+        />
       </div>
 
       {/* ── Size Guide Modal ─────────────────────────────── */}
