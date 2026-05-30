@@ -8,6 +8,7 @@ import { ChevronLeft, MapPin, CreditCard, Package, MessageCircle, Instagram, Pri
 import TrackingPanel from "@/components/order/TrackingPanel";
 import OrderReviewSection from "@/components/order/OrderReviewSection";
 import ManualPaymentPanel from "@/components/order/ManualPaymentPanel";
+import MidtransPayButton from "@/components/order/MidtransPayButton";
 import CancelOrderButton from "@/components/order/CancelOrderButton";
 import ReturnRequestButton from "@/components/order/ReturnRequestButton";
 
@@ -309,6 +310,16 @@ export default async function OrderDetailPage({ params }: Props) {
               )}
             </div>
           </div>
+
+          {/* Midtrans payment panel */}
+          {order.payment?.method === "MIDTRANS" &&
+           order.payment?.status !== "SUCCESS" &&
+           !["SHIPPED", "DELIVERED", "COMPLETED", "CANCELLED"].includes(order.status) && (
+            <MidtransPayButton
+              orderId={order.id}
+              amount={order.total}
+            />
+          )}
 
           {/* Manual payment panel */}
           {["MANUAL", "TRANSFER", "QRIS", "EWALLET"].includes(order.payment?.method ?? "") &&
