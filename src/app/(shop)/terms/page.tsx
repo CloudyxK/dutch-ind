@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Syarat & Ketentuan â€” DUTCH.IND",
+  title: "Syarat & Ketentuan — DUTCH.IND",
   description: "Syarat dan ketentuan penggunaan layanan DUTCH.IND.",
 };
 
@@ -34,7 +34,7 @@ export default function TermsPage() {
         </div>
 
         <div className="lg:flex lg:gap-16">
-          {/* Sticky sidebar nav â€” desktop only */}
+          {/* Sticky sidebar nav — desktop only */}
           <nav className="hidden lg:block w-48 shrink-0">
             <div className="sticky top-24">
               <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-600 mb-4">
@@ -65,8 +65,8 @@ export default function TermsPage() {
               </h2>
               <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
                 <p>
-                  Dengan mengakses dan menggunakan layanan DUTCH.IND â€” termasuk website,
-                  aplikasi, dan seluruh fitur yang tersedia â€” kamu menyatakan telah membaca,
+                  Dengan mengakses dan menggunakan layanan DUTCH.IND — termasuk website,
+                  aplikasi, dan seluruh fitur yang tersedia — kamu menyatakan telah membaca,
                   memahami, dan menyetujui syarat dan ketentuan ini secara penuh.
                 </p>
                 <p>
@@ -86,7 +86,7 @@ export default function TermsPage() {
                 <ul className="list-disc list-inside space-y-1.5 ml-2">
                   <li>
                     Kamu sepenuhnya bertanggung jawab atas keamanan akun dan kerahasiaan
-                    kata sandi â€” jangan bagikan kepada siapapun
+                    kata sandi — jangan bagikan kepada siapapun
                   </li>
                   <li>
                     Setiap pengguna hanya diperbolehkan memiliki satu akun aktif; akun
@@ -182,7 +182,7 @@ export default function TermsPage() {
                   </li>
                   <li>
                     Refund diproses dalam{" "}
-                    <span className="text-white font-medium">3â€“7 hari kerja</span> setelah
+                    <span className="text-white font-medium">3”“7 hari kerja</span> setelah
                     barang diterima dan diperiksa oleh tim kami
                   </li>
                   <li>
@@ -200,9 +200,9 @@ export default function TermsPage() {
               </h2>
               <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
                 <p>
-                  Seluruh konten yang tersedia di platform DUTCH.IND â€” termasuk namun tidak
+                  Seluruh konten yang tersedia di platform DUTCH.IND — termasuk namun tidak
                   terbatas pada foto produk, desain grafis, logo, nama brand, teks, dan
-                  tampilan antarmuka â€” adalah milik eksklusif DUTCH.IND dan dilindungi
+                  tampilan antarmuka — adalah milik eksklusif DUTCH.IND dan dilindungi
                   oleh hukum hak cipta Republik Indonesia.
                 </p>
                 <p>

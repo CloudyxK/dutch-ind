@@ -3,9 +3,9 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Kebijakan Privasi â€” DUTCH.IND",
+  title: "Kebijakan Privasi — DUTCH.IND",
   description:
-    "Kebijakan privasi DUTCH.IND â€” bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi kamu.",
+    "Kebijakan privasi DUTCH.IND — bagaimana kami mengumpulkan, menggunakan, dan melindungi data pribadi kamu.",
 };
 
 const sections = [
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
         </div>
 
         <div className="lg:flex lg:gap-16">
-          {/* Sticky sidebar nav â€” desktop only */}
+          {/* Sticky sidebar nav — desktop only */}
           <nav className="hidden lg:block w-48 shrink-0">
             <div className="sticky top-24">
               <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-600 mb-4">
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
               <div className="text-sm text-brand-gray-300 leading-relaxed space-y-2">
                 <p>
                   Kami menyimpan seluruh data kamu menggunakan enkripsi standar industri.
-                  Kata sandi disimpan dalam bentuk hash terenkripsi â€” tidak dapat dibaca oleh
+                  Kata sandi disimpan dalam bentuk hash terenkripsi — tidak dapat dibaca oleh
                   siapapun, termasuk tim kami.
                 </p>
                 <p>

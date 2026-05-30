@@ -54,7 +54,7 @@ export default function HeroSection() {
       ref={sectionRef}
       className="relative min-h-screen flex items-center overflow-hidden bg-[#080808]"
     >
-      {/* â”€â”€ Film grain â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Film grain ────────────────────────────────────────── */}
       <svg
         className="absolute inset-0 w-full h-full pointer-events-none z-20"
         style={{ opacity: 0.055, mixBlendMode: "overlay" }}
@@ -67,7 +67,7 @@ export default function HeroSection() {
         <rect width="100%" height="100%" filter="url(#grain-filter)" />
       </svg>
 
-      {/* â”€â”€ Vignette â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Vignette ─────────────────────────────────────────── */}
       <div
         aria-hidden
         className="absolute inset-0 z-10 pointer-events-none"
@@ -77,7 +77,7 @@ export default function HeroSection() {
         }}
       />
 
-      {/* â”€â”€ Diagonal light beam â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Diagonal light beam ──────────────────────────────── */}
       <motion.div
         aria-hidden
         className="absolute pointer-events-none z-10 will-change-transform"
@@ -92,7 +92,7 @@ export default function HeroSection() {
         }}
       />
 
-      {/* â”€â”€ Ambient glow â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Ambient glow ─────────────────────────────────────── */}
       <div
         aria-hidden
         className="absolute pointer-events-none z-[5]"
@@ -104,11 +104,11 @@ export default function HeroSection() {
         }}
       />
 
-      {/* â”€â”€ Cinematic letterbox bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Cinematic letterbox bars ──────────────────────────── */}
       <div aria-hidden className="absolute top-0 inset-x-0 h-[3.5vh] bg-black z-30 pointer-events-none" />
       <div aria-hidden className="absolute bottom-0 inset-x-0 h-[3.5vh] bg-black z-30 pointer-events-none" />
 
-      {/* â”€â”€ Background wordmark + parallax â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Background wordmark + parallax ───────────────────── */}
       <motion.div
         aria-hidden
         style={{ y: parallaxY }}
@@ -127,7 +127,7 @@ export default function HeroSection() {
         </span>
       </motion.div>
 
-      {/* â”€â”€ 3D Floating logo emblem (top-right) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── 3D Floating logo emblem (top-right) ─────────────── */}
       <motion.div
         aria-hidden
         className="absolute pointer-events-none select-none hidden lg:block"
@@ -159,7 +159,7 @@ export default function HeroSection() {
         </div>
       </motion.div>
 
-      {/* â”€â”€ Main content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Main content ─────────────────────────────────────── */}
       <motion.div
         className="container-main relative z-20 py-24"
         variants={container}
@@ -211,7 +211,7 @@ export default function HeroSection() {
             className="mt-6 text-sm max-w-[280px] leading-relaxed text-white/38"
             style={{ color: "rgba(255,255,255,0.38)" }}
           >
-            Seller brand lokal streetwear #1 termurah di Samarinda â€” kualitas premium, harga terjangkau.
+            Seller brand lokal streetwear #1 termurah di Samarinda — kualitas premium, harga terjangkau.
           </motion.p>
 
           {/* CTAs */}
@@ -249,7 +249,7 @@ export default function HeroSection() {
         </div>
       </motion.div>
 
-      {/* â”€â”€ Scroll indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Scroll indicator ─────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.3 }}

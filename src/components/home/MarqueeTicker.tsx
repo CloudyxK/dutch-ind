@@ -1,10 +1,10 @@
-﻿const items = [
-  "DUTCH.IND", "Â·", "STREETWEAR", "Â·", "SS 2026", "Â·",
-  "PREMIUM", "Â·", "SAMARINDA", "Â·", "100% ORIGINAL", "Â·",
-  "KUALITAS PREMIUM", "Â·", "GAYA OTENTIK", "Â·", "SEJAK 2026", "Â·",
-  "DUTCH.IND", "Â·", "STREETWEAR", "Â·", "SS 2026", "Â·",
-  "PREMIUM", "Â·", "SAMARINDA", "Â·", "100% ORIGINAL", "Â·",
-  "KUALITAS PREMIUM", "Â·", "GAYA OTENTIK", "Â·", "SEJAK 2026", "Â·",
+const items = [
+  "DUTCH.IND", "·", "STREETWEAR", "·", "SS 2026", "·",
+  "PREMIUM", "·", "SAMARINDA", "·", "100% ORIGINAL", "·",
+  "KUALITAS PREMIUM", "·", "GAYA OTENTIK", "·", "SEJAK 2026", "·",
+  "DUTCH.IND", "·", "STREETWEAR", "·", "SS 2026", "·",
+  "PREMIUM", "·", "SAMARINDA", "·", "100% ORIGINAL", "·",
+  "KUALITAS PREMIUM", "·", "GAYA OTENTIK", "·", "SEJAK 2026", "·",
 ];
 
 export default function MarqueeTicker() {
@@ -26,9 +26,9 @@ export default function MarqueeTicker() {
             key={i}
             className="inline-flex items-center font-display text-[10px] uppercase mx-4"
             style={{
-              letterSpacing: w === "Â·" ? "0" : "0.38em",
+              letterSpacing: w === "·" ? "0" : "0.38em",
               color:
-                w === "Â·"
+                w === "·"
                   ? "rgba(255,255,255,0.14)"
                   : "rgba(255,255,255,0.35)",
             }}

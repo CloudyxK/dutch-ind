@@ -22,7 +22,7 @@ export default function SplashScreen() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  /* â”€â”€ Three.js scene â”€â”€ */
+  /* ── Three.js scene ── */
   useEffect(() => {
     if (!mounted || !canvasRef.current) return;
 
@@ -96,7 +96,7 @@ export default function SplashScreen() {
     const group = new THREE.Group();
     scene.add(group);
 
-    /* Load logo texture â†’ create extruded mesh stack */
+    /* Load logo texture → create extruded mesh stack */
     const loader = new THREE.TextureLoader();
     loader.load(
       "/logo.png",
@@ -109,7 +109,7 @@ export default function SplashScreen() {
         const pw = 3.2;
         const ph = pw / aspect;
 
-        /* â”€â”€ DEPTH SLABS â€” extruded layers â”€â”€ */
+        /* ── DEPTH SLABS — extruded layers ── */
         const SLABS = 18;
         const SLAB_DEPTH = 0.055;
 
@@ -138,7 +138,7 @@ export default function SplashScreen() {
           group.add(mesh);
         }
 
-        /* â”€â”€ FRONT FACE â€” chrome â”€â”€ */
+        /* ── FRONT FACE — chrome ── */
         const frontGeo = new THREE.PlaneGeometry(pw, ph);
         const frontMat = new THREE.MeshStandardMaterial({
           map:             logoTex,
@@ -158,7 +158,7 @@ export default function SplashScreen() {
         frontMesh.renderOrder = SLABS + 1;
         group.add(frontMesh);
 
-        /* â”€â”€ BACK FACE â”€â”€ */
+        /* ── BACK FACE ── */
         const backMat = new THREE.MeshStandardMaterial({
           map:         logoTex,
           alphaMap:    logoTex,
@@ -178,7 +178,7 @@ export default function SplashScreen() {
       (err) => console.warn("Logo load error:", err)
     );
 
-    /* â”€â”€ RAF render loop â”€â”€ */
+    /* ── RAF render loop ── */
     function tick() {
       timeRef.current += 0.008;
 
@@ -225,7 +225,7 @@ export default function SplashScreen() {
     };
   }, [mounted]);
 
-  /* â”€â”€ Drag / touch â”€â”€ */
+  /* ── Drag / touch ── */
   const onMouseDown = useCallback((e: React.MouseEvent) => {
     isDragging.current = true;
     lastX.current = e.clientX;
@@ -312,7 +312,7 @@ export default function SplashScreen() {
         />
       ))}
 
-      {/* â”€â”€ Three.js Canvas â”€â”€ */}
+      {/* ── Three.js Canvas ── */}
       <div
         className={`relative mb-14 ${leaving ? "animate-logo-leave" : "animate-logo-enter"}`}
         style={{ cursor: isDragging.current ? "grabbing" : "grab" }}
@@ -343,7 +343,7 @@ export default function SplashScreen() {
         </p>
       </div>
 
-      {/* â”€â”€ MASUK button â”€â”€ */}
+      {/* ── MASUK button ── */}
       <div
         className={leaving ? "opacity-0 translate-y-6" : "animate-enter-text"}
         style={{ transition: leaving ? "all 0.35s ease-in" : "" }}
