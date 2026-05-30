@@ -73,36 +73,69 @@ export default function AdminProductForm({ categories, initialData }: Props) {
   const updateImage = (index: number, url: string) =>
     setImages((prev) => prev.map((img, i) => (i === index ? url : img)));
 
+  const uploadToCloudinaryDirect = async (file: File): Promise<string | null> => {
+    // Get signed params from server
+    const paramRes = await fetch("/api/admin/upload", { method: "GET" });
+    if (!paramRes.ok) return null;
+    const { cloudName, apiKey, timestamp, signature, folder } = await paramRes.json();
+
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("api_key", apiKey);
+    fd.append("timestamp", String(timestamp));
+    fd.append("signature", signature);
+    fd.append("folder", folder);
+    fd.append("transformation", "c_limit,w_1200,h_1200/q_auto:good,f_auto");
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+      method: "POST",
+      body: fd,
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.secure_url ?? null;
+  };
+
   const handleFileUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
     const uploaded: string[] = [];
+
     for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append("file", file);
+      // Try server-side upload first
       try {
-        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const fd = new FormData();
+        fd.append("file", file);
+        const res  = await fetch("/api/admin/upload", { method: "POST", body: fd });
         const data = await res.json();
-        if (!res.ok) {
-          if (data.error?.includes("dikonfigurasi")) {
-            toast.error("Cloudinary belum dikonfigurasi. Gunakan 'Tambah via URL' untuk sementara.", { duration: 5000 });
-            setShowUrlInput(true);
-          } else {
-            toast.error(data.error || "Upload gagal");
-          }
+
+        if (res.ok && data.url) {
+          uploaded.push(data.url);
           continue;
         }
-        uploaded.push(data.url);
+
+        // Server failed — fallback to direct browser upload
+        console.warn("Server upload failed, trying direct Cloudinary upload:", data.error);
+        const directUrl = await uploadToCloudinaryDirect(file);
+        if (directUrl) {
+          uploaded.push(directUrl);
+        } else {
+          toast.error(data.error || "Gagal mengupload gambar");
+        }
       } catch (err: any) {
-        toast.error(err.message);
+        // Network error — try direct upload
+        const directUrl = await uploadToCloudinaryDirect(file).catch(() => null);
+        if (directUrl) {
+          uploaded.push(directUrl);
+        } else {
+          toast.error("Gagal mengupload gambar. Coba lagi.");
+        }
       }
     }
+
     setUploading(false);
     if (uploaded.length === 0) return;
-    setImages((prev) => {
-      const cleaned = prev.filter(Boolean);
-      return [...cleaned, ...uploaded];
-    });
+    setImages((prev) => [...prev.filter(Boolean), ...uploaded]);
   };
 
   const handleAddUrl = () => {
