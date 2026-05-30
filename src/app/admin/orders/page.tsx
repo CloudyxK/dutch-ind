@@ -122,6 +122,8 @@ export default async function AdminOrdersPage() {
                         orderNumber={order.orderNumber}
                         buyerName={order.user.name}
                         buyerPhone={order.address?.phone}
+                        buyerEmail={order.user.email}
+                        buyerUserId={order.userId}
                       />
                               {/* Manual payment confirm/reject */}
                       {order.payment &&

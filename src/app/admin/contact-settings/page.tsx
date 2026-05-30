@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { Save, Loader2, MessageCircle, Instagram, Mail, Clock, AtSign } from "lucide-react";
+import { Save, Loader2, MessageCircle, Instagram, Mail, Clock, AtSign, Image as ImageIcon, Plus, Trash2, GripVertical } from "lucide-react";
 
 type Config = {
   whatsapp:         string;
@@ -27,11 +27,19 @@ export default function ContactSettingsPage() {
   const [fetching, setFetching] = useState(true);
   const [saving,   setSaving]   = useState(false);
 
+  // Instagram feed images
+  const [feedImages, setFeedImages]     = useState<string[]>([]);
+  const [newFeedUrl, setNewFeedUrl]     = useState("");
+  const [savingFeed, setSavingFeed]     = useState(false);
+
   useEffect(() => {
-    fetch("/api/admin/contact-settings")
-      .then(r => r.json())
-      .then(({ data }) => { if (data) setConfig({ ...EMPTY, ...data }); })
-      .finally(() => setFetching(false));
+    Promise.all([
+      fetch("/api/admin/contact-settings").then(r => r.json()),
+      fetch("/api/admin/instagram-feed").then(r => r.json()),
+    ]).then(([contactData, feedData]) => {
+      if (contactData.data) setConfig({ ...EMPTY, ...contactData.data });
+      if (Array.isArray(feedData.data)) setFeedImages(feedData.data);
+    }).finally(() => setFetching(false));
   }, []);
 
   const set = (key: keyof Config, value: string) =>
@@ -49,6 +57,35 @@ export default function ContactSettingsPage() {
       toast.success("Kontak berhasil disimpan");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const addFeedImage = () => {
+    const url = newFeedUrl.trim();
+    if (!url || !/^https?:\/\/.+/.test(url)) { toast.error("Masukkan URL gambar yang valid (http/https)"); return; }
+    if (feedImages.length >= 12) { toast.error("Maksimal 12 gambar"); return; }
+    setFeedImages(prev => [...prev, url]);
+    setNewFeedUrl("");
+  };
+
+  const removeFeedImage = (idx: number) => {
+    setFeedImages(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const saveFeed = async () => {
+    setSavingFeed(true);
+    try {
+      const res = await fetch("/api/admin/instagram-feed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ images: feedImages }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Foto Instagram berhasil disimpan");
+    } catch {
+      toast.error("Gagal menyimpan foto");
+    } finally {
+      setSavingFeed(false);
     }
   };
 
@@ -179,6 +216,83 @@ export default function ContactSettingsPage() {
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
         Simpan Kontak
       </button>
+
+      {/* Instagram Feed Images */}
+      <div className="bg-brand-gray-900 border border-brand-gray-700 p-6 space-y-5">
+        <div>
+          <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+            <Instagram className="w-4 h-4 text-pink-400" /> Foto Feed Instagram
+          </h2>
+          <p className="text-xs text-brand-gray-500 mt-1">
+            Foto-foto ini tampil di bagian bawah halaman utama. Maks. 6 foto (dari 12 yang disimpan). Salin URL foto dari Cloudinary, IG, atau hosting lainnya.
+          </p>
+        </div>
+
+        {/* Current images */}
+        {feedImages.length > 0 && (
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+            {feedImages.map((url, idx) => (
+              <div key={idx} className="relative group aspect-square bg-brand-gray-800 overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt={`Feed ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <button
+                    onClick={() => removeFeedImage(idx)}
+                    className="p-1.5 bg-red-600 hover:bg-red-500 text-white rounded-sm transition-colors"
+                    title="Hapus foto"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="absolute top-1 left-1 bg-black/70 text-[9px] text-white px-1 rounded-sm">
+                  {idx + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {feedImages.length === 0 && (
+          <div className="border border-dashed border-brand-gray-700 p-8 text-center">
+            <ImageIcon className="w-8 h-8 text-brand-gray-600 mx-auto mb-2" />
+            <p className="text-xs text-brand-gray-500">Belum ada foto. Tambahkan URL gambar di bawah.</p>
+          </div>
+        )}
+
+        {/* Add image URL */}
+        {feedImages.length < 12 && (
+          <div>
+            <label className="input-label">Tambah URL Foto</label>
+            <div className="flex gap-2">
+              <input
+                value={newFeedUrl}
+                onChange={(e) => setNewFeedUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addFeedImage()}
+                className="input-field flex-1 text-sm"
+                placeholder="https://res.cloudinary.com/.../foto.jpg"
+              />
+              <button
+                type="button"
+                onClick={addFeedImage}
+                disabled={!newFeedUrl.trim()}
+                className="btn-secondary px-3 flex items-center gap-1 text-xs disabled:opacity-40"
+              >
+                <Plus className="w-3.5 h-3.5" /> Tambah
+              </button>
+            </div>
+            <p className="text-[10px] text-brand-gray-600 mt-1">{feedImages.length}/12 foto</p>
+          </div>
+        )}
+
+        <button
+          onClick={saveFeed}
+          disabled={savingFeed}
+          className="btn-primary flex items-center gap-2 disabled:opacity-50"
+        >
+          {savingFeed ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Simpan Foto Feed
+        </button>
+      </div>
     </div>
   );
 }

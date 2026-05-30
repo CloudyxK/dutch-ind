@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Truck, Check, RefreshCw, ChevronDown, X, Trash2, StickyNote, MessageCircle } from "lucide-react";
+import { Truck, Check, RefreshCw, ChevronDown, X, Trash2, StickyNote, MessageCircle, Mail, Loader2 } from "lucide-react";
 import { CARRIER_OPTIONS } from "@/lib/tracking";
 
 const STATUS_OPTIONS = [
@@ -46,6 +46,8 @@ interface Props {
   orderNumber?: string;
   buyerName?: string;
   buyerPhone?: string;
+  buyerEmail?: string | null;
+  buyerUserId?: string | null;
 }
 
 export default function AdminOrderActions({
@@ -58,6 +60,8 @@ export default function AdminOrderActions({
   orderNumber,
   buyerName,
   buyerPhone,
+  buyerEmail,
+  buyerUserId,
 }: Props) {
   const router = useRouter();
   const [updating, setUpdating]   = useState(false);
@@ -199,6 +203,44 @@ export default function AdminOrderActions({
       toast.error("Gagal menyimpan pesan");
     } finally {
       setSavingAdminNote(false);
+    }
+  };
+
+  // Email to buyer
+  const [showEmail, setShowEmail]         = useState(false);
+  const [emailSubject, setEmailSubject]   = useState(`Pesanan #${orderNumber ?? ""} dari DUTCH.IND`);
+  const [emailMessage, setEmailMessage]   = useState("");
+  const [sendingEmail, setSendingEmail]   = useState(false);
+
+  const sendEmail = async () => {
+    if (!emailSubject.trim() || !emailMessage.trim()) {
+      toast.error("Isi subjek dan pesan email");
+      return;
+    }
+    setSendingEmail(true);
+    try {
+      const res = await fetch("/api/admin/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: buyerUserId,
+          email: buyerEmail,
+          recipientName: buyerName ?? "Pelanggan",
+          subject: emailSubject.trim(),
+          message: emailMessage.trim(),
+        }),
+      });
+      if (!res.ok) {
+        const d = await res.json();
+        throw new Error(d.error || "Gagal mengirim email");
+      }
+      toast.success("Email berhasil dikirim!");
+      setShowEmail(false);
+      setEmailMessage("");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -371,6 +413,51 @@ export default function AdminOrderActions({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Kirim Email ke Pembeli */}
+      {(buyerEmail || buyerUserId) && (
+        !showEmail ? (
+          <button
+            onClick={() => setShowEmail(true)}
+            className="flex items-center gap-1 text-[10px] text-purple-400/70 hover:text-purple-300 transition-colors"
+          >
+            <Mail className="w-3 h-3" />
+            <span>Kirim Email ke Pembeli</span>
+          </button>
+        ) : (
+          <div className="space-y-1">
+            <p className="text-[9px] text-purple-400 uppercase tracking-wider">Kirim Email</p>
+            <input
+              value={emailSubject}
+              onChange={(e) => setEmailSubject(e.target.value)}
+              placeholder="Subjek email..."
+              maxLength={200}
+              className="w-full bg-brand-gray-800 border border-purple-500/30 text-[10px] px-2 py-1 text-white focus:outline-none focus:border-purple-400"
+            />
+            <textarea
+              value={emailMessage}
+              onChange={(e) => setEmailMessage(e.target.value)}
+              rows={3}
+              maxLength={2000}
+              placeholder="Pesan email untuk pembeli..."
+              className="w-full bg-brand-gray-800 border border-purple-500/30 text-[10px] px-2 py-1 text-white focus:outline-none focus:border-purple-400 resize-none"
+            />
+            <div className="flex gap-1">
+              <button
+                onClick={sendEmail}
+                disabled={sendingEmail}
+                className="flex items-center gap-1 bg-purple-600 hover:bg-purple-500 text-white text-[10px] px-2 py-1 disabled:opacity-50 transition-colors"
+              >
+                {sendingEmail ? <Loader2 className="w-3 h-3 animate-spin" /> : <Mail className="w-3 h-3" />}
+                Kirim
+              </button>
+              <button onClick={() => setShowEmail(false)} className="text-brand-gray-500 hover:text-white px-1">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        )
       )}
 
       {/* Delete order */}

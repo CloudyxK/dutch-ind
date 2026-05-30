@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useCartStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import toast from "react-hot-toast";
-import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck, QrCode, Wallet, Star } from "lucide-react";
+import { Tag, Loader2, MapPin, ChevronDown, Check, X, Banknote, HandCoins, Truck, QrCode, Wallet, Star, Users, AlertCircle } from "lucide-react";
 
 type SavedAddress = {
   id: string;
@@ -85,6 +85,10 @@ export default function CheckoutPage() {
   const [couponData, setCouponData] = useState<{ discountAmount: number; description: string } | null>(null);
   const [checkingCoupon, setCheckingCoupon] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // "Beli untuk orang lain"
+  const [isForOther, setIsForOther] = useState(false);
 
   // Points redemption
   const [userPoints, setUserPoints] = useState(0);
@@ -323,18 +327,23 @@ export default function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
     if (isCodAntar && !codMeetingPoint.trim()) {
       toast.error("Masukkan titik pertemuan untuk COD Antar");
-      setLoading(false);
       return;
     }
     if (isCodAntar && codBlocked) {
       toast.error("COD Antar hanya tersedia di Kota Samarinda");
-      setLoading(false);
       return;
     }
+
+    // Show confirmation modal before placing order
+    setShowConfirmModal(true);
+  };
+
+  const confirmAndPlaceOrder = async () => {
+    setShowConfirmModal(false);
+    setLoading(true);
 
     try {
       const res = await fetch("/api/orders", {
@@ -356,6 +365,7 @@ export default function CheckoutPage() {
           shippingCost: isCodAntar ? 0 : shippingCost,
           notes: [
             isCodAntar ? `[COD] Titik pertemuan: ${codMeetingPoint}` : "",
+            isForOther ? `[Beli untuk orang lain] Penerima: ${form.recipientName}` : "",
             form.notes,
           ].filter(Boolean).join("\n"),
           giftNote: isGift ? giftNote : undefined,
@@ -392,8 +402,133 @@ export default function CheckoutPage() {
 
   if (!session || (items.length === 0 && !quickBuyItem)) return null;
 
+  const paymentMethodLabel: Record<string, string> = {
+    TRANSFER: "Transfer Bank (Virtual Account)",
+    EWALLET: "E-Wallet (GoPay / DANA / OVO)",
+    QRIS: "QRIS",
+    COD: "Bayar Tunai (COD Antar)",
+    MANUAL: "Transfer / QRIS / E-Wallet",
+  };
+
   return (
     <>
+      {/* ── Order Confirmation Modal ─────────────────────── */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+          <div
+            className="w-full sm:max-w-md bg-brand-black border border-brand-gray-700 overflow-y-auto max-h-[95dvh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-brand-gray-800">
+              <p className="text-sm font-bold uppercase tracking-widest">Konfirmasi Pesanan</p>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="p-1 hover:text-brand-gray-400 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-5">
+              {/* Items summary */}
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-3">Produk</p>
+                <ul className="space-y-2">
+                  {effectiveItems.map((item) => (
+                    <li key={item.variantId} className="flex items-center gap-3 text-xs">
+                      <div className="relative w-10 h-12 bg-brand-gray-800 flex-shrink-0">
+                        <Image src={item.product.images[0]?.url || ""} alt={item.product.name} fill className="object-cover" sizes="40px" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{item.product.name}</p>
+                        <p className="text-brand-gray-500">Qty {item.quantity}</p>
+                      </div>
+                      <span className="font-bold flex-shrink-0">{formatPrice(item.product.price * item.quantity)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Address */}
+              <div className="border-t border-brand-gray-800 pt-4">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-gray-500 mb-2">Dikirim ke</p>
+                <p className="text-sm font-semibold">{form.recipientName} — {form.phone}</p>
+                <p className="text-xs text-brand-gray-400 mt-0.5">{form.street}, {form.district}, {form.city}, {form.province} {form.postalCode}</p>
+                {isForOther && (
+                  <p className="text-xs text-blue-400 mt-1 flex items-center gap-1">
+                    <Users className="w-3 h-3" /> Dikirim ke orang lain
+                  </p>
+                )}
+              </div>
+
+              {/* Shipping + Payment */}
+              <div className="border-t border-brand-gray-800 pt-4 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-brand-gray-400">Pengiriman</span>
+                  <span className="font-medium text-right">{isCodAntar ? `COD Antar — ${codMeetingPoint}` : `${form.shippingMethod} via ${form.shippingCarrier}`}</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-brand-gray-400">Pembayaran</span>
+                  <span className="font-medium">{paymentMethodLabel[paymentMethod] ?? paymentMethod}</span>
+                </div>
+                {isGift && giftNote && (
+                  <div className="flex justify-between text-xs">
+                    <span className="text-brand-gray-400">Pesan hadiah</span>
+                    <span className="font-medium text-right max-w-[200px] truncate">{giftNote}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Totals */}
+              <div className="border-t border-brand-gray-800 pt-4 space-y-1.5 text-sm">
+                <div className="flex justify-between text-brand-gray-400">
+                  <span>Subtotal</span><span>{formatPrice(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-brand-gray-400">
+                  <span>Ongkir</span>
+                  <span className={effectiveShippingCost === 0 ? "text-green-400" : ""}>{effectiveShippingCost === 0 ? "Gratis" : formatPrice(effectiveShippingCost)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-green-400">
+                    <span>Kupon</span><span>-{formatPrice(discountAmount)}</span>
+                  </div>
+                )}
+                {usePoints && pointsDiscount > 0 && (
+                  <div className="flex justify-between text-amber-400">
+                    <span>Poin ({maxPointsToUse} poin)</span><span>-{formatPrice(pointsDiscount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-base border-t border-brand-gray-800 pt-2 mt-1">
+                  <span>Total Bayar</span><span>{formatPrice(total)}</span>
+                </div>
+              </div>
+
+              {/* CTA */}
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={confirmAndPlaceOrder}
+                  disabled={loading}
+                  className="btn-primary w-full flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+                  ) : (
+                    <><Check className="w-4 h-4" /> Konfirmasi &amp; Buat Pesanan</>
+                  )}
+                </button>
+                <button
+                  onClick={() => setShowConfirmModal(false)}
+                  className="w-full py-3 text-sm text-brand-gray-400 hover:text-white transition-colors"
+                >
+                  Kembali &amp; Ubah Pesanan
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="min-h-screen py-10">
         <div className="container-main">
           <h1 className="section-title mb-8">Checkout</h1>
@@ -511,9 +646,43 @@ export default function CheckoutPage() {
                     </div>
                   )}
 
+                  {/* Beli untuk orang lain */}
+                  <div className="mb-5">
+                    <label className="flex items-center gap-3 cursor-pointer select-none group">
+                      <div
+                        onClick={() => {
+                          setIsForOther((v) => !v);
+                          if (!isForOther) {
+                            // Switching to "for other" — clear recipient fields
+                            setSelectedAddressId(null);
+                            setForm((prev) => ({ ...prev, recipientName: "", phone: "" }));
+                          } else {
+                            // Switching back to "for me" — restore from session
+                            setForm((prev) => ({ ...prev, recipientName: session?.user?.name || "" }));
+                          }
+                        }}
+                        className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isForOther ? "bg-white border-white" : "border-brand-gray-600 group-hover:border-white"}`}
+                      >
+                        {isForOther && <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Users className="w-4 h-4 text-brand-gray-400" />
+                        <span className="text-sm">Kirim ke orang lain (hadiah / titip)</span>
+                      </div>
+                    </label>
+                    {isForOther && (
+                      <div className="mt-3 flex items-start gap-2 px-3 py-2.5 bg-blue-950/30 border border-blue-700/40">
+                        <AlertCircle className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                        <p className="text-xs text-blue-300">
+                          Isi nama &amp; alamat penerima di bawah. Pesananmu akan dikemas dan dikirim langsung ke mereka.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="input-label">Nama Penerima</label>
+                      <label className="input-label">{isForOther ? "Nama Penerima (orang lain)" : "Nama Penerima"}</label>
                       <input
                         name="recipientName"
                         value={form.recipientName}

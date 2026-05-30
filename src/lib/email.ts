@@ -288,6 +288,57 @@ export async function sendAbandonedCartEmail(
   );
 }
 
+// ── Email notif perubahan status pesanan ─────────────────────────────────────
+export async function sendOrderStatusEmail(
+  to: string,
+  data: {
+    recipientName: string;
+    orderNumber: string;
+    orderId: string;
+    status: "PROCESSING" | "DELIVERED" | "COMPLETED";
+  }
+) {
+  const cfg = {
+    PROCESSING: {
+      subject: `Pesanan #${data.orderNumber} Sedang Diproses — DUTCH.IND`,
+      title: "Pesanan Sedang Diproses",
+      headline: "Kami Sedang Menyiapkan Pesananmu!",
+      body: `Pesanan <strong style="color:#F5F5F5">#${data.orderNumber}</strong> sudah kami terima dan sedang dikemas dengan hati-hati. Kami akan memberimu info ketika paket sudah dikirim.`,
+      emoji: "📦",
+    },
+    DELIVERED: {
+      subject: `Pesanan #${data.orderNumber} Telah Tiba — DUTCH.IND`,
+      title: "Pesanan Tiba",
+      headline: "Pesananmu Sudah Tiba! 🎉",
+      body: `Pesanan <strong style="color:#F5F5F5">#${data.orderNumber}</strong> sudah berhasil diterima. Semoga kamu puas dengan produknya! Jangan lupa tinggalkan ulasan untuk membantu pembeli lain.`,
+      emoji: "🎉",
+    },
+    COMPLETED: {
+      subject: `Terima Kasih atas Pesanan #${data.orderNumber} — DUTCH.IND`,
+      title: "Pesanan Selesai",
+      headline: "Pesanan Selesai — Terima Kasih!",
+      body: `Pesanan <strong style="color:#F5F5F5">#${data.orderNumber}</strong> telah selesai. Terima kasih sudah belanja di DUTCH.IND. Kami tunggu kamu di kunjungan berikutnya! 🙏`,
+      emoji: "⭐",
+    },
+  }[data.status];
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://dutch-indd.vercel.app";
+  await send(to, cfg.subject,
+    baseTemplate(cfg.title, `
+      <h1>${cfg.headline}</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.recipientName}</strong>,</p>
+      <p>${cfg.body}</p>
+      <div class="num">#${data.orderNumber}</div>
+      ${data.status === "DELIVERED" || data.status === "COMPLETED" ? `
+        <p style="margin-top:20px">Punya pengalaman belanja yang menyenangkan? Tinggalkan ulasan produkmu:</p>
+        <a href="${appUrl}/profile/orders/${data.orderId}" class="btn">Tulis Ulasan →</a>
+      ` : `
+        <a href="${appUrl}/profile/orders/${data.orderId}" class="btn">Lacak Pesanan →</a>
+      `}
+    `)
+  );
+}
+
 // ── Email pengingat pembayaran (sebelum deadline) ─────────────────────────────
 export async function sendPaymentReminderEmail(
   to: string,
@@ -328,6 +379,34 @@ export async function sendPaymentReminderEmail(
       <p>Segera selesaikan pembayaran dan upload bukti transfer agar pesananmu diproses.</p>
       <a href="${process.env.NEXT_PUBLIC_APP_URL}/profile/orders/${data.orderId}" class="btn">Bayar Sekarang →</a>
       <p style="font-size:12px;color:#525252;margin-top:20px">Jika sudah bayar, upload bukti pembayaran di halaman pesanan.</p>
+    `)
+  );
+}
+
+// ── Email kustom dari admin ───────────────────────────────────────────────────
+export async function sendAdminCustomEmail(
+  to: string,
+  data: {
+    recipientName: string;
+    subject: string;
+    message: string;  // plain text, will be wrapped in HTML
+  }
+) {
+  // Convert line breaks to <br> and paragraph breaks to <p>
+  const htmlMessage = data.message
+    .split(/\n{2,}/)
+    .map((para) => `<p>${para.replace(/\n/g, "<br/>")}</p>`)
+    .join("");
+
+  await send(to, data.subject,
+    baseTemplate(data.subject, `
+      <h1>${data.subject}</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.recipientName}</strong>,</p>
+      ${htmlMessage}
+      <p style="font-size:12px;color:#525252;margin-top:32px">
+        Email ini dikirim langsung oleh tim DUTCH.IND.
+        Jika kamu memiliki pertanyaan, balas email ini atau hubungi kami via WhatsApp.
+      </p>
     `)
   );
 }

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { fetchTracking, mapToOrderStatus, carrierCodeFromMethod, CarrierCode } from "@/lib/tracking";
-import { sendShippingEmail } from "@/lib/email";
+import { sendShippingEmail, sendOrderStatusEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/webpush";
 
 async function requireAdmin() {
@@ -109,20 +109,34 @@ export async function PATCH(
       } catch { /* non-fatal */ }
     }
 
-    // Kirim email notifikasi jika status berubah ke SHIPPED
-    if (updateData.status === "SHIPPED" || (trackingNumber && order.status === "SHIPPED")) {
+    // Kirim email notifikasi saat status berubah
+    const prevStatus = orderBefore?.status;
+    const newStatus  = updateData.status;
+    if (newStatus && newStatus !== prevStatus) {
       try {
         const fullOrder = await prisma.order.findUnique({
           where: { id },
           include: { user: { select: { email: true, name: true } } },
         });
-        if (fullOrder?.user?.email && fullOrder.trackingNumber) {
-          await sendShippingEmail(fullOrder.user.email, {
-            recipientName:  fullOrder.user.name ?? "Pelanggan",
-            orderNumber:    fullOrder.orderNumber,
-            trackingNumber: fullOrder.trackingNumber,
-            shippingMethod: fullOrder.shippingMethod ?? "Kurir",
-          });
+        const userEmail = fullOrder?.user?.email;
+        const userName  = fullOrder?.user?.name ?? "Pelanggan";
+
+        if (userEmail) {
+          if (newStatus === "SHIPPED" && fullOrder?.trackingNumber) {
+            await sendShippingEmail(userEmail, {
+              recipientName:  userName,
+              orderNumber:    fullOrder.orderNumber,
+              trackingNumber: fullOrder.trackingNumber,
+              shippingMethod: fullOrder.shippingMethod ?? "Kurir",
+            });
+          } else if (["PROCESSING", "DELIVERED", "COMPLETED"].includes(newStatus)) {
+            await sendOrderStatusEmail(userEmail, {
+              recipientName: userName,
+              orderNumber:   fullOrder!.orderNumber,
+              orderId:       id,
+              status:        newStatus as "PROCESSING" | "DELIVERED" | "COMPLETED",
+            });
+          }
         }
       } catch { /* email gagal tidak boleh block response */ }
     }

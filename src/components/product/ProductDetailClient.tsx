@@ -479,6 +479,16 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
               );
             })()}
 
+            {/* Low stock warning */}
+            {selectedVariantObj && selectedVariantObj.stock > 0 && selectedVariantObj.stock <= 5 && (
+              <div className="mt-4 flex items-center gap-2 px-3 py-2 border border-amber-600/40 bg-amber-900/20">
+                <span className="text-amber-400 text-sm">⚠</span>
+                <p className="text-xs text-amber-300 font-medium">
+                  Sisa <span className="font-bold">{selectedVariantObj.stock}</span> lagi! Segera checkout sebelum kehabisan.
+                </p>
+              </div>
+            )}
+
             {/* Quantity */}
             <div className="mt-6">
               <p className="text-xs font-bold uppercase tracking-widest mb-3">Jumlah</p>
