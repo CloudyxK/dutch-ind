@@ -346,13 +346,35 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
         </div>
       )}
 
-      {/* QRIS — sementara nonaktif */}
+      {/* QRIS */}
       {activeTab === "qris" && (
-        <div className="flex flex-col items-center gap-3 py-8 text-center border border-brand-gray-800">
-          <QrCode className="w-8 h-8 text-brand-gray-700" />
-          <p className="text-sm font-semibold text-brand-gray-500">Pembayaran QRIS Sementara Tidak Tersedia</p>
-          <p className="text-xs text-brand-gray-600 max-w-xs">Gunakan Transfer Bank (Virtual Account) atau E-Wallet sebagai alternatif pembayaran.</p>
-        </div>
+        hasQris ? (
+          <div className="space-y-4">
+            <div className="flex flex-col items-center gap-3 p-4 bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={config!.qrisImageUrl} alt="QRIS" className="max-w-[220px] max-h-[220px] object-contain" />
+              <p className="text-[11px] text-black font-bold uppercase tracking-wider">Scan QR untuk Bayar</p>
+            </div>
+            <div className="p-3 bg-brand-gray-800 border border-brand-gray-700 space-y-1">
+              <p className="text-[11px] text-brand-gray-400 leading-relaxed">
+                <span className="text-white font-bold">1.</span> Buka aplikasi e-wallet atau m-banking kamu<br />
+                <span className="text-white font-bold">2.</span> Pilih fitur Scan QR / QRIS<br />
+                <span className="text-white font-bold">3.</span> Scan kode QR di atas<br />
+                <span className="text-white font-bold">4.</span> Masukkan nominal <span className="font-bold font-mono text-white">{formatPrice(amount)}</span> (harus tepat)<br />
+                <span className="text-white font-bold">5.</span> Screenshot bukti pembayaran → upload di bawah
+              </p>
+            </div>
+            <p className="text-[10px] text-amber-400/80 text-center flex items-center justify-center gap-1">
+              ⚠ Pastikan nominal tepat — pembayaran tidak akan terkonfirmasi jika berbeda
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-8 text-center border border-brand-gray-800">
+            <QrCode className="w-8 h-8 text-brand-gray-700" />
+            <p className="text-sm font-semibold text-brand-gray-500">QRIS belum dikonfigurasi</p>
+            <p className="text-xs text-brand-gray-600 max-w-xs">Gunakan Transfer Bank atau E-Wallet sebagai alternatif.</p>
+          </div>
+        )
       )}
 
       {/* Fallback jika hanya 1 kategori — auto-show tanpa tab */}

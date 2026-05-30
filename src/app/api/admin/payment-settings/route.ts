@@ -10,10 +10,8 @@ async function requireAdmin() {
   return session;
 }
 
+// GET is public — customers need to read bank/wallet info in ManualPaymentPanel
 export async function GET() {
-  if (!(await requireAdmin()))
-    return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-
   const row = await prisma.setting.findUnique({ where: { key: KEY } });
   if (!row) return NextResponse.json({ data: null });
   try {
@@ -28,10 +26,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
 
   const body = await request.json();
-  const { banks, qrisImageUrl, instructions } = body;
+  const { banks, ewallets, qrisImageUrl, instructions } = body;
 
   const config = {
-    banks: Array.isArray(banks) ? banks : [],
+    banks:        Array.isArray(banks)    ? banks    : [],
+    ewallets:     Array.isArray(ewallets) ? ewallets : [],
     qrisImageUrl: qrisImageUrl || "",
     instructions: instructions || "",
   };
