@@ -30,7 +30,8 @@ export async function POST(request: NextRequest) {
 
     const body = parsed.data;
     const { items, address, addressId: existingAddressId, couponCode, shippingMethod, shippingCost, notes, paymentMethod, pointsUsed, giftNote } = body;
-    const isManual = paymentMethod === "MANUAL";
+    const MANUAL_METHODS = ["MANUAL", "TRANSFER", "QRIS", "EWALLET"];
+    const isManual = MANUAL_METHODS.includes(paymentMethod);
     const isCod    = paymentMethod === "COD";
 
     if (!items || items.length === 0) {
@@ -220,7 +221,7 @@ export async function POST(request: NextRequest) {
       await tx.payment.create({
         data: {
           orderId: newOrder.id,
-          method:  isCod ? "COD" : isManual ? "MANUAL" : "MIDTRANS",
+          method:  isCod ? "COD" : isManual ? (paymentMethod as string) : "MIDTRANS",
           status:  isCod ? "COD_PENDING" : isManual ? "MANUAL_PENDING" : "PENDING",
           amount:  total,
         },
