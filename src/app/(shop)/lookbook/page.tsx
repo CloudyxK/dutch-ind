@@ -47,7 +47,7 @@ export default async function LookbookPage() {
         <div className="container-main relative z-10 text-center">
           <RevealSection>
             <p className="text-[10px] uppercase tracking-[0.6em] text-white/30 mb-5">
-              â—ˆ &nbsp; DUTCH.IND &nbsp; â—ˆ
+              ◈ &nbsp; DUTCH.IND &nbsp; ◈
             </p>
             <h1
               className="font-display uppercase"

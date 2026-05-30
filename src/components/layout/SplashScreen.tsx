@@ -357,7 +357,7 @@ export default function SplashScreen() {
             fontWeight: 500,
           }}
         >
-          â—ˆ &nbsp; DUTCH.IND &nbsp; â—ˆ
+          ◈ &nbsp; DUTCH.IND &nbsp; ◈
         </p>
 
         <button
