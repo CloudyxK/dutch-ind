@@ -65,7 +65,7 @@ export default function StoreHeader() {
               className="text-[9px] uppercase tracking-[0.55em]"
               style={{ color: "rgba(255,255,255,0.28)" }}
             >
-              Brand Streetwear Premium Indonesia
+              Toko Brand Lokal Termurah No #1
             </span>
             <div className="w-7 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
           </motion.div>
