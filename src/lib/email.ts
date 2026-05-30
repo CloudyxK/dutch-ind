@@ -288,6 +288,50 @@ export async function sendAbandonedCartEmail(
   );
 }
 
+// ── Email pengingat pembayaran (sebelum deadline) ─────────────────────────────
+export async function sendPaymentReminderEmail(
+  to: string,
+  data: {
+    recipientName: string;
+    orderNumber: string;
+    orderId: string;
+    total: number;
+    paymentDeadline: Date;
+    paymentMethod: string;
+    hoursLeft: number;
+  }
+) {
+  const methodLabel = data.paymentMethod === "TRANSFER" ? "Transfer Bank"
+    : data.paymentMethod === "QRIS" ? "QRIS"
+    : data.paymentMethod === "EWALLET" ? "E-Wallet"
+    : data.paymentMethod;
+
+  const deadlineStr = new Intl.DateTimeFormat("id-ID", {
+    dateStyle: "full",
+    timeStyle: "short",
+    timeZone: "Asia/Makassar",
+  }).format(data.paymentDeadline);
+
+  await send(to, `⏰ Segera Bayar — Pesanan #${data.orderNumber} Hampir Kedaluwarsa`,
+    baseTemplate("Pengingat Pembayaran", `
+      <h1>Pesananmu Hampir Kedaluwarsa!</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.recipientName}</strong>,</p>
+      <p>Pesanan <strong style="color:#F5F5F5">#${data.orderNumber}</strong> belum dibayar dan akan otomatis dibatalkan dalam
+        <strong style="color:#EF4444">${data.hoursLeft} jam</strong>.
+      </p>
+      <table>
+        <tr><td style="color:#737373;width:40%">No. Pesanan</td><td style="color:#F5F5F5;font-family:monospace;font-weight:700">#${data.orderNumber}</td></tr>
+        <tr><td style="color:#737373">Total</td><td style="color:#F5F5F5;font-weight:700">${formatPrice(data.total)}</td></tr>
+        <tr><td style="color:#737373">Metode</td><td style="color:#F5F5F5">${methodLabel}</td></tr>
+        <tr style="border:none"><td style="color:#737373">Batas Bayar</td><td style="color:#EF4444;font-weight:700">${deadlineStr}</td></tr>
+      </table>
+      <p>Segera selesaikan pembayaran dan upload bukti transfer agar pesananmu diproses.</p>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/profile/orders/${data.orderId}" class="btn">Bayar Sekarang →</a>
+      <p style="font-size:12px;color:#525252;margin-top:20px">Jika sudah bayar, upload bukti pembayaran di halaman pesanan.</p>
+    `)
+  );
+}
+
 // ── Email selamat datang ──────────────────────────────────────────────────────
 export async function sendWelcomeEmail(to: string, name: string) {
   await send(to, `Selamat Datang di DUTCH.IND, ${name}!`,

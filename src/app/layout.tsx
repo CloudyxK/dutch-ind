@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import { SessionProvider } from "next-auth/react";
 import { auth } from "@/lib/auth";
 import Analytics from "@/components/analytics/Analytics";
+import ServiceWorkerRegistration from "@/components/pwa/ServiceWorkerRegistration";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default async function RootLayout({
       </head>
       <body className="font-sans antialiased">
         <SessionProvider session={session}>
+          <ServiceWorkerRegistration />
           <Analytics />
           {children}
           <Toaster

@@ -382,44 +382,102 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
               </span>
             </p>
 
-            {/* Size selection */}
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-bold uppercase tracking-widest">
-                  Pilih Ukuran
-                  {selectedVariantObj && (
-                    <span className="text-brand-gray-400 ml-2 normal-case font-normal">
-                      — {selectedVariantObj.size} ({selectedVariantObj.stock} tersedia)
-                    </span>
+            {/* Color + Size selection */}
+            {(() => {
+              const hasColors = product.variants.some((v: any) => v.color);
+              const uniqueColors = hasColors
+                ? [...new Set(product.variants.filter((v: any) => v.color).map((v: any) => v.color as string))]
+                : [];
+              const selectedColor = hasColors && selectedVariantObj ? (selectedVariantObj as any).color : null;
+
+              const filteredVariants = hasColors && selectedColor
+                ? product.variants.filter((v: any) => v.color === selectedColor)
+                : hasColors && uniqueColors.length > 0
+                ? product.variants.filter((v: any) => v.color === uniqueColors[0])
+                : product.variants;
+
+              return (
+                <>
+                  {/* Color picker — only shown when product has color variants */}
+                  {hasColors && (
+                    <div className="mt-6">
+                      <p className="text-xs font-bold uppercase tracking-widest mb-3">
+                        Warna
+                        {selectedColor && (
+                          <span className="text-brand-gray-400 ml-2 normal-case font-normal">— {selectedColor}</span>
+                        )}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {uniqueColors.map((color) => {
+                          const isSelected = selectedColor === color;
+                          const hasStock = product.variants.some((v: any) => v.color === color && v.stock > 0);
+                          return (
+                            <button
+                              key={color}
+                              onClick={() => {
+                                const first = product.variants.find((v: any) => v.color === color && v.stock > 0)
+                                  || product.variants.find((v: any) => v.color === color);
+                                if (first) setSelectedVariant(first.id);
+                              }}
+                              disabled={!hasStock}
+                              className={cn(
+                                "h-9 px-4 text-xs font-bold border-2 transition-all duration-200",
+                                !hasStock
+                                  ? "border-brand-gray-700 text-brand-gray-600 cursor-not-allowed line-through"
+                                  : isSelected
+                                  ? "border-white bg-white text-black"
+                                  : "border-brand-gray-600 hover:border-white"
+                              )}
+                            >
+                              {color}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   )}
-                </p>
-                <button
-                  onClick={() => setSizeGuideOpen(true)}
-                  className="text-xs text-brand-gray-400 hover:text-white underline"
-                >
-                  Panduan Ukuran
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {product.variants.map((variant) => (
-                  <button
-                    key={variant.id}
-                    onClick={() => setSelectedVariant(variant.id)}
-                    disabled={variant.stock === 0}
-                    className={cn(
-                      "h-11 min-w-[44px] px-3 text-sm font-bold border-2 transition-all duration-200",
-                      variant.stock === 0
-                        ? "border-brand-gray-700 text-brand-gray-600 cursor-not-allowed line-through"
-                        : selectedVariant === variant.id
-                        ? "border-white bg-white text-black"
-                        : "border-brand-gray-600 hover:border-white"
-                    )}
-                  >
-                    {variant.size}
-                  </button>
-                ))}
-              </div>
-            </div>
+
+                  {/* Size selection */}
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-xs font-bold uppercase tracking-widest">
+                        Pilih Ukuran
+                        {selectedVariantObj && (
+                          <span className="text-brand-gray-400 ml-2 normal-case font-normal">
+                            — {selectedVariantObj.size} ({selectedVariantObj.stock} tersedia)
+                          </span>
+                        )}
+                      </p>
+                      <button
+                        onClick={() => setSizeGuideOpen(true)}
+                        className="text-xs text-brand-gray-400 hover:text-white underline"
+                      >
+                        Panduan Ukuran
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {filteredVariants.map((variant: any) => (
+                        <button
+                          key={variant.id}
+                          onClick={() => setSelectedVariant(variant.id)}
+                          disabled={variant.stock === 0}
+                          className={cn(
+                            "h-11 min-w-[44px] px-3 text-sm font-bold border-2 transition-all duration-200",
+                            variant.stock === 0
+                              ? "border-brand-gray-700 text-brand-gray-600 cursor-not-allowed line-through"
+                              : selectedVariant === variant.id
+                              ? "border-white bg-white text-black"
+                              : "border-brand-gray-600 hover:border-white"
+                          )}
+                        >
+                          {variant.size}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Quantity */}
             <div className="mt-6">
@@ -874,13 +932,13 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
           {/* Compact size chips shown only when no size is selected */}
           {!selectedVariant && (
             <div className="flex items-center gap-1.5 px-4 pb-3 overflow-x-auto">
-              {product.variants.filter(v => v.stock > 0).map((v) => (
+              {product.variants.filter((v: any) => v.stock > 0).map((v: any) => (
                 <button
                   key={v.id}
                   onClick={() => setSelectedVariant(v.id)}
-                  className="w-9 h-9 text-xs font-bold border border-brand-gray-600 hover:border-white flex-shrink-0 transition-all"
+                  className="h-9 px-2 text-xs font-bold border border-brand-gray-600 hover:border-white flex-shrink-0 transition-all"
                 >
-                  {v.size}
+                  {(v as any).color ? `${v.size} / ${(v as any).color}` : v.size}
                 </button>
               ))}
             </div>

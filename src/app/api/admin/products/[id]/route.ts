@@ -43,17 +43,18 @@ export async function PUT(request: NextRequest, { params }: Params) {
         });
       }
 
-      // Update variants (upsert by size)
+      // Update variants (upsert by size + color)
       if (variants) {
         for (const v of variants) {
+          const color = v.color || null;
           const existing = await tx.productVariant.findFirst({
-            where: { productId: id, size: v.size },
+            where: { productId: id, size: v.size, color },
           });
           if (existing) {
             const diff = v.stock - existing.stock;
             await tx.productVariant.update({
               where: { id: existing.id },
-              data: { stock: v.stock },
+              data: { stock: v.stock, color },
             });
             if (diff !== 0) {
               await tx.inventoryLog.create({
@@ -69,7 +70,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
             }
           } else {
             const created = await tx.productVariant.create({
-              data: { productId: id, size: v.size, stock: v.stock },
+              data: { productId: id, size: v.size, color, stock: v.stock },
             });
             if (v.stock > 0) {
               await tx.inventoryLog.create({

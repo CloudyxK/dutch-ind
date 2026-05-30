@@ -39,8 +39,10 @@ export async function POST(request: NextRequest) {
           },
           variants: {
             create: variants.map((v: any) => ({
-              size: v.size, stock: v.stock,
-              sku: sku ? `${sku}-${v.size}` : undefined,
+              size: v.size,
+              color: v.color || null,
+              stock: v.stock,
+              sku: sku ? `${sku}-${v.size}${v.color ? `-${v.color}` : ""}` : undefined,
             })),
           },
         },

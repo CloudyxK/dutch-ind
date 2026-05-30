@@ -48,8 +48,8 @@ export default function AdminProductForm({ categories, initialData }: Props) {
     initialData?.images?.map((i: any) => i.url) || [""]
   );
 
-  const [variants, setVariants] = useState<{ size: string; stock: number }[]>(
-    initialData?.variants || [{ size: "M", stock: 0 }]
+  const [variants, setVariants] = useState<{ size: string; color: string; stock: number }[]>(
+    initialData?.variants?.map((v: any) => ({ size: v.size, color: v.color ?? "", stock: v.stock })) || [{ size: "M", color: "", stock: 0 }]
   );
 
   const [loading, setLoading] = useState(false);
@@ -151,11 +151,7 @@ export default function AdminProductForm({ categories, initialData }: Props) {
   };
 
   const addVariant = () => {
-    const usedSizes = variants.map((v) => v.size);
-    const nextSize = SIZES.find((s) => !usedSizes.includes(s));
-    if (nextSize) {
-      setVariants((prev) => [...prev, { size: nextSize, stock: 0 }]);
-    }
+    setVariants((prev) => [...prev, { size: "M", color: "", stock: 0 }]);
   };
 
   const removeVariant = (index: number) =>
@@ -173,10 +169,10 @@ export default function AdminProductForm({ categories, initialData }: Props) {
         weight: parseFloat(String(form.weight)),
         tags: form.tags
           .split(",")
-          .map((t) => t.trim())
+          .map((t: string) => t.trim())
           .filter(Boolean),
         images: images.filter(Boolean),
-        variants: variants.filter((v) => v.size),
+        variants: variants.filter((v) => v.size).map((v) => ({ size: v.size, color: v.color || null, stock: v.stock })),
         salePrice: form.salePrice,
         saleStartAt: form.saleStartAt,
         saleEndAt: form.saleEndAt,
@@ -482,17 +478,17 @@ export default function AdminProductForm({ categories, initialData }: Props) {
 
         {/* Variants */}
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xs font-bold uppercase tracking-widest">Ukuran & Stok</h2>
+          <div className="flex items-center justify-between mb-1">
+            <h2 className="text-xs font-bold uppercase tracking-widest">Ukuran, Warna & Stok</h2>
             <button
               type="button"
               onClick={addVariant}
-              disabled={variants.length >= SIZES.length}
-              className="btn-ghost text-xs gap-1 disabled:opacity-30"
+              className="btn-ghost text-xs gap-1"
             >
-              <Plus className="w-3 h-3" /> Tambah Ukuran
+              <Plus className="w-3 h-3" /> Tambah Varian
             </button>
           </div>
+          <p className="text-[10px] text-brand-gray-500 mb-4">Warna opsional — isi jika ada variasi warna (contoh: Hitam, Putih)</p>
           <div className="space-y-2">
             {variants.map((variant, index) => (
               <div key={index} className="flex gap-2 items-center">
@@ -503,12 +499,24 @@ export default function AdminProductForm({ categories, initialData }: Props) {
                       prev.map((v, i) => (i === index ? { ...v, size: e.target.value } : v))
                     )
                   }
-                  className="input-field w-24"
+                  className="input-field w-24 flex-shrink-0"
                 >
                   {SIZES.map((size) => (
                     <option key={size} value={size}>{size}</option>
                   ))}
                 </select>
+                <input
+                  type="text"
+                  value={variant.color}
+                  onChange={(e) =>
+                    setVariants((prev) =>
+                      prev.map((v, i) => (i === index ? { ...v, color: e.target.value } : v))
+                    )
+                  }
+                  className="input-field w-28 flex-shrink-0"
+                  placeholder="Warna (opsional)"
+                  maxLength={30}
+                />
                 <input
                   type="number"
                   value={variant.stock}
@@ -520,14 +528,14 @@ export default function AdminProductForm({ categories, initialData }: Props) {
                     )
                   }
                   className="input-field flex-1"
-                  placeholder="Jumlah stok"
+                  placeholder="Stok"
                   min="0"
                 />
                 {variants.length > 1 && (
                   <button
                     type="button"
                     onClick={() => removeVariant(index)}
-                    className="p-2 bg-brand-gray-800 hover:text-red-400 transition-colors"
+                    className="p-2 bg-brand-gray-800 hover:text-red-400 transition-colors flex-shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>

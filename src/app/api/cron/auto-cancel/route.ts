@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { sendPaymentReminderEmail } from "@/lib/email";
 
 /**
- * Cron job: batalkan pesanan yang melewati paymentDeadline secara otomatis.
- * Dipanggil oleh Vercel Cron setiap jam (lihat vercel.json).
+ * Cron job: batalkan pesanan expired + kirim reminder email untuk yang hampir expired.
+ * Dipanggil Vercel Cron sekali sehari (lihat vercel.json).
  * Bisa juga dipanggil manual oleh admin.
  */
 export async function POST(request: NextRequest) {
@@ -22,10 +23,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const now = new Date();
+
+    // ── 1. Batalkan pesanan yang sudah expired ─────────────────────────────────
     const expired = await prisma.order.findMany({
       where: {
         status: "AWAITING_PAYMENT",
-        paymentDeadline: { lt: new Date() },
+        paymentDeadline: { lt: now },
         payment: { status: { in: ["PENDING", "MANUAL_PENDING"] } },
       },
       include: {
@@ -36,7 +40,6 @@ export async function POST(request: NextRequest) {
     });
 
     for (const order of expired) {
-      // Restore stock
       for (const item of order.items) {
         await prisma.productVariant.update({
           where: { id: item.variantId },
@@ -47,8 +50,6 @@ export async function POST(request: NextRequest) {
           data: { totalStock: { increment: item.quantity } },
         });
       }
-
-      // Cancel order + payment
       await prisma.order.update({
         where: { id: order.id },
         data: { status: "CANCELLED" },
@@ -59,8 +60,6 @@ export async function POST(request: NextRequest) {
           data: { status: "CANCELLED" },
         });
       }
-
-      // Refund redeemed points (jika ada pointsUsed tersimpan di order)
       const pointsUsed = (order as any).pointsUsed ?? 0;
       if (pointsUsed > 0 && order.user?.id) {
         await prisma.user.update({
@@ -70,10 +69,43 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, cancelled: expired.length });
+    // ── 2. Kirim reminder untuk pesanan yang expire dalam 12 jam ke depan ─────
+    const reminderWindow = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+    const toRemind = await prisma.order.findMany({
+      where: {
+        status: "AWAITING_PAYMENT",
+        paymentDeadline: { gt: now, lt: reminderWindow },
+        payment: { status: "MANUAL_PENDING" },
+      },
+      include: {
+        payment: true,
+        user: { select: { email: true, name: true } },
+      },
+    });
+
+    let reminded = 0;
+    for (const order of toRemind) {
+      if (!order.user?.email || !order.paymentDeadline) continue;
+      const hoursLeft = Math.max(
+        1,
+        Math.round((order.paymentDeadline.getTime() - now.getTime()) / (60 * 60 * 1000))
+      );
+      await sendPaymentReminderEmail(order.user.email, {
+        recipientName:   order.user.name ?? "Pelanggan",
+        orderNumber:     order.orderNumber,
+        orderId:         order.id,
+        total:           order.total,
+        paymentDeadline: order.paymentDeadline,
+        paymentMethod:   order.payment?.method ?? "MANUAL",
+        hoursLeft,
+      });
+      reminded++;
+    }
+
+    return NextResponse.json({ success: true, cancelled: expired.length, reminded });
   } catch (error) {
     console.error("Auto-cancel error:", error);
-    return NextResponse.json({ error: "Gagal membatalkan pesanan" }, { status: 500 });
+    return NextResponse.json({ error: "Gagal menjalankan cron" }, { status: 500 });
   }
 }
 

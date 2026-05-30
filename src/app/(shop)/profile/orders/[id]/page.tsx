@@ -59,10 +59,10 @@ export default async function OrderDetailPage({ params }: Props) {
 
   if (!order) notFound();
 
-  /* ── Contact config (untuk tombol WA/IG di panel COD) ── */
+  /* ── Contact config ── */
   let waNumber = "";
   let igHandle = "";
-  if (order.payment?.method === "COD") {
+  {
     const contactRow = await prisma.setting.findUnique({ where: { key: "contact.config" } });
     if (contactRow) {
       try {
@@ -166,6 +166,40 @@ export default async function OrderDetailPage({ params }: Props) {
             </div>
           </div>
         </div>
+
+        {/* WA Konfirmasi Pesanan — muncul saat AWAITING_PAYMENT untuk metode manual */}
+        {order.status === "AWAITING_PAYMENT" &&
+         ["TRANSFER", "QRIS", "EWALLET", "MANUAL"].includes(order.payment?.method ?? "") &&
+         order.payment?.status === "MANUAL_PENDING" &&
+         waNumber && (
+          <div className="mb-5 bg-green-950/30 border border-green-700/40 p-4">
+            <p className="text-xs font-bold uppercase tracking-widest mb-3 text-green-400">
+              Konfirmasi Pesanan via WhatsApp
+            </p>
+            <p className="text-sm text-brand-gray-300 mb-3">
+              Setelah transfer, kirim konfirmasi ke admin agar pesananmu diproses lebih cepat.
+            </p>
+            <a
+              href={`https://wa.me/${waNumber.replace(/\D/g, "")}?text=${encodeURIComponent(
+                `Halo DUTCH.IND! Saya sudah ${
+                  order.payment?.method === "TRANSFER" ? "transfer bank" :
+                  order.payment?.method === "EWALLET"  ? "transfer via e-wallet" :
+                  "bayar"
+                } untuk pesanan berikut:\n\n` +
+                `📦 No. Pesanan: #${order.orderNumber}\n` +
+                `💰 Total: ${formatPrice(order.total)}\n` +
+                `📅 Tanggal: ${formatDate(order.createdAt)}\n` +
+                `\nMohon dikonfirmasi. Terima kasih! 🙏`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              Chat WhatsApp Admin
+            </a>
+          </div>
+        )}
 
         {/* Status timeline */}
         {!isCancelled && (
@@ -475,6 +509,16 @@ export default async function OrderDetailPage({ params }: Props) {
             <div className="bg-brand-gray-900 border border-brand-gray-700 p-5">
               <p className="text-xs font-bold uppercase tracking-widest mb-1">Catatan Pesanan</p>
               <p className="text-sm text-brand-gray-400">{order.notes}</p>
+            </div>
+          )}
+
+          {/* Admin message to buyer */}
+          {(order as any).adminNote && (
+            <div className="bg-blue-950/30 border border-blue-700/40 p-5">
+              <p className="text-xs font-bold uppercase tracking-widest mb-2 text-blue-400 flex items-center gap-2">
+                💬 Pesan dari DUTCH.IND
+              </p>
+              <p className="text-sm text-blue-100/90">{(order as any).adminNote}</p>
             </div>
           )}
         </div>

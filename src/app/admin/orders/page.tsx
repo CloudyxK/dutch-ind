@@ -118,6 +118,7 @@ export default async function AdminOrdersPage() {
                         currentTrackingNumber={order.trackingNumber}
                         currentTrackingCarrier={order.trackingCarrier}
                         currentNotes={order.notes}
+                        currentAdminNote={(order as any).adminNote}
                         orderNumber={order.orderNumber}
                         buyerName={order.user.name}
                         buyerPhone={order.address?.phone}

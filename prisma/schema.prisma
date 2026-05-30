@@ -195,6 +195,7 @@ model ProductVariant {
   id        String   @id @default(cuid())
   productId String
   size      String
+  color     String?
   stock     Int      @default(0)
   sku       String?  @unique
   createdAt DateTime @default(now())
@@ -205,7 +206,7 @@ model ProductVariant {
   orderItems    OrderItem[]
   inventoryLogs InventoryLog[]
 
-  @@unique([productId, size])
+  @@unique([productId, size, color])
   @@index([productId])
   @@map("product_variants")
 }
@@ -280,6 +281,7 @@ model Order {
   paymentDeadline DateTime?
   giftNote        String?
   pointsUsed      Int       @default(0)
+  adminNote       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Truck, Check, RefreshCw, ChevronDown, X, Trash2, StickyNote } from "lucide-react";
+import { Truck, Check, RefreshCw, ChevronDown, X, Trash2, StickyNote, MessageCircle } from "lucide-react";
 import { CARRIER_OPTIONS } from "@/lib/tracking";
 
 const STATUS_OPTIONS = [
@@ -42,6 +42,7 @@ interface Props {
   currentTrackingNumber?: string | null;
   currentTrackingCarrier?: string | null;
   currentNotes?: string | null;
+  currentAdminNote?: string | null;
   orderNumber?: string;
   buyerName?: string;
   buyerPhone?: string;
@@ -53,6 +54,7 @@ export default function AdminOrderActions({
   currentTrackingNumber,
   currentTrackingCarrier,
   currentNotes,
+  currentAdminNote,
   orderNumber,
   buyerName,
   buyerPhone,
@@ -69,6 +71,9 @@ export default function AdminOrderActions({
   const [showNote, setShowNote]   = useState(false);
   const [note, setNote]           = useState(currentNotes ?? "");
   const [savingNote, setSavingNote] = useState(false);
+  const [showAdminNote, setShowAdminNote] = useState(false);
+  const [adminNote, setAdminNote]         = useState(currentAdminNote ?? "");
+  const [savingAdminNote, setSavingAdminNote] = useState(false);
 
   /* ── status dropdown ─────────────────────────────── */
   const updateStatus = async (status: string) => {
@@ -175,6 +180,25 @@ export default function AdminOrderActions({
       toast.error("Gagal menyimpan catatan");
     } finally {
       setSavingNote(false);
+    }
+  };
+
+  const saveAdminNote = async () => {
+    setSavingAdminNote(true);
+    try {
+      const res = await fetch(`/api/admin/orders/${orderId}/note`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ adminNote }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Pesan ke pembeli disimpan");
+      setShowAdminNote(false);
+      router.refresh();
+    } catch {
+      toast.error("Gagal menyimpan pesan");
+    } finally {
+      setSavingAdminNote(false);
     }
   };
 
@@ -312,6 +336,37 @@ export default function AdminOrderActions({
               <Check className="w-3 h-3" />
             </button>
             <button onClick={() => setShowNote(false)} className="text-brand-gray-500 hover:text-white px-1">
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Pesan ke pembeli (adminNote — visible to customer) */}
+      {!showAdminNote ? (
+        <button
+          onClick={() => setShowAdminNote(true)}
+          className="flex items-center gap-1 text-[10px] text-blue-400/70 hover:text-blue-300 transition-colors"
+        >
+          <MessageCircle className="w-3 h-3" />
+          <span className="truncate">{adminNote ? adminNote.slice(0, 20) + (adminNote.length > 20 ? "…" : "") : "Pesan ke Pembeli"}</span>
+        </button>
+      ) : (
+        <div className="space-y-1">
+          <p className="text-[9px] text-blue-400 uppercase tracking-wider">Pesan ke Pembeli (tampil di halaman pesanan)</p>
+          <textarea
+            value={adminNote}
+            onChange={(e) => setAdminNote(e.target.value)}
+            rows={2}
+            maxLength={500}
+            placeholder="Contoh: Pesananmu sedang kami siapkan, estimasi 1-2 hari..."
+            className="w-full bg-brand-gray-800 border border-blue-500/30 text-[10px] px-2 py-1 text-white focus:outline-none focus:border-blue-400 resize-none"
+          />
+          <div className="flex gap-1">
+            <button onClick={saveAdminNote} disabled={savingAdminNote} className="bg-blue-600 hover:bg-blue-500 text-white text-[10px] px-2 py-1 disabled:opacity-50">
+              <Check className="w-3 h-3" />
+            </button>
+            <button onClick={() => { setShowAdminNote(false); setAdminNote(currentAdminNote ?? ""); }} className="text-brand-gray-500 hover:text-white px-1">
               <X className="w-3 h-3" />
             </button>
           </div>
