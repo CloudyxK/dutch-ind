@@ -109,6 +109,56 @@ export async function sendOrderConfirmationEmail(
   );
 }
 
+// ── Email notif admin: bukti bayar masuk ─────────────────────────────────────
+export async function sendAdminPaymentProofEmail(data: {
+  orderNumber: string;
+  buyerName: string;
+  buyerEmail: string;
+  amount: number;
+  paymentMethod: string;
+  orderId: string;
+}) {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) return;
+  const methodLabel = data.paymentMethod === "TRANSFER" ? "Transfer Bank"
+    : data.paymentMethod === "QRIS" ? "QRIS"
+    : data.paymentMethod === "EWALLET" ? "E-Wallet"
+    : data.paymentMethod;
+  await send(adminEmail, `⚡ Bukti Bayar Masuk — #${data.orderNumber}`,
+    baseTemplate("Bukti Bayar Masuk", `
+      <h1>Bukti Pembayaran Baru</h1>
+      <p>Ada bukti pembayaran yang perlu dikonfirmasi:</p>
+      <table>
+        <tr><td style="color:#737373;width:40%">No. Pesanan</td><td style="color:#F5F5F5;font-family:monospace;font-weight:700">#${data.orderNumber}</td></tr>
+        <tr><td style="color:#737373">Pembeli</td><td style="color:#F5F5F5">${data.buyerName} (${data.buyerEmail})</td></tr>
+        <tr><td style="color:#737373">Metode</td><td style="color:#F5F5F5">${methodLabel}</td></tr>
+        <tr style="border:none"><td style="color:#737373">Nominal</td><td style="color:#F5F5F5;font-weight:700">${formatPrice(data.amount)}</td></tr>
+      </table>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/admin/orders" class="btn">Konfirmasi Sekarang →</a>
+    `)
+  );
+}
+
+// ── Email ke customer: bukti bayar ditolak ────────────────────────────────────
+export async function sendPaymentRejectedEmail(
+  to: string,
+  data: { recipientName: string; orderNumber: string; reason: string; orderId: string }
+) {
+  await send(to, `Bukti Pembayaran Ditolak — #${data.orderNumber}`,
+    baseTemplate("Bukti Pembayaran Ditolak", `
+      <h1>Bukti Pembayaranmu Ditolak</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.recipientName}</strong>,</p>
+      <p>Maaf, bukti pembayaran untuk pesanan <strong style="color:#F5F5F5">#${data.orderNumber}</strong> tidak dapat kami konfirmasi.</p>
+      <div style="background:#1A0A0A;border:1px solid #4B1414;padding:16px 20px;margin:20px 0">
+        <p style="color:#EF4444;font-size:13px;font-weight:600;margin:0 0 6px">Alasan Penolakan:</p>
+        <p style="color:#FCA5A5;margin:0;font-size:14px">${data.reason}</p>
+      </div>
+      <p>Silakan upload ulang bukti pembayaran yang benar melalui halaman pesananmu.</p>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL}/profile/orders/${data.orderId}" class="btn">Upload Ulang Bukti →</a>
+    `)
+  );
+}
+
 // ── Email pengiriman ──────────────────────────────────────────────────────────
 export async function sendShippingEmail(
   to: string,

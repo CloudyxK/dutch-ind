@@ -43,7 +43,8 @@ export default async function AdminOrdersPage() {
           </thead>
           <tbody className="divide-y divide-brand-gray-800">
             {orders.map((order) => {
-              const isManualWaiting = order.payment?.method === "MANUAL" &&
+              const isManualWaiting =
+                ["MANUAL", "TRANSFER", "QRIS", "EWALLET"].includes(order.payment?.method ?? "") &&
                 order.payment?.status === "WAITING_CONFIRMATION";
               const isCod = order.payment?.method === "COD";
               const meetMatch = isCod ? order.notes?.match(/\[COD\] Titik pertemuan: (.+?)(\n|$)/) : null;

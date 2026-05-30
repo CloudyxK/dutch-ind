@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Upload, CheckCircle2, XCircle, Clock, Copy, QrCode, Banknote, Loader2, ImageIcon, Wallet, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Upload, CheckCircle2, XCircle, Copy, QrCode, Banknote, Loader2, ImageIcon, Wallet, AlertTriangle, ShieldCheck, Eye } from "lucide-react";
+import PaymentCountdown from "./PaymentCountdown";
 import { formatPrice } from "@/lib/utils";
 
 type Bank    = { name: string; number: string; holder: string };
@@ -17,9 +18,10 @@ type Props = {
   paymentMethod?:   string; // TRANSFER | QRIS | EWALLET | MANUAL (legacy)
   rejectedReason?:  string | null;
   paymentDeadline?: string | null; // ISO string
+  proofImageUrl?:   string | null; // bukti yang sudah diupload
 };
 
-export default function ManualPaymentPanel({ orderId, amount, status, paymentMethod, rejectedReason, paymentDeadline }: Props) {
+export default function ManualPaymentPanel({ orderId, amount, status, paymentMethod, rejectedReason, paymentDeadline, proofImageUrl }: Props) {
   const router = useRouter();
   const [config, setConfig] = useState<PaymentConfig>(null);
   const [loading, setLoading] = useState(true);
@@ -123,14 +125,23 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
 
   if (status === "WAITING_CONFIRMATION") {
     return (
-      <div className="bg-brand-gray-900 border border-yellow-800 p-5">
+      <div className="bg-brand-gray-900 border border-yellow-800 p-5 space-y-4">
         <div className="flex items-center gap-3 text-yellow-400">
-          <Clock className="w-5 h-5 flex-shrink-0" />
+          <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
           <div>
-            <p className="font-bold text-sm">Bukti Transfer Dikirim — Menunggu Konfirmasi</p>
-            <p className="text-xs text-yellow-400/70 mt-0.5">Admin akan mengonfirmasi pembayaranmu dalam 1×24 jam.</p>
+            <p className="font-bold text-sm">Bukti Pembayaran Terkirim</p>
+            <p className="text-xs text-yellow-400/70 mt-0.5">Admin akan mengonfirmasi dalam 1×24 jam.</p>
           </div>
         </div>
+        {proofImageUrl && (
+          <div className="space-y-2">
+            <p className="text-[10px] uppercase tracking-widest text-brand-gray-500 flex items-center gap-1.5">
+              <Eye className="w-3 h-3" /> Bukti yang kamu kirim
+            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={proofImageUrl} alt="Bukti pembayaran" className="w-full max-h-56 object-contain bg-brand-gray-950 border border-brand-gray-700" />
+          </div>
+        )}
       </div>
     );
   }
@@ -158,13 +169,8 @@ export default function ManualPaymentPanel({ orderId, amount, status, paymentMet
         </span>
       </div>
 
-      {/* Payment deadline warning */}
-      {paymentDeadline && (
-        <div className="p-3 bg-red-500/10 border border-red-500/30 text-center">
-          <p className="text-xs text-red-400">⏰ Bayar sebelum <strong>{new Date(paymentDeadline).toLocaleString("id-ID")}</strong></p>
-          <p className="text-[10px] text-red-400/70 mt-0.5">Pesanan otomatis dibatalkan jika melewati batas waktu</p>
-        </div>
-      )}
+      {/* Countdown real-time */}
+      {paymentDeadline && <PaymentCountdown deadline={paymentDeadline} />}
 
       {/* Peringatan utama sebelum bayar */}
       <div className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/40">

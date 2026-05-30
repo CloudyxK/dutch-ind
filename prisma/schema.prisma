@@ -279,6 +279,7 @@ model Order {
   shippingMethod  String?
   paymentDeadline DateTime?
   giftNote        String?
+  pointsUsed      Int       @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

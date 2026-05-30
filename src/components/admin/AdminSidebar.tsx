@@ -28,6 +28,7 @@ import {
   Bell,
   AlertTriangle,
   ShoppingBag,
+  CreditCard,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ const navGroups = [
     label: "Operasional",
     items: [
       { href: "/admin/orders",           label: "Pesanan",         icon: ShoppingCart },
+      { href: "/admin/payments",         label: "Pembayaran",      icon: CreditCard },
       { href: "/admin/abandoned-carts", label: "Abandoned Carts", icon: ShoppingBag },
       { href: "/admin/returns",         label: "Returns",         icon: RotateCcw },
       { href: "/admin/shipping",  label: "Pengiriman", icon: Truck },

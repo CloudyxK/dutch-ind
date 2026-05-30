@@ -332,6 +332,7 @@ export default async function OrderDetailPage({ params }: Props) {
               paymentMethod={order.payment!.method}
               rejectedReason={order.payment!.rejectedReason}
               paymentDeadline={(order as any).paymentDeadline ? (order as any).paymentDeadline.toISOString() : null}
+              proofImageUrl={order.payment!.proofImageUrl}
             />
           )}
 

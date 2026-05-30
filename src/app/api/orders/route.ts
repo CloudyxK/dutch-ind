@@ -163,6 +163,7 @@ export async function POST(request: NextRequest) {
           notes: cleanNotes,
           giftNote: cleanGiftNote ?? null,
           shippingMethod,
+          pointsUsed: pointsToRedeem,
           // Set payment deadline for manual payment orders (24 hours)
           paymentDeadline: isManual ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined,
           // COD: langsung PROCESSING (tidak perlu bayar duluan)

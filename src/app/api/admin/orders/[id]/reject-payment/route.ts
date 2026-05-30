@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { sendPaymentRejectedEmail } from "@/lib/email";
 
 async function requireAdmin() {
   const session = await auth();
@@ -20,21 +21,36 @@ export async function PATCH(
 
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { payment: true },
+    include: {
+      payment: true,
+      user: { select: { name: true, email: true } },
+    },
   });
 
   if (!order) return NextResponse.json({ error: "Pesanan tidak ditemukan" }, { status: 404 });
   if (!order.payment) return NextResponse.json({ error: "Data pembayaran tidak ditemukan" }, { status: 404 });
 
+  const rejectedReason = reason || "Bukti transfer tidak valid";
+
   await prisma.payment.update({
     where: { orderId: id },
     data: {
-      status:         "REJECTED",
-      rejectedReason: reason || "Bukti transfer tidak valid",
-      proofImageUrl:  null,
+      status:          "REJECTED",
+      rejectedReason,
+      proofImageUrl:   null,
       proofUploadedAt: null,
     },
   });
+
+  // Kirim email ke customer (fire-and-forget)
+  if (order.user?.email) {
+    sendPaymentRejectedEmail(order.user.email, {
+      recipientName: order.user.name ?? "Pelanggan",
+      orderNumber:   order.orderNumber,
+      reason:        rejectedReason,
+      orderId:       order.id,
+    }).catch(console.error);
+  }
 
   return NextResponse.json({ success: true });
 }

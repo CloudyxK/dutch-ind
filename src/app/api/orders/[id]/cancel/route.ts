@@ -57,5 +57,14 @@ export async function POST(request: NextRequest, { params }: Params) {
     ),
   ]);
 
+  // Refund redeemed points (jika ada)
+  const pointsUsed = (order as any).pointsUsed ?? 0;
+  if (pointsUsed > 0) {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: { points: { increment: pointsUsed } },
+    });
+  }
+
   return NextResponse.json({ success: true });
 }

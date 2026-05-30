@@ -369,7 +369,19 @@ export default function CheckoutPage() {
 
       orderPlaced.current = true;
       clearCart();
-      // Both MANUAL and COD redirect to order detail
+
+      // Tampilkan ringkasan cara bayar sebelum redirect
+      const method = paymentMethod as string;
+      if (method === "TRANSFER") {
+        toast.success("Pesanan dibuat! Segera transfer sesuai nominal ke rekening yang tertera.", { duration: 5000 });
+      } else if (method === "EWALLET") {
+        toast.success("Pesanan dibuat! Segera transfer via e-wallet ke nomor yang tertera.", { duration: 5000 });
+      } else if (method === "QRIS") {
+        toast.success("Pesanan dibuat! Segera scan QRIS dan transfer sesuai nominal.", { duration: 5000 });
+      } else if (method === "COD") {
+        toast.success("Pesanan COD dibuat! Admin akan menghubungimu untuk konfirmasi.", { duration: 5000 });
+      }
+
       router.push(`/profile/orders/${data.data.orderId}`);
     } catch (err: any) {
       toast.error(err.message);
