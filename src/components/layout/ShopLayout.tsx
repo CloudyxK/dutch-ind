@@ -3,27 +3,27 @@ import Footer from "./Footer";
 import CartSidebar from "@/components/cart/CartSidebar";
 import FloatingContact from "./FloatingContact";
 import BackToTop from "./BackToTop";
-import SplashScreen from "./SplashScreen";
 import AnnouncementTicker from "./AnnouncementTicker";
-import CustomCursor from "@/components/ui/CustomCursor";
-import MusicToggle from "@/components/ui/MusicToggle";
 import PageTransition from "./PageTransition";
+import dynamic from "next/dynamic";
+
+// Dynamically import heavy components so they don't block initial page render
+// Three.js SplashScreen is ~500KB — lazy load keeps it out of the main bundle
+const SplashScreen  = dynamic(() => import("./SplashScreen"),           { ssr: false });
+const CustomCursor  = dynamic(() => import("@/components/ui/CustomCursor"),  { ssr: false });
+const MusicToggle   = dynamic(() => import("@/components/ui/MusicToggle"),   { ssr: false });
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* Custom cursor (desktop only, handled inside component) */}
+      {/* Heavy components — code-split via dynamic import */}
       <CustomCursor />
-
-      {/* Ambient music toggle */}
       <MusicToggle />
-
-      {/* Entry splash — every visit */}
       <SplashScreen />
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col min-h-screen">
-        {/* Logo watermark — overlaid above section backgrounds via mix-blend-mode */}
+        {/* Logo watermark — desktop only, hidden on mobile */}
         <div
           className="logo-watermark hidden md:block fixed inset-0 pointer-events-none select-none"
           style={{

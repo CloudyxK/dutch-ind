@@ -22,7 +22,8 @@ export default function SplashScreen() {
   const timeRef     = useRef(0);
 
   useEffect(() => {
-    // Show splash only once per hour — avoids Three.js re-loading on every navigation
+    // Skip entirely if: already shown within 1h OR mobile device
+    const isMobile = window.innerWidth < 768 || navigator.maxTouchPoints > 0;
     try {
       const last = localStorage.getItem("splash_ts");
       if (last && Date.now() - parseInt(last) < 3_600_000) {
@@ -32,6 +33,13 @@ export default function SplashScreen() {
       }
       localStorage.setItem("splash_ts", Date.now().toString());
     } catch {}
+
+    // Mobile: show a lightweight CSS splash instead of Three.js
+    if (isMobile) {
+      setMounted(true); // let the mobile CSS splash render
+      return; // don't load Three.js
+    }
+
     setMounted(true);
   }, []);
 
@@ -281,6 +289,29 @@ export default function SplashScreen() {
   }
 
   if (skip || !mounted || !visible) return null;
+
+  // Mobile: lightweight CSS splash (no Three.js, no WebGL)
+  const isMobileRender = typeof window !== "undefined" && (window.innerWidth < 768 || navigator.maxTouchPoints > 0);
+  if (isMobileRender) {
+    return (
+      <div
+        className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center select-none ${leaving ? "animate-splash-leave" : ""}`}
+        style={{ background: "#060608" }}
+        onClick={enter}
+      >
+        <div className="animate-logo-enter flex flex-col items-center gap-5">
+          <img src="/logo.png" alt="DUTCH.IND" className="h-16 w-auto object-contain" style={{ filter: "brightness(2) contrast(2.8)", mixBlendMode: "screen" }} />
+          <p className="text-[9px] uppercase tracking-[0.55em] text-white/30">Streetwear Premium</p>
+        </div>
+        <button
+          onClick={(e) => { e.stopPropagation(); enter(); }}
+          className="animate-enter-text absolute bottom-16 px-10 py-3.5 border border-white/20 text-[10px] uppercase tracking-[0.35em] text-white/70 hover:border-white/60 transition-colors active:scale-95"
+        >
+          Masuk →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div

@@ -25,10 +25,13 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Full font size on all screens — 90% made mobile text too small */
     font-size: 100%;
-    /* Use dynamic viewport height to avoid iOS browser chrome issues */
     height: -webkit-fill-available;
+  }
+
+  /* Disable smooth scroll on mobile — causes jank */
+  @media (max-width: 768px) {
+    html { scroll-behavior: auto; }
   }
 
   body {
@@ -36,8 +39,22 @@
     font-family: var(--font-inter);
     min-height: 100dvh;
     min-height: -webkit-fill-available;
-    /* Prevent horizontal scroll on mobile */
     overflow-x: hidden;
+  }
+
+  /* Respect prefers-reduced-motion globally */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    .reveal-on-scroll { opacity: 1; transform: none; }
+  }
+
+  /* Mobile: disable backdrop-filter (expensive GPU operation) */
+  @media (max-width: 768px) {
+    .backdrop-blur-sm, .backdrop-blur-md, .backdrop-blur { backdrop-filter: none !important; }
   }
 
   /* Larger tap targets on mobile for all interactive elements */

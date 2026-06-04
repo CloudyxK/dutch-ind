@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
-/* Drop your ambient track at public/music/ambient.mp3 */
 const TRACK = "/music/ambient.mp3";
 
 export default function MusicToggle() {
@@ -12,6 +10,8 @@ export default function MusicToggle() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // Skip on mobile — music toggle is pointless on touch devices and wastes memory
+    if (window.innerWidth < 768 || navigator.maxTouchPoints > 0) return;
     setMounted(true);
     const audio = new Audio(TRACK);
     audio.loop   = true;
@@ -27,73 +27,53 @@ export default function MusicToggle() {
       audio.pause();
       setPlaying(false);
     } else {
-      try {
-        await audio.play();
-        setPlaying(true);
-      } catch {
-        /* autoplay blocked — still flip UI */
-        setPlaying(true);
-      }
+      try { await audio.play(); setPlaying(true); }
+      catch { setPlaying(true); }
     }
   }
 
   if (!mounted) return null;
 
   return (
-    <motion.button
+    // Desktop only — hidden on mobile via CSS too (belt-and-suspenders)
+    <button
       onClick={toggle}
       aria-label={playing ? "Matikan musik" : "Putar musik"}
-      className="fixed bottom-24 left-5 z-40 flex items-center gap-2.5 px-3 py-2
-                 bg-brand-black/90 border border-brand-gray-800 backdrop-blur-md
-                 hover:border-white/30 transition-colors duration-300"
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: 2.5, duration: 0.6 }}
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
+      className="hidden md:flex fixed bottom-24 left-5 z-40 items-center gap-2.5 px-3 py-2 bg-brand-black/90 border border-brand-gray-800 backdrop-blur-md hover:border-white/30 transition-colors duration-300 music-btn-enter"
     >
-      {/* Animated waveform bars */}
+      {/* Waveform bars — CSS animation, no framer-motion */}
       <div className="flex items-end gap-[2px] h-4">
         {[0.45, 0.75, 1, 0.75, 0.45].map((h, i) => (
-          <motion.span
+          <span
             key={i}
-            className="w-[3px] rounded-sm bg-white"
-            animate={
-              playing
-                ? {
-                    scaleY: [h * 0.4, h, h * 0.6, h * 0.9, h * 0.4],
-                    transition: {
-                      duration: 0.9 + i * 0.12,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    },
-                  }
-                : { scaleY: 0.25 }
-            }
-            style={{ originY: 1, height: "100%" }}
+            className={`w-[3px] rounded-sm bg-white ${playing ? "music-bar-playing" : ""}`}
+            style={{
+              height: "100%",
+              transformOrigin: "bottom",
+              transform: `scaleY(${playing ? h : 0.25})`,
+              transition: "transform 0.3s ease",
+              animationDuration: playing ? `${0.9 + i * 0.12}s` : undefined,
+              animationDelay: playing ? `${i * 0.1}s` : undefined,
+            }}
           />
         ))}
       </div>
-
       <span
         className="text-[9px] font-bold uppercase tracking-[0.3em]"
         style={{ color: playing ? "#fff" : "rgba(255,255,255,0.4)" }}
       >
         {playing ? "LIVE" : "MUSIC"}
       </span>
+      {playing && <span className="w-1.5 h-1.5 rounded-full bg-white music-dot-pulse" />}
 
-      <AnimatePresence>
-        {playing && (
-          <motion.span
-            key="dot"
-            className="w-1.5 h-1.5 rounded-full bg-white"
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: [1, 1.5, 1], opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            transition={{ duration: 1.4, repeat: Infinity }}
-          />
-        )}
-      </AnimatePresence>
-    </motion.button>
+      <style>{`
+        .music-btn-enter { animation: musicFadeIn 0.6s ease 2.5s both; }
+        @keyframes musicFadeIn { from { opacity:0; transform: translateX(-16px); } to { opacity:1; transform: translateX(0); } }
+        .music-bar-playing { animation: barPulse var(--dur, 0.9s) ease-in-out infinite alternate; }
+        @keyframes barPulse { from { transform: scaleY(0.3); } to { transform: scaleY(1); } }
+        .music-dot-pulse { animation: dotPulse 1.4s ease-in-out infinite; }
+        @keyframes dotPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.6); } }
+      `}</style>
+    </button>
   );
 }

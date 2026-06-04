@@ -1,9 +1,7 @@
-﻿"use client";
-
+// Server component — no "use client" needed, no JS sent to browser
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function StoreHeader() {
   return (
@@ -11,72 +9,38 @@ export default function StoreHeader() {
       className="relative overflow-hidden"
       style={{ background: "#060608", minHeight: "300px" }}
     >
-      {/* Top rule */}
       <div className="absolute top-0 inset-x-0 h-px bg-white/[0.06]" />
 
-      {/* Grain */}
+      {/* Ambient glow — CSS only, no filter blur on mobile */}
       <div
-        className="absolute inset-0 pointer-events-none"
         aria-hidden
+        className="absolute inset-0 pointer-events-none hidden sm:block"
         style={{
-          opacity: 0.055,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: "160px",
+          background: "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,255,255,0.04) 0%, transparent 65%)",
         }}
       />
 
-      {/* Centered ambient glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden
-        style={{
-          background:
-            "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 65%)",
-          filter: "blur(40px)",
-        }}
-      />
-
-      {/* Edition marker — top right */}
+      {/* Edition marker */}
       <div className="absolute top-7 right-8 hidden md:block" aria-hidden>
-        <p
-          className="font-mono text-[8px] uppercase tracking-[0.45em]"
-          style={{ color: "rgba(255,255,255,0.1)" }}
-        >
+        <p className="font-mono text-[8px] uppercase tracking-[0.45em]" style={{ color: "rgba(255,255,255,0.1)" }}>
           SS25 / IDN
         </p>
       </div>
 
-      {/* Main content — centered */}
-      <div
-        className="container-main relative z-10 flex items-center justify-center"
-        style={{ minHeight: "300px" }}
-      >
+      <div className="container-main relative z-10 flex items-center justify-center" style={{ minHeight: "300px" }}>
         <div className="flex flex-col items-center text-center py-10 md:py-12">
 
           {/* Eyebrow */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="flex items-center gap-3 mb-7"
-          >
+          <div className="flex items-center gap-3 mb-7 header-fade-1">
             <div className="w-7 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
-            <span
-              className="text-[9px] uppercase tracking-[0.55em]"
-              style={{ color: "rgba(255,255,255,0.28)" }}
-            >
+            <span className="text-[9px] uppercase tracking-[0.55em]" style={{ color: "rgba(255,255,255,0.28)" }}>
               Toko Brand Lokal Termurah No #1
             </span>
             <div className="w-7 h-px" style={{ background: "rgba(255,255,255,0.3)" }} />
-          </motion.div>
+          </div>
 
-          {/* Logo — bigger */}
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.85, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="mb-7"
-          >
+          {/* Logo */}
+          <div className="mb-7 header-fade-2">
             <Image
               src="/logo.png"
               alt="DUTCH.IND"
@@ -86,31 +50,19 @@ export default function StoreHeader() {
               style={{
                 height: "clamp(56px, 12vw, 76px)",
                 mixBlendMode: "screen",
-                filter:
-                  "brightness(2) contrast(2.8) drop-shadow(0 0 48px rgba(255,255,255,0.16))",
+                filter: "brightness(2) contrast(2.8) drop-shadow(0 0 48px rgba(255,255,255,0.16))",
               }}
               priority
             />
-          </motion.div>
+          </div>
 
           {/* Sub-label */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[10px] uppercase tracking-[0.45em] mb-10"
-            style={{ color: "rgba(255,255,255,0.2)" }}
-          >
+          <p className="text-[10px] uppercase tracking-[0.45em] mb-10 header-fade-3" style={{ color: "rgba(255,255,255,0.2)" }}>
             Samarinda, Indonesia &nbsp;·&nbsp; Est. 2026
-          </motion.p>
+          </p>
 
           {/* CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.36, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto px-4 sm:px-0"
-          >
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 w-full sm:w-auto px-4 sm:px-0 header-fade-4">
             <Link
               href="/products"
               className="group inline-flex items-center justify-center gap-3 bg-white text-black w-full sm:w-auto px-8 py-3.5 text-[11px] font-black uppercase tracking-[0.22em] hover:bg-white/90 transition-colors"
@@ -123,21 +75,28 @@ export default function StoreHeader() {
               className="group inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.3em] transition-colors"
               style={{ color: "rgba(255,255,255,0.32)" }}
             >
-              Koleksi Baru
-              <span
-                className="transition-transform group-hover:translate-x-0.5"
-                style={{ display: "inline-block" }}
-              >
-                →
-              </span>
+              Koleksi Baru <span className="transition-transform group-hover:translate-x-0.5 inline-block">→</span>
             </Link>
-          </motion.div>
+          </div>
 
         </div>
       </div>
 
-      {/* Bottom rule */}
       <div className="absolute bottom-0 inset-x-0 h-px bg-white/[0.06]" />
+
+      <style>{`
+        .header-fade-1 { animation: hdrFade 0.65s ease both 0.05s; }
+        .header-fade-2 { animation: hdrFade 0.75s ease both 0.15s; }
+        .header-fade-3 { animation: hdrFade 0.65s ease both 0.25s; }
+        .header-fade-4 { animation: hdrFade 0.65s ease both 0.35s; }
+        @keyframes hdrFade {
+          from { opacity: 0; transform: translateY(12px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .header-fade-1, .header-fade-2, .header-fade-3, .header-fade-4 { animation: none; }
+        }
+      `}</style>
     </section>
   );
 }

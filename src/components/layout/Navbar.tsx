@@ -98,7 +98,8 @@ export default function Navbar() {
         className={cn(
           "sticky top-0 z-50 transition-all duration-500",
           scrolled
-            ? "bg-brand-black/90 backdrop-blur-xl border-b border-white/[0.06]"
+            // backdrop-blur-xl is expensive on mobile — use solid bg instead
+            ? "bg-brand-black/95 sm:backdrop-blur-xl border-b border-white/[0.06]"
             : "bg-transparent border-b border-white/[0.04]"
         )}
       >
