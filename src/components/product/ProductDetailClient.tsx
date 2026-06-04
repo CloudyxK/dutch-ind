@@ -27,6 +27,8 @@ interface Props {
     saleEndAt?: Date | string | null;
     bulkDiscountQty?: number | null;
     bulkDiscountPct?: number | null;
+    sizeGuide?: string | null;
+    videoUrl?: string | null;
   };
   related: Product[];
   hasPurchased?: boolean;
@@ -632,6 +634,31 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
               <p className="text-xs text-brand-gray-600 mt-4">SKU: {product.sku}</p>
             )}
 
+            {/* Product video */}
+            {product.videoUrl && (
+              <div className="mt-6">
+                <p className="text-xs font-bold uppercase tracking-widest mb-3">Video Produk</p>
+                {product.videoUrl.includes("youtube.com") || product.videoUrl.includes("youtu.be") ? (
+                  <div className="relative aspect-video bg-brand-gray-800 overflow-hidden">
+                    <iframe
+                      src={product.videoUrl}
+                      title="Product video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                    />
+                  </div>
+                ) : (
+                  <video
+                    src={product.videoUrl}
+                    controls
+                    className="w-full bg-brand-gray-800"
+                    style={{ maxHeight: 400 }}
+                  />
+                )}
+              </div>
+            )}
+
             {/* Accordion sections */}
             <div className="mt-8 border-t border-brand-gray-800">
               {sections.map((section) => (
@@ -829,14 +856,17 @@ export default function ProductDetailClient({ product, related, hasPurchased = f
                       </tr>
                     </thead>
                     <tbody>
-                      {[
-                        { size: "XS", chest: "82–86",  shoulder: "40–42", length: "65–67" },
-                        { size: "S",  chest: "86–91",  shoulder: "42–44", length: "67–69" },
-                        { size: "M",  chest: "91–97",  shoulder: "44–46", length: "69–71" },
-                        { size: "L",  chest: "97–103", shoulder: "46–48", length: "71–73" },
-                        { size: "XL", chest: "103–109",shoulder: "48–50", length: "73–75" },
-                        { size: "XXL",chest: "109–116",shoulder: "50–52", length: "75–77" },
-                      ].map((row) => {
+                      {(product.sizeGuide
+                        ? JSON.parse(product.sizeGuide)
+                        : [
+                            { size: "XS", chest: "82–86",  shoulder: "40–42", length: "65–67" },
+                            { size: "S",  chest: "86–91",  shoulder: "42–44", length: "67–69" },
+                            { size: "M",  chest: "91–97",  shoulder: "44–46", length: "69–71" },
+                            { size: "L",  chest: "97–103", shoulder: "46–48", length: "71–73" },
+                            { size: "XL", chest: "103–109",shoulder: "48–50", length: "73–75" },
+                            { size: "XXL",chest: "109–116",shoulder: "50–52", length: "75–77" },
+                          ]
+                      ).map((row: any) => {
                         const isSelected = selectedVariantObj?.size === row.size;
                         return (
                           <tr

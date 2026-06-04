@@ -3,6 +3,7 @@ import { formatPrice, formatDateTime, getOrderStatusLabel, getOrderStatusColor }
 import AdminOrderActions from "@/components/admin/AdminOrderActions";
 import AdminManualPaymentActions from "@/components/admin/AdminManualPaymentActions";
 import ExportOrdersButton from "@/components/admin/ExportOrdersButton";
+import AdminOrdersBulkWrapper from "@/components/admin/AdminOrdersBulkWrapper";
 
 export default async function AdminOrdersPage() {
   const orders = await prisma.order.findMany({
@@ -28,11 +29,13 @@ export default async function AdminOrdersPage() {
         <ExportOrdersButton />
       </div>
 
+      <AdminOrdersBulkWrapper orderIds={orders.map(o => o.id)} />
+
       <div className="bg-brand-gray-900 border border-brand-gray-700 overflow-x-auto">
         <table className="w-full min-w-[900px]">
           <thead>
             <tr className="border-b border-brand-gray-700 bg-brand-gray-800">
-              {["No. Pesanan", "Pelanggan", "Produk", "Total", "Pembayaran", "Status", "Tanggal", ""].map(
+              {["☐", "No. Pesanan", "Pelanggan", "Produk", "Total", "Pembayaran", "Status", "Tanggal", ""].map(
                 (h) => (
                   <th key={h} className="text-left p-4 text-xs font-bold uppercase tracking-wider text-brand-gray-400">
                     {h}
@@ -52,6 +55,9 @@ export default async function AdminOrdersPage() {
 
               return (
                 <tr key={order.id} className={`hover:bg-brand-gray-800/50 transition-colors ${isManualWaiting ? "border-l-2 border-l-yellow-500" : isCod ? "border-l-2 border-l-amber-600" : ""}`}>
+                  <td className="p-4">
+                    <input type="checkbox" className="order-bulk-cb w-4 h-4 cursor-pointer accent-white" data-order-id={order.id} />
+                  </td>
                   <td className="p-4 font-mono text-sm font-bold">#{order.orderNumber}</td>
                   <td className="p-4">
                     <p className="text-sm">{order.user.name}</p>

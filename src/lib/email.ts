@@ -339,6 +339,27 @@ export async function sendOrderStatusEmail(
   );
 }
 
+// ── Email pesanan dibatalkan ─────────────────────────────────────────────────
+export async function sendOrderCancelledEmail(
+  to: string,
+  data: { recipientName: string; orderNumber: string; orderId: string; reason?: string }
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://dutch-indd.vercel.app";
+  await send(to, `Pesanan #${data.orderNumber} Dibatalkan — DUTCH.IND`,
+    baseTemplate("Pesanan Dibatalkan", `
+      <h1>Pesananmu Telah Dibatalkan</h1>
+      <p>Halo <strong style="color:#F5F5F5">${data.recipientName}</strong>,</p>
+      <p>Pesanan <strong style="color:#F5F5F5">#${data.orderNumber}</strong> telah dibatalkan.</p>
+      ${data.reason ? `<p>Alasan: <span style="color:#D4D4D4">${data.reason}</span></p>` : ""}
+      <p>Jika kamu memiliki pertanyaan, silakan hubungi customer service kami.</p>
+      <a href="${appUrl}/products" class="btn">Belanja Lagi →</a>
+      <p style="font-size:12px;color:#525252;margin-top:24px">
+        Jika ada pembayaran yang sudah masuk, refund akan diproses dalam 1-3 hari kerja.
+      </p>
+    `)
+  );
+}
+
 // ── Email pengingat pembayaran (sebelum deadline) ─────────────────────────────
 export async function sendPaymentReminderEmail(
   to: string,

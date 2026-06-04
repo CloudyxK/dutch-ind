@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { fetchTracking, mapToOrderStatus, carrierCodeFromMethod, CarrierCode } from "@/lib/tracking";
-import { sendShippingEmail, sendOrderStatusEmail } from "@/lib/email";
+import { sendShippingEmail, sendOrderStatusEmail, sendOrderCancelledEmail } from "@/lib/email";
 import { sendPushToUser } from "@/lib/webpush";
 
 async function requireAdmin() {
@@ -135,6 +135,12 @@ export async function PATCH(
               orderNumber:   fullOrder!.orderNumber,
               orderId:       id,
               status:        newStatus as "PROCESSING" | "DELIVERED" | "COMPLETED",
+            });
+          } else if (newStatus === "CANCELLED") {
+            await sendOrderCancelledEmail(userEmail, {
+              recipientName: userName,
+              orderNumber:   fullOrder!.orderNumber,
+              orderId:       id,
             });
           }
         }

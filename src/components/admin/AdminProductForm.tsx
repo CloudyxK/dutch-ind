@@ -42,7 +42,23 @@ export default function AdminProductForm({ categories, initialData }: Props) {
     saleEndAt: initialData?.saleEndAt ?? null as string | null,
     bulkDiscountQty: initialData?.bulkDiscountQty ?? null as number | null,
     bulkDiscountPct: initialData?.bulkDiscountPct ?? null as number | null,
+    videoUrl: initialData?.videoUrl || "",
   });
+
+  // Size guide — editable rows
+  const defaultSizeRows = [
+    { size: "XS", chest: "84–88",   shoulder: "41–42", length: "67" },
+    { size: "S",  chest: "88–92",   shoulder: "43–44", length: "69" },
+    { size: "M",  chest: "92–96",   shoulder: "45–46", length: "71" },
+    { size: "L",  chest: "96–100",  shoulder: "47–48", length: "73" },
+    { size: "XL", chest: "100–104", shoulder: "49–50", length: "75" },
+    { size: "XXL",chest: "104–110", shoulder: "51–53", length: "77" },
+  ];
+  const [sizeRows, setSizeRows] = useState<{ size: string; chest: string; shoulder: string; length: string }[]>(
+    initialData?.sizeGuide
+      ? JSON.parse(initialData.sizeGuide)
+      : defaultSizeRows
+  );
 
   const [images, setImages] = useState<string[]>(
     initialData?.images?.map((i: any) => i.url) || [""]
@@ -178,6 +194,8 @@ export default function AdminProductForm({ categories, initialData }: Props) {
         saleEndAt: form.saleEndAt,
         bulkDiscountQty: form.bulkDiscountQty,
         bulkDiscountPct: form.bulkDiscountPct,
+        videoUrl: form.videoUrl || null,
+        sizeGuide: JSON.stringify(sizeRows.filter(r => r.size)),
       };
 
       const url = isEdit ? `/api/admin/products/${initialData.id}` : "/api/admin/products";
@@ -346,6 +364,60 @@ export default function AdminProductForm({ categories, initialData }: Props) {
               placeholder="hoodie, premium, streetwear"
             />
           </div>
+
+          <div>
+            <label className="input-label">URL Video Produk (opsional)</label>
+            <input
+              value={form.videoUrl}
+              onChange={(e) => setForm((p) => ({ ...p, videoUrl: e.target.value }))}
+              className="input-field"
+              placeholder="https://www.youtube.com/embed/... atau link mp4 langsung"
+            />
+            <p className="text-[10px] text-brand-gray-600 mt-1">YouTube embed URL atau link video mp4 langsung. Tampil di halaman produk.</p>
+          </div>
+        </div>
+
+        {/* Size Guide per product */}
+        <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">
+          <h2 className="text-xs font-bold uppercase tracking-widest mb-4">Panduan Ukuran (cm)</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-brand-gray-700">
+                  {["Ukuran", "Lingkar Dada", "Lebar Bahu", "Panjang Baju", ""].map(h => (
+                    <th key={h} className="text-left py-2 pr-3 text-brand-gray-500 font-semibold uppercase tracking-wider text-[10px]">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {sizeRows.map((row, i) => (
+                  <tr key={i} className="border-b border-brand-gray-800">
+                    {(["size", "chest", "shoulder", "length"] as const).map((field) => (
+                      <td key={field} className="py-1.5 pr-2">
+                        <input
+                          value={row[field]}
+                          onChange={e => setSizeRows(prev => prev.map((r, idx) => idx === i ? { ...r, [field]: e.target.value } : r))}
+                          className="bg-brand-gray-800 border border-brand-gray-700 text-xs px-2 py-1 w-full text-white focus:outline-none focus:border-white"
+                          placeholder={field === "size" ? "M" : "90–96"}
+                        />
+                      </td>
+                    ))}
+                    <td className="py-1.5">
+                      <button type="button" onClick={() => setSizeRows(prev => prev.filter((_, idx) => idx !== i))}
+                        className="text-brand-gray-600 hover:text-red-400 transition-colors px-1">×</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button
+            type="button"
+            onClick={() => setSizeRows(prev => [...prev, { size: "", chest: "", shoulder: "", length: "" }])}
+            className="mt-3 text-xs text-brand-gray-400 hover:text-white transition-colors flex items-center gap-1"
+          >
+            <Plus className="w-3 h-3" /> Tambah Baris Ukuran
+          </button>
         </div>
 
         {/* Images */}

@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     const {
       name, slug, description, price, comparePrice, sku,
       categoryId, weight, isActive, isFeatured, isNewArrival,
-      isBestSeller, tags, images, variants,
+      isBestSeller, tags, images, variants, sizeGuide, videoUrl,
     } = body;
 
     // Check slug uniqueness
@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
           categoryId, weight, isActive, isFeatured, isNewArrival,
           isBestSeller,
           tags: Array.isArray(tags) ? JSON.stringify(tags) : (tags ?? "[]"),
+          sizeGuide: sizeGuide || null,
+          videoUrl: videoUrl || null,
           totalStock,
           images: {
             create: images.map((url: string, i: number) => ({

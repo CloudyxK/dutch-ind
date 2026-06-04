@@ -145,6 +145,8 @@ model Product {
   saleEndAt       DateTime?
   bulkDiscountQty Int?
   bulkDiscountPct Float?
+  sizeGuide    String?  // JSON array: [{size,chest,shoulder,length}]
+  videoUrl     String?  // optional product video (YouTube embed / direct mp4)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

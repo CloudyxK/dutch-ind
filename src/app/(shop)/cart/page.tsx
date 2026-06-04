@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
-import { useCartStore } from "@/store/useCartStore";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Heart } from "lucide-react";
+import { useCartStore, useWishlistStore } from "@/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import type { Product } from "@/types";
@@ -11,6 +11,7 @@ import ProductCard from "@/components/product/ProductCard";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, getTotalPrice, clearCart } = useCartStore();
+  const { toggleWishlist, isWishlisted } = useWishlistStore();
   const total = getTotalPrice();
   const shippingThreshold = 500000;
   const freeShipping = total >= shippingThreshold;
@@ -153,6 +154,18 @@ export default function CartPage() {
                       )}
                     </div>
                   </div>
+
+                  {/* Save for later */}
+                  <button
+                    onClick={() => {
+                      toggleWishlist(item.product.id);
+                      removeItem(item.variantId);
+                    }}
+                    className="mt-2 flex items-center gap-1.5 text-[11px] text-brand-gray-500 hover:text-pink-400 transition-colors"
+                  >
+                    <Heart className={`w-3 h-3 ${isWishlisted(item.product.id) ? "fill-pink-400 text-pink-400" : ""}`} />
+                    Simpan untuk nanti
+                  </button>
                 </div>
               </div>
             ))}
