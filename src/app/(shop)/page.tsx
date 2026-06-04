@@ -13,6 +13,9 @@ import BundleSection from "@/components/home/BundleSection";
 import prisma from "@/lib/prisma";
 import type { Metadata } from "next";
 
+// ISR: revalidate every 60s so DB isn't hit on every request
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "DUTCH.IND — Brand Streetwear Premium Indonesia",
 };

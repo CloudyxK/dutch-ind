@@ -44,27 +44,37 @@ export default function CustomCursor() {
     /* Trail */
     const trail: { x: number; y: number; age: number }[] = [];
 
+    // Throttle mousemove to max 60fps to avoid excess work
+    let lastMoveTime = 0;
     const onMove = (e: MouseEvent) => {
+      const now = performance.now();
+      if (now - lastMoveTime < 16) return; // ~60fps cap
+      lastMoveTime = now;
       mx = e.clientX;
       my = e.clientY;
       if (!hasMoused) {
-        rx = mx; ry = my; /* snap ring on first move so it doesn't lerp from off-screen */
+        rx = mx; ry = my;
         hasMoused = true;
-        dot.style.opacity  = "1";
-        ring.style.opacity = "1";
+        dot.style.opacity    = "1";
+        ring.style.opacity   = "1";
         canvas.style.opacity = "1";
       }
       trail.push({ x: mx, y: my, age: 0 });
-      if (trail.length > 22) trail.shift();
+      if (trail.length > 18) trail.shift(); // shorter trail = less canvas work
     };
 
+    // Throttle mouseover — fires constantly on DOM traversal
+    let lastOverTime = 0;
     const onOver = (e: MouseEvent) => {
+      const now = performance.now();
+      if (now - lastOverTime < 50) return; // check every 50ms max
+      lastOverTime = now;
       const t = e.target as Element;
       pointer = !!t.closest("a, button, [role='button'], label, input, select, textarea");
     };
 
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseover", onOver);
+    document.addEventListener("mousemove", onMove, { passive: true });
+    document.addEventListener("mouseover", onOver, { passive: true });
 
     const LERP = 0.12;
 

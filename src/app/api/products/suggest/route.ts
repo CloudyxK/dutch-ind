@@ -33,18 +33,21 @@ export async function GET(request: NextRequest) {
       orderBy: [{ isFeatured: "desc" }, { isBestSeller: "desc" }],
     });
 
-    return NextResponse.json({
-      data: products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        slug: p.slug,
-        price: p.price,
-        comparePrice: p.comparePrice,
-        imageUrl: p.images[0]?.url ?? null,
-        category: p.category.name,
-        inStock: p.totalStock > 0,
-      })),
-    });
+    return NextResponse.json(
+      {
+        data: products.map((p) => ({
+          id: p.id,
+          name: p.name,
+          slug: p.slug,
+          price: p.price,
+          comparePrice: p.comparePrice,
+          imageUrl: p.images[0]?.url ?? null,
+          category: p.category.name,
+          inStock: p.totalStock > 0,
+        })),
+      },
+      { headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" } }
+    );
   } catch {
     return NextResponse.json({ data: [] });
   }

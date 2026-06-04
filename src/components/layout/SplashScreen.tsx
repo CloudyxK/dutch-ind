@@ -8,6 +8,7 @@ export default function SplashScreen() {
   const [leaving,  setLeaving]  = useState(false);
   const [mounted,  setMounted]  = useState(false);
   const [hoverBtn, setHoverBtn] = useState(false);
+  const [skip,     setSkip]     = useState(false);
 
   const canvasRef   = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
@@ -20,7 +21,19 @@ export default function SplashScreen() {
   const rotY        = useRef(0.3);
   const timeRef     = useRef(0);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    // Show splash only once per hour — avoids Three.js re-loading on every navigation
+    try {
+      const last = localStorage.getItem("splash_ts");
+      if (last && Date.now() - parseInt(last) < 3_600_000) {
+        setSkip(true);
+        setVisible(false);
+        return;
+      }
+      localStorage.setItem("splash_ts", Date.now().toString());
+    } catch {}
+    setMounted(true);
+  }, []);
 
   /* ── Three.js scene ── */
   useEffect(() => {
@@ -267,7 +280,7 @@ export default function SplashScreen() {
     setTimeout(() => setVisible(false), 900);
   }
 
-  if (!mounted || !visible) return null;
+  if (skip || !mounted || !visible) return null;
 
   return (
     <div

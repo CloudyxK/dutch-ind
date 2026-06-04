@@ -4,6 +4,9 @@ import ProductDetailClient from "@/components/product/ProductDetailClient";
 import { auth } from "@/lib/auth";
 import type { Metadata } from "next";
 
+// ISR: revalidate product pages every 60s
+export const revalidate = 60;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

@@ -1,40 +1,43 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ReactNode } from "react";
+import { useEffect, useRef } from "react";
 
 interface Props {
-  children: ReactNode;
+  children: React.ReactNode;
   delay?: number;
   className?: string;
   direction?: "up" | "left" | "right" | "none";
 }
 
-export default function RevealSection({
-  children,
-  delay = 0,
-  className = "",
-  direction = "up",
-}: Props) {
-  const initial =
-    direction === "up"    ? { opacity: 0, y: 48 }    :
-    direction === "left"  ? { opacity: 0, x: -48 }   :
-    direction === "right" ? { opacity: 0, x: 48 }    :
-                            { opacity: 0 };
+export default function RevealSection({ children, delay = 0, className = "", direction = "up" }: Props) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add("is-visible");
+          io.disconnect();
+        }
+      },
+      { threshold: 0.08, rootMargin: "-60px 0px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const extraStyle: React.CSSProperties = {
+    "--reveal-delay": `${delay}s`,
+    ...(direction === "left"  && { transform: "translateX(-28px)" }),
+    ...(direction === "right" && { transform: "translateX(28px)"  }),
+    ...(direction === "none"  && { transform: "none"              }),
+  } as React.CSSProperties;
 
   return (
-    <motion.div
-      className={className}
-      initial={initial}
-      whileInView={{ opacity: 1, y: 0, x: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{
-        duration: 0.72,
-        delay,
-        ease: [0.22, 1, 0.36, 1],
-      }}
-    >
+    <div ref={ref} className={`reveal-on-scroll ${className}`} style={extraStyle}>
       {children}
-    </motion.div>
+    </div>
   );
 }

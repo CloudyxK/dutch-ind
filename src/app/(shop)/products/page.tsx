@@ -8,6 +8,9 @@ import SortDropdown from "@/components/product/SortDropdown";
 import { ProductGridSkeleton } from "@/components/ui/LoadingSkeleton";
 import type { Metadata } from "next";
 
+// ISR: revalidate every 30s — products change more frequently
+export const revalidate = 30;
+
 export const metadata: Metadata = {
   title: "Semua Produk — Streetwear Collection",
 };
