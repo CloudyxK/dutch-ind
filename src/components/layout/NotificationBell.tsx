@@ -136,7 +136,7 @@ export default function NotificationBell() {
               </span>
               {notifications.length > 0 && (
                 <Link
-                  href="/profile/orders"
+                  href="/profile/notifications"
                   onClick={() => setOpen(false)}
                   className="text-[10px] text-brand-gray-400 hover:text-white transition-colors uppercase tracking-widest"
                 >

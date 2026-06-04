@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Plus, Edit, Trash2, Upload } from "lucide-react";
 import AdminProductActions from "@/components/admin/AdminProductActions";
 
 export default async function AdminProductsPage() {
@@ -25,11 +25,15 @@ export default async function AdminProductsPage() {
           </div>
           <h1 className="text-3xl font-display tracking-widest uppercase text-white">Produk</h1>
         </div>
-        <Link href="/admin/products/new" className="btn-primary text-sm gap-2 flex items-center">
-          <Plus className="w-4 h-4" />
-          Tambah Produk
-        </Link>
-      </div>
+        <div className="flex items-center gap-2">
+          <Link href="/admin/products/import" className="flex items-center gap-2 px-4 py-2 border border-brand-gray-700 hover:border-white text-xs uppercase tracking-widest transition-colors">
+            <Upload className="w-3.5 h-3.5" /> Import CSV
+          </Link>
+          <Link href="/admin/products/new" className="btn-primary text-sm gap-2 flex items-center">
+            <Plus className="w-4 h-4" />
+            Tambah Produk
+          </Link>
+        </div>
 
       {/* Table */}
       <div className="bg-brand-gray-900 border border-brand-gray-700 overflow-hidden">

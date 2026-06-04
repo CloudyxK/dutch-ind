@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatDate } from "@/lib/utils";
-import { Package, Heart, MapPin, ShoppingBag, Star } from "lucide-react";
+import { Package, Heart, MapPin, ShoppingBag, Star, Bell } from "lucide-react";
 import ProfileCard from "@/components/profile/ProfileCard";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
 import RankIcon from "@/components/profile/RankIcon";
@@ -136,10 +136,10 @@ export default async function ProfilePage() {
             </div>
 
             {/* Quick links */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pb-6 lg:pb-0">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pb-6 lg:pb-0">
               <Link href="/profile/orders" className="bg-brand-gray-900 border border-brand-gray-700 hover:border-white p-4 flex items-center gap-3 transition-colors relative">
                 <Package className="w-5 h-5" />
-                <span className="text-sm font-medium">Pesanan Saya</span>
+                <span className="text-sm font-medium">Pesanan</span>
                 {pendingOrderCount > 0 && (
                   <span className="ml-auto flex-shrink-0 bg-white text-black text-[10px] font-bold px-2 py-0.5 min-w-[20px] text-center">
                     {pendingOrderCount}
@@ -152,7 +152,11 @@ export default async function ProfilePage() {
               </Link>
               <Link href="/profile/addresses" className="bg-brand-gray-900 border border-brand-gray-700 hover:border-white p-4 flex items-center gap-3 transition-colors">
                 <MapPin className="w-5 h-5" />
-                <span className="text-sm font-medium">Alamat Saya</span>
+                <span className="text-sm font-medium">Alamat</span>
+              </Link>
+              <Link href="/profile/notifications" className="bg-brand-gray-900 border border-brand-gray-700 hover:border-white p-4 flex items-center gap-3 transition-colors">
+                <Bell className="w-5 h-5" />
+                <span className="text-sm font-medium">Notifikasi</span>
               </Link>
             </div>
           </div>
