@@ -2,10 +2,13 @@ import prisma from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
 import { TrendingUp, ShoppingCart, Users, UserPlus } from "lucide-react";
 import AnalyticsCharts from "@/components/admin/AnalyticsCharts";
+import { Suspense } from "react";
+import AnalyticsDateFilter from "@/components/admin/AnalyticsDateFilter";
 
-async function getAnalytics() {
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+async function getAnalytics(days: number = 30) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  const thirtyDaysAgo = startDate; // keep variable name for compatibility
 
   const [
     revenueThisMonth,
@@ -29,7 +32,7 @@ async function getAnalytics() {
       _count: true,
     }),
 
-    // 30 hari terakhir
+    // Revenue dalam periode yang dipilih
     prisma.payment.findMany({
       where: { status: "SUCCESS", paidAt: { gte: thirtyDaysAgo } },
       select: { amount: true, paidAt: true },
@@ -50,13 +53,11 @@ async function getAnalytics() {
       take: 8,
     }),
 
-    // Penjualan 7 hari terakhir
+    // Penjualan dalam periode yang dipilih
     prisma.order.findMany({
       where: {
         status: { in: ["PAID", "PROCESSING", "SHIPPED", "DELIVERED"] },
-        createdAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-        },
+        createdAt: { gte: thirtyDaysAgo },
       },
       select: { total: true, createdAt: true },
     }),
@@ -87,9 +88,9 @@ async function getAnalytics() {
     })
   );
 
-  // Group sales by day (7 days — orders)
+  // Group sales by day (within selected period)
   const salesMap: Record<string, number> = {};
-  for (let i = 6; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     salesMap[d.toISOString().split("T")[0]] = 0;
@@ -99,9 +100,9 @@ async function getAnalytics() {
     if (key in salesMap) salesMap[key] = (salesMap[key] || 0) + order.total;
   });
 
-  // Group payment revenue by day (last 14 days)
+  // Group payment revenue by day (same period)
   const revenueMap: Record<string, number> = {};
-  for (let i = 13; i >= 0; i--) {
+  for (let i = days - 1; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     revenueMap[d.toISOString().split("T")[0]] = 0;
@@ -134,12 +135,23 @@ const STATUS_LABEL: Record<string, string> = {
   SHIPPED: "Dikirim", DELIVERED: "Terkirim", CANCELLED: "Dibatalkan",
 };
 
-export default async function AnalyticsPage() {
-  const data = await getAnalytics();
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ days?: string }>;
+}) {
+  const sp = await searchParams;
+  const days = Math.min(Math.max(parseInt(sp.days || "30") || 30, 7), 365);
+  const data = await getAnalytics(days);
 
   return (
     <div className="space-y-8">
-      <h1 className="text-3xl font-display tracking-widest uppercase text-white">Analitik</h1>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <h1 className="text-3xl font-display tracking-widest uppercase text-white">Analitik</h1>
+        <Suspense fallback={null}>
+          <AnalyticsDateFilter />
+        </Suspense>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -149,7 +161,7 @@ export default async function AnalyticsPage() {
             <span className="text-xs text-brand-gray-500 uppercase tracking-wider">Revenue</span>
           </div>
           <p className="text-2xl font-bold">{formatPrice(data.revenueThisMonth)}</p>
-          <p className="text-xs text-brand-gray-500 mt-1">{data.transactionsThisMonth} transaksi bulan ini</p>
+          <p className="text-xs text-brand-gray-500 mt-1">{data.transactionsThisMonth} transaksi {days} hari terakhir</p>
         </div>
 
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6">

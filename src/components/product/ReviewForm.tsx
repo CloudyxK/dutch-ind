@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Star, ImageIcon, X } from "lucide-react";
+import { Star, ImageIcon, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -29,6 +29,7 @@ export default function ReviewForm({ productSlug, userId: _userId, existingRevie
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(!!existingReview);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -88,10 +89,33 @@ export default function ReviewForm({ productSlug, userId: _userId, existingRevie
     setLoading(true);
     setError("");
     try {
+      // Upload image to Cloudinary first if a base64 preview exists
+      let finalImageUrl = imageUrl;
+      if (imagePreview && imageUrl?.startsWith("data:")) {
+        setUploading(true);
+        try {
+          const upRes = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ file: imageUrl, folder: "reviews" }),
+          });
+          const upJson = await upRes.json();
+          if (upRes.ok && upJson.url) {
+            finalImageUrl = upJson.url;
+          } else {
+            // Non-fatal: submit without image rather than blocking review
+            finalImageUrl = null;
+            toast.error("Foto gagal diupload, ulasan tetap disimpan tanpa foto");
+          }
+        } finally {
+          setUploading(false);
+        }
+      }
+
       const res = await fetch(`/api/products/${productSlug}/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, comment, imageUrl }),
+        body: JSON.stringify({ rating, comment, imageUrl: finalImageUrl }),
       });
       const json = await res.json();
       if (!res.ok) { setError(json.error || "Gagal menyimpan ulasan"); return; }
@@ -173,8 +197,12 @@ export default function ReviewForm({ productSlug, userId: _userId, existingRevie
 
       {error && <p className="text-red-400 text-xs mb-3">{error}</p>}
 
-      <button type="submit" disabled={loading} className="btn-primary px-6 py-2 text-sm disabled:opacity-50">
-        {loading ? "Menyimpan..." : "Kirim Ulasan"}
+      <button type="submit" disabled={loading || uploading} className="btn-primary px-6 py-2 text-sm disabled:opacity-50 flex items-center gap-2">
+        {uploading ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> Mengupload foto...</>
+        ) : loading ? (
+          <><Loader2 className="w-4 h-4 animate-spin" /> Menyimpan...</>
+        ) : "Kirim Ulasan"}
       </button>
     </form>
   );

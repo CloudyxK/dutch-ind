@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { ShoppingBag, Search, User, Menu, X, Heart, ChevronDown, Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -35,6 +35,10 @@ export default function Navbar() {
   const [notifCount, setNotifCount]    = useState(0);
   const [searchOpen, setSearchOpen]    = useState(false);
   const [searchQuery, setSearchQuery]  = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shopOpen, setShopOpen]        = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [logoSpinning, setLogoSpinning] = useState(false);
@@ -45,6 +49,27 @@ export default function Navbar() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Search autocomplete debounce
+  useEffect(() => {
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    if (!searchQuery.trim() || searchQuery.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    searchDebounce.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products/suggest?q=${encodeURIComponent(searchQuery)}`);
+        const json = await res.json();
+        setSearchResults(json.data ?? []);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 280);
+  }, [searchQuery]);
 
   // Fetch notif count for mobile badge
   useEffect(() => {
@@ -272,26 +297,79 @@ export default function Navbar() {
                 transition={{ duration: 0.25 }}
                 className="overflow-hidden border-t border-white/[0.06]"
               >
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (searchQuery.trim())
-                      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
-                  }}
-                  className="flex gap-2 py-3"
-                >
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Cari produk..."
-                    className="input-field flex-1"
-                    autoFocus
-                  />
-                  <button type="submit" className="btn-primary px-4">
-                    <Search className="w-4 h-4" />
-                  </button>
-                </form>
+                <div className="relative">
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (searchQuery.trim()) {
+                        setSearchResults([]);
+                        window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+                      }
+                    }}
+                    className="flex gap-2 py-3"
+                  >
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => setSearchFocused(true)}
+                      onBlur={() => setTimeout(() => setSearchFocused(false), 180)}
+                      placeholder="Cari produk, kategori..."
+                      className="input-field flex-1"
+                      autoFocus
+                      autoComplete="off"
+                    />
+                    <button type="submit" className="btn-primary px-4">
+                      <Search className="w-4 h-4" />
+                    </button>
+                  </form>
+
+                  {/* Autocomplete dropdown */}
+                  {searchFocused && (searchResults.length > 0 || searchLoading) && (
+                    <div className="absolute top-full left-0 right-0 z-50 bg-brand-black border border-brand-gray-700 border-t-0 shadow-2xl max-h-80 overflow-y-auto">
+                      {searchLoading && searchResults.length === 0 && (
+                        <div className="px-4 py-3 text-xs text-brand-gray-500 flex items-center gap-2">
+                          <div className="w-3 h-3 border border-brand-gray-500 border-t-white rounded-full animate-spin" />
+                          Mencari...
+                        </div>
+                      )}
+                      {searchResults.map((item) => (
+                        <a
+                          key={item.id}
+                          href={`/products/${item.slug}`}
+                          className="flex items-center gap-3 px-4 py-2.5 hover:bg-white/[0.06] transition-colors border-b border-brand-gray-800 last:border-b-0"
+                          onClick={() => { setSearchResults([]); setSearchOpen(false); }}
+                        >
+                          {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={item.imageUrl} alt="" className="w-10 h-10 object-cover flex-shrink-0 bg-brand-gray-800" />
+                          ) : (
+                            <div className="w-10 h-10 bg-brand-gray-800 flex-shrink-0" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{item.name}</p>
+                            <p className="text-[10px] text-brand-gray-500">{item.category}</p>
+                          </div>
+                          <div className="text-right flex-shrink-0">
+                            <p className="text-sm font-bold">
+                              {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(item.price)}
+                            </p>
+                            {!item.inStock && <p className="text-[10px] text-red-400">Habis</p>}
+                          </div>
+                        </a>
+                      ))}
+                      {!searchLoading && searchResults.length > 0 && (
+                        <a
+                          href={`/products?search=${encodeURIComponent(searchQuery)}`}
+                          className="block px-4 py-2.5 text-xs text-brand-gray-400 hover:text-white hover:bg-white/[0.04] transition-colors text-center"
+                          onClick={() => setSearchResults([])}
+                        >
+                          Lihat semua hasil untuk "{searchQuery}" →
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

@@ -12,16 +12,48 @@ type ContactConfig = {
   operationalHours: string;
 } | null;
 
+function parseIsOnline(hours: string): boolean {
+  try {
+    const now = new Date();
+    // WITA = UTC+8
+    const wita = new Date(now.getTime() + 8 * 3600000);
+    const day  = wita.getUTCDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    const h = wita.getUTCHours();
+    const m = wita.getUTCMinutes();
+
+    // Parse day range
+    const low = hours.toLowerCase();
+    let dayOk = true;
+    if (low.includes("sen") && low.includes("sab")) dayOk = day >= 1 && day <= 6;
+    else if (low.includes("sen") && low.includes("jum")) dayOk = day >= 1 && day <= 5;
+    else if (low.includes("sen") && low.includes("min")) dayOk = true;
+    // else assume everyday
+
+    // Parse time: 09.00–21.00 or 09:00-21:00
+    const tm = hours.match(/(\d{1,2})[.:](\d{2})\s*[–\-]\s*(\d{1,2})[.:](\d{2})/);
+    if (!tm) return dayOk;
+    const startMin = parseInt(tm[1]) * 60 + parseInt(tm[2]);
+    const endMin   = parseInt(tm[3]) * 60 + parseInt(tm[4]);
+    const nowMin   = h * 60 + m;
+
+    return dayOk && nowMin >= startMin && nowMin < endMin;
+  } catch { return true; }
+}
+
 export default function FloatingContact() {
   const [config,  setConfig]  = useState<ContactConfig>(null);
   const [open,    setOpen]    = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
     setMounted(true);
     fetch("/api/contact")
       .then(r => r.json())
-      .then(({ data }) => setConfig(data));
+      .then(({ data }) => {
+        setConfig(data);
+        if (data?.operationalHours) setIsOnline(parseIsOnline(data.operationalHours));
+      });
   }, []);
 
   if (!mounted || !config) return null;
@@ -45,9 +77,24 @@ export default function FloatingContact() {
 
         {/* Info card */}
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-4 rounded-none w-64 shadow-2xl mb-1">
-          <p className="text-xs font-bold uppercase tracking-widest mb-1">Customer Service</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs font-bold uppercase tracking-widest">Customer Service</p>
+            {config.operationalHours && (
+              <div className="flex items-center gap-1.5">
+                <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-green-400 animate-pulse" : "bg-brand-gray-600"}`} />
+                <span className={`text-[10px] font-medium ${isOnline ? "text-green-400" : "text-brand-gray-500"}`}>
+                  {isOnline ? "Online" : "Offline"}
+                </span>
+              </div>
+            )}
+          </div>
           {config.operationalHours && (
             <p className="text-[10px] text-brand-gray-500 mb-3">{config.operationalHours}</p>
+          )}
+          {!isOnline && config.operationalHours && (
+            <p className="text-[10px] text-amber-400/80 mb-2 bg-amber-900/20 border border-amber-800/30 px-2 py-1">
+              Di luar jam operasional — balasan mungkin tertunda
+            </p>
           )}
           <div className="space-y-2">
             {waHref && (
@@ -87,11 +134,15 @@ export default function FloatingContact() {
         className="relative w-14 h-14 bg-green-600 hover:bg-green-500 text-white shadow-lg hover:shadow-green-500/30 transition-all duration-300 flex items-center justify-center"
         style={{ boxShadow: open ? "none" : "0 0 20px rgba(34,197,94,0.35)" }}
       >
-        {/* Pulse ring — only when closed */}
-        {!open && (
+        {/* Pulse ring — only when closed & online */}
+        {!open && isOnline && (
           <span className="absolute inset-0 animate-ping bg-green-500 opacity-20 rounded-none" />
         )}
-        <span className={`transition-all duration-300 ${open ? "rotate-0 scale-100" : "rotate-0 scale-100"}`}>
+        {/* Online/offline dot */}
+        {!open && (
+          <span className={`absolute top-1 right-1 w-2.5 h-2.5 rounded-full border-2 border-green-600 ${isOnline ? "bg-green-300" : "bg-brand-gray-500"}`} />
+        )}
+        <span className="transition-all duration-300">
           {open
             ? <X className="w-5 h-5" />
             : <WhatsAppIcon className="w-6 h-6" />

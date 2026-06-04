@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, ShoppingBag, ArrowLeft, Share2, Copy, Check, X } from "lucide-react";
+import { Heart, ShoppingBag, ArrowLeft, Share2, Copy, Check, X, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
 import ProductCard from "@/components/product/ProductCard";
 import ProductCardSkeleton from "@/components/ui/ProductCardSkeleton";
@@ -15,6 +15,7 @@ export default function WishlistPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingAll, setAddingAll] = useState(false);
+  const [sortBy, setSortBy] = useState<"default" | "price-asc" | "price-desc" | "name-asc">("default");
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -83,6 +84,13 @@ export default function WishlistPage() {
     fetchWishlistProducts();
   }, [wishlistIds]);
 
+  const sortedProducts = [...products].sort((a, b) => {
+    if (sortBy === "price-asc")  return a.price - b.price;
+    if (sortBy === "price-desc") return b.price - a.price;
+    if (sortBy === "name-asc")   return a.name.localeCompare(b.name, "id");
+    return 0; // default: keep original order
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen py-10">
@@ -107,9 +115,24 @@ export default function WishlistPage() {
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
           Lanjut Belanja
         </Link>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h1 className="section-title">Wishlist ({wishlistIds.length})</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {products.length > 1 && (
+              <div className="relative">
+                <ArrowUpDown className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-brand-gray-500 pointer-events-none" />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                  className="bg-brand-gray-900 border border-brand-gray-700 text-xs pl-7 pr-3 py-1.5 text-white focus:outline-none focus:border-white appearance-none"
+                >
+                  <option value="default">Urutan Default</option>
+                  <option value="price-asc">Harga: Terendah</option>
+                  <option value="price-desc">Harga: Tertinggi</option>
+                  <option value="name-asc">Nama A–Z</option>
+                </select>
+              </div>
+            )}
             {products.length > 0 && (
               <button
                 onClick={generateShareLink}
@@ -117,7 +140,7 @@ export default function WishlistPage() {
                 className="flex items-center gap-2 text-xs border border-brand-gray-700 hover:border-white px-3 py-1.5 transition-colors"
               >
                 <Share2 className="w-3.5 h-3.5" />
-                {shareLoading ? "..." : "Bagikan Wishlist"}
+                {shareLoading ? "..." : "Bagikan"}
               </button>
             )}
             {products.length > 0 && (
@@ -155,7 +178,7 @@ export default function WishlistPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product) => (
+            {sortedProducts.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
