@@ -1,49 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getToken } from "next-auth/jwt";
 
 // ─── Attack pattern blocklists ────────────────────────────────────────────────
 
-/** Paths that signal scanning / path-traversal attempts */
 const BLOCKED_PATH_PATTERNS = [
-  /\.\.(\/|\\|%2f|%5c)/i,                // path traversal
+  /\.\.(\/|\\|%2f|%5c)/i,
   /\.(env|git|htaccess|htpasswd|ssh|bash_history|zshrc|npmrc|yarnrc)$/i,
-  /wp-(admin|login|config|includes|content)/i,  // WordPress probing
+  /wp-(admin|login|config|includes|content)/i,
   /phpmyadmin|phpinfo|adminer/i,
   /\.php(\?|$)/i,
   /\/etc\/(passwd|shadow|group)/i,
   /\/proc\/(self|version|cmdline)/i,
   /xmlrpc\.php/i,
   /eval\s*\(/i,
-  /(base64_decode|gzinflate|str_rot13)\s*\(/i,   // PHP webshell patterns
+  /(base64_decode|gzinflate|str_rot13)\s*\(/i,
 ];
 
-/** Known attack tool user-agent substrings */
 const BLOCKED_UA = [
   "sqlmap", "nikto", "masscan", "nmap", "burpsuite", "acunetix",
   "nessus", "openvas", "w3af", "havij", "pangolin", "dirbuster",
   "gobuster", "hydra", "medusa", "metasploit", "zgrab", "nuclei",
-  "python-requests/2.1",  // common scraper version
-  "curl/7.1",             // old curl used by some attack scripts
 ];
 
-/** SQL injection fragments in query strings */
 const SQL_PATTERNS = [
   /(\s|%20|\+)(union|select|insert|update|delete|drop|create|alter|exec|truncate)(\s|%20|\+)/i,
-  /(--|%23|%2f\*)/,       // SQL comment starters
+  /(--|%23|%2f\*)/,
   /xp_cmdshell|waitfor\s+delay|sleep\(\d/i,
-  /'(\s)*(or|and)(\s)*'?1'?(\s)*=(\s)*'?1/i,  // classic OR 1=1
+  /'(\s)*(or|and)(\s)*'?1'?(\s)*=(\s)*'?1/i,
 ];
 
-// ─── Admin-only route prefix ──────────────────────────────────────────────────
-const ADMIN_PREFIX = "/admin";
-const ADMIN_API_PREFIX = "/api/admin";
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function blocked(reason: string, status = 403): NextResponse {
-  return new NextResponse(
-    JSON.stringify({ error: "Forbidden", reason }),
-    { status, headers: { "Content-Type": "application/json" } }
-  );
+
+function blocked(status = 403): NextResponse {
+  return new NextResponse(JSON.stringify({ error: "Forbidden" }), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
 }
 
 function addSecurityHeaders(res: NextResponse, reqId: string): NextResponse {
@@ -52,57 +44,56 @@ function addSecurityHeaders(res: NextResponse, reqId: string): NextResponse {
   res.headers.set("X-Frame-Options", "DENY");
   res.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   res.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(self)");
-  res.headers.set("Cross-Origin-Opener-Policy", "same-origin");
-  res.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+  res.headers.set("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.headers.set("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
   return res;
 }
 
 // ─── Main middleware ──────────────────────────────────────────────────────────
+
 export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const ua = request.headers.get("user-agent") ?? "";
-  const fullPath = pathname + search;
 
-  // Generate unique request ID for tracing
-  const reqId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  // Unique request ID for tracing
+  const reqId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
   // ── 1. Block known attack user-agents ─────────────────────────────────────
   const uaLower = ua.toLowerCase();
   if (BLOCKED_UA.some((bad) => uaLower.includes(bad))) {
-    console.warn(`[security] Blocked UA: ${ua.slice(0, 80)} | path: ${pathname}`);
-    return blocked("Forbidden user-agent", 403);
+    return blocked(403);
   }
 
   // ── 2. Block path traversal and dangerous paths ────────────────────────────
-  const decodedPath = decodeURIComponent(pathname);
+  const decodedPath = (() => { try { return decodeURIComponent(pathname); } catch { return pathname; } })();
   if (BLOCKED_PATH_PATTERNS.some((p) => p.test(decodedPath) || p.test(pathname))) {
-    console.warn(`[security] Blocked path: ${pathname} | IP: ${request.headers.get("x-forwarded-for") ?? "?"}`);
-    return blocked("Forbidden path", 404); // 404 to not reveal the rule
+    return blocked(404); // 404 so attackers don't know the rule exists
   }
 
-  // ── 3. Block SQL injection patterns in query string ────────────────────────
+  // ── 3. Block SQL injection in query string ─────────────────────────────────
   if (search && SQL_PATTERNS.some((p) => p.test(search))) {
-    console.warn(`[security] SQL pattern in query: ${search.slice(0, 100)}`);
-    return blocked("Invalid request", 400);
+    return blocked(400);
   }
 
-  // ── 4. Admin route protection ──────────────────────────────────────────────
-  const isAdminPage = pathname.startsWith(ADMIN_PREFIX);
-  const isAdminApi  = pathname.startsWith(ADMIN_API_PREFIX);
+  // ── 4. Protect admin routes via JWT (Edge-compatible, no Prisma) ──────────
+  const isAdminPage = pathname.startsWith("/admin");
+  const isAdminApi  = pathname.startsWith("/api/admin");
 
   if (isAdminPage || isAdminApi) {
-    const session = await auth();
+    // getToken reads the JWT from the cookie without calling Prisma
+    const token = await getToken({
+      req:    request,
+      secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+    });
 
-    if (!session) {
+    if (!token) {
       if (isAdminPage) {
         return NextResponse.redirect(new URL("/login", request.url));
       }
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const role = (session.user as any)?.role;
-    if (role !== "ADMIN") {
-      console.warn(`[security] Non-admin access attempt: ${session.user?.email} → ${pathname}`);
+    if ((token as any).role !== "ADMIN") {
       if (isAdminPage) {
         return NextResponse.redirect(new URL("/", request.url));
       }
@@ -110,22 +101,17 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // ── 5. Block empty or suspicious User-Agent on API mutations ──────────────
+  // ── 5. Block mutations with empty User-Agent ───────────────────────────────
   if (pathname.startsWith("/api/") && !ua && request.method !== "GET") {
-    return blocked("Missing User-Agent", 400);
+    return blocked(400);
   }
 
-  // ── 6. Enforce HTTPS redirect signal header ────────────────────────────────
-  // Vercel handles actual HTTPS redirect; we add HSTS header
-  const res = NextResponse.next();
-  res.headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-
-  return addSecurityHeaders(res, reqId);
+  // ── 6. Pass through with security headers ─────────────────────────────────
+  return addSecurityHeaders(NextResponse.next(), reqId);
 }
 
 export const config = {
   matcher: [
-    // Run on everything EXCEPT static files and Next.js internals
-    "/((?!_next/static|_next/image|favicon.ico|icon-|splash-|manifest|sw.js|logo|music|robots.txt|sitemap).*)",
+    "/((?!_next/static|_next/image|favicon.ico|icon-|splash-|manifest|sw\\.js|logo|music|robots\\.txt|sitemap).*)",
   ],
 };
