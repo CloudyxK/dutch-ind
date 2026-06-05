@@ -454,6 +454,40 @@ model DropWaitlist {
   @@map("drop_waitlist")
 }
 
+// ── Stock Finder / Sourcing Tool ─────────────────────────────────────────────
+
+model StockSource {
+  id          String   @id @default(cuid())
+  name        String                         // nama supplier/toko
+  platform    String                         // shopee|tokopedia|lazada|facebook|tiktok|offline
+  url         String                         // direct link ke toko/produk
+  category    String   @default("general")   // hoodie|kaos|celana|aksesori|general
+  priceMin    Float?                         // harga grosir terendah
+  priceMax    Float?                         // harga grosir tertinggi
+  minOrder    Int?                           // MOQ
+  quality     Int      @default(3)           // rating kualitas 1-5
+  notes       String?
+  isActive    Boolean  @default(true)
+  lastChecked DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([platform])
+  @@index([category])
+  @@map("stock_sources")
+}
+
+model StockSearch {
+  id        String   @id @default(cuid())
+  query     String                           // kata kunci yang dicari
+  category  String   @default("general")
+  results   String   @default("[]")          // JSON: [{platform, keyword, url, estimatedPrice}]
+  aiNotes   String?                          // insight dari AI
+  createdAt DateTime @default(now())
+
+  @@map("stock_searches")
+}
+
 model Bundle {
   id          String       @id @default(cuid())
   name        String

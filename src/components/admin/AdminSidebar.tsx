@@ -30,6 +30,7 @@ import {
   ShoppingBag,
   CreditCard,
   Shield,
+  Sparkles,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -38,8 +39,9 @@ const navGroups = [
   {
     label: "Utama",
     items: [
-      { href: "/admin",            label: "Dashboard", icon: LayoutDashboard },
-      { href: "/admin/analytics",  label: "Analitik",  icon: BarChart3 },
+      { href: "/admin",                label: "Dashboard",    icon: LayoutDashboard },
+      { href: "/admin/analytics",      label: "Analitik",     icon: BarChart3 },
+      { href: "/admin/stock-finder",   label: "Stock Finder ✨", icon: Sparkles },
     ],
   },
   {
