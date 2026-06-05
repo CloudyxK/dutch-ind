@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { verifySameOrigin, sanitize, isValidId } from "@/lib/security";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -11,10 +12,12 @@ async function requireOwnership(addressId: string, userId: string) {
 
 export async function PUT(request: NextRequest, { params }: Params) {
   try {
+    if (!verifySameOrigin(request)) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     const session = await auth();
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
+    if (!isValidId(id)) return NextResponse.json({ error: "ID tidak valid" }, { status: 400 });
     const userId = session.user.id;
 
     if (!(await requireOwnership(id, userId))) {

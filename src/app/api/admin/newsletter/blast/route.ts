@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { sanitize, rateLimitResponse } from "@/lib/security";
+import { emailBlastLimiter, getIp } from "@/lib/rateLimit";
 
 async function requireAdmin() {
   const session = await auth();
@@ -53,9 +55,14 @@ function buildHtml(subject: string, body: string) {
 
 export async function POST(request: NextRequest) {
   try {
-    if (!(await requireAdmin())) {
+    const session = await requireAdmin();
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
+
+    // Rate limit: 5 blasts/hour per admin — prevents accidental spam
+    const rl = emailBlastLimiter(`blast:${(session.user as any).id}`);
+    if (!rl.success) return rateLimitResponse(rl.retryAfter);
 
     const body = await request.json();
     const { subject, message, testEmail } = body;
@@ -64,7 +71,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Subjek dan pesan wajib diisi" }, { status: 400 });
     }
 
-    const html = buildHtml(subject.trim(), message.trim());
+    // Sanitize subject/message to prevent HTML injection in emails
+    const cleanSubject = sanitize(subject).slice(0, 200);
+    const cleanMessage = sanitize(message).slice(0, 5000);
+    if (!cleanSubject || !cleanMessage) {
+      return NextResponse.json({ error: "Konten tidak valid" }, { status: 400 });
+    }
+
+    const html = buildHtml(cleanSubject, cleanMessage);
 
     // Test mode — kirim ke satu email saja
     if (testEmail?.trim()) {

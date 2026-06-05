@@ -34,6 +34,7 @@ export default async function AdminProductsPage() {
             Tambah Produk
           </Link>
         </div>
+      </div>
 
       {/* Table */}
       <div className="bg-brand-gray-900 border border-brand-gray-700 overflow-hidden">

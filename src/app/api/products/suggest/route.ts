@@ -1,11 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { sanitize, hasSqlInjection, rateLimitResponse } from "@/lib/security";
+import { searchLimiter, getIp } from "@/lib/rateLimit";
 
 export async function GET(request: NextRequest) {
+  // Rate limit search: 60/min/IP
+  const ip = getIp(request);
+  const rl = searchLimiter(`search:${ip}`);
+  if (!rl.success) return rateLimitResponse(rl.retryAfter);
+
   const { searchParams } = new URL(request.url);
-  const q = searchParams.get("q")?.trim();
+  const rawQ = searchParams.get("q")?.trim();
+  const q    = rawQ ? sanitize(rawQ).slice(0, 100) : "";
 
   if (!q || q.length < 2) {
+    return NextResponse.json({ data: [] });
+  }
+
+  // Block injection attempts
+  if (hasSqlInjection(q)) {
     return NextResponse.json({ data: [] });
   }
 
