@@ -80,6 +80,10 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "cdn.midtrans.com" },
       { protocol: "https", hostname: "res.cloudinary.com" },
+      // Stock Finder — marketplace product images
+      { protocol: "https", hostname: "cf.shopee.co.id" },
+      { protocol: "https", hostname: "down-id.img.susercontent.com" },
+      { protocol: "https", hostname: "images.tokopedia.net" },
     ],
     // Serve AVIF/WebP — 30-50% smaller than JPEG
     formats: ["image/avif", "image/webp"],

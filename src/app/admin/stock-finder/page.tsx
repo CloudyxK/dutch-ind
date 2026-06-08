@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
-  Search, Sparkles, ExternalLink, Plus, Trash2, Star, RefreshCw,
+  Search, Sparkles, ExternalLink, Plus, Trash2,
   ShoppingBag, Package, Loader2, ChevronDown, ChevronUp, BookmarkPlus,
   TrendingDown, Clock, Globe, CheckCircle2, X, Filter, SlidersHorizontal,
-  ImageOff, AlertCircle,
+  ImageOff, AlertCircle, Star, MapPin, Store, ShoppingCart,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -63,6 +63,32 @@ interface SearchHistory {
   aiNotes: string | null;
 }
 
+interface ProductResult {
+  id:             string;
+  name:           string;
+  price:          number;
+  priceFormatted: string;
+  priceOriginal:  number | null;
+  image:          string;
+  url:            string;
+  rating:         number | null;
+  ratingCount:    number | null;
+  sold:           string | null;
+  shop:           string | null;
+  platform:       "shopee" | "tokopedia";
+  location:       string | null;
+}
+
+interface ProductSearchState {
+  products:       ProductResult[];
+  count:          number;
+  query:          string;
+  priceMin?:      number;
+  priceMax?:      number;
+  platformStatus: Record<string, { count: number; error: string | null }>;
+  errors?:        string[];
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -114,13 +140,22 @@ export default function StockFinderPage() {
     new Set(["shopee", "tokopedia", "lazada", "facebook", "tiktok"])
   );
 
+  // Product-search state (Shopee / Tokopedia live results)
+  const [pQuery,          setPQuery]          = useState("");
+  const [pPriceMin,       setPPriceMin]       = useState("");
+  const [pPriceMax,       setPPriceMax]       = useState("");
+  const [pPlatforms,      setPPlatforms]      = useState<Set<string>>(new Set(["shopee", "tokopedia"]));
+  const [pSearching,      setPSearching]      = useState(false);
+  const [pResult,         setPResult]         = useState<ProductSearchState | null>(null);
+  const [pSortBy,         setPSortBy]         = useState<"price" | "rating" | "sold">("price");
+
   // Sources state
   const [sources,        setSources]        = useState<Source[]>([]);
   const [history,        setHistory]        = useState<SearchHistory[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
   const [showAddForm,    setShowAddForm]    = useState(false);
   const [filterCat,      setFilterCat]      = useState("all");
-  const [activeTab,      setActiveTab]      = useState<"search" | "sources" | "history">("search");
+  const [activeTab,      setActiveTab]      = useState<"search" | "products" | "sources" | "history">("search");
 
   // Add source form
   const [newSource, setNewSource] = useState({
@@ -241,6 +276,39 @@ export default function StockFinderPage() {
     } catch {}
   }
 
+  async function doProductSearch() {
+    if (!pQuery.trim()) { toast.error("Masukkan nama produk"); return; }
+    setPSearching(true);
+    setPResult(null);
+    try {
+      const params = new URLSearchParams({ q: pQuery.trim() });
+      if (pPriceMin) params.set("priceMin", pPriceMin);
+      if (pPriceMax) params.set("priceMax", pPriceMax);
+      params.set("platforms", [...pPlatforms].join(","));
+
+      const r = await fetch(`/api/admin/stock-finder/products?${params}`);
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setPResult(d.data);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal mencari produk");
+    } finally {
+      setPSearching(false);
+    }
+  }
+
+  function sortedProducts(products: ProductResult[]) {
+    return [...products].sort((a, b) => {
+      if (pSortBy === "rating")  return (b.rating ?? 0) - (a.rating ?? 0);
+      if (pSortBy === "sold") {
+        const numA = parseInt(a.sold ?? "0");
+        const numB = parseInt(b.sold ?? "0");
+        return numB - numA;
+      }
+      return a.price - b.price; // default: harga termurah dulu
+    });
+  }
+
   const filteredSources = filterCat === "all" ? sources : sources.filter(s => s.category === filterCat);
   const catEmoji = (c: string) => CATEGORIES.find(x => x.value === c)?.emoji ?? "📦";
 
@@ -271,9 +339,10 @@ export default function StockFinderPage() {
       {/* Tabs */}
       <div className="flex border-b border-brand-gray-700">
         {[
-          { key: "search",  label: "🔍 Cari Stok", count: null },
-          { key: "sources", label: "📋 Supplier Tersimpan", count: sources.length },
-          { key: "history", label: "🕐 Histori Pencarian", count: history.length },
+          { key: "search",   label: "🔍 Cari Stok Grosir",  count: null },
+          { key: "products", label: "🛒 Cari Produk Nyata",  count: pResult?.count ?? null },
+          { key: "sources",  label: "📋 Supplier Tersimpan", count: sources.length },
+          { key: "history",  label: "🕐 Histori",            count: history.length },
         ].map(tab => (
           <button
             key={tab.key}
@@ -600,6 +669,257 @@ export default function StockFinderPage() {
               <Sparkles className="w-12 h-12 mx-auto mb-4 text-amber-400/30" />
               <p className="text-sm">Masukkan kata kunci dan klik "Cari Stok Grosir"</p>
               <p className="text-xs mt-1">AI akan generate variasi keyword optimal untuk tiap marketplace</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Cari Produk Nyata ────────────────────────────────────────────── */}
+      {activeTab === "products" && (
+        <div className="space-y-6">
+          {/* Search form */}
+          <div className="bg-brand-gray-900 border border-brand-gray-700 p-6 space-y-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-white mb-1">Cari Produk Spesifik</p>
+              <p className="text-[11px] text-brand-gray-500">
+                Masukkan nama produk yang kamu mau — sistem akan mencari langsung di Shopee &amp; Tokopedia dan menampilkan foto, harga, serta link produknya.
+              </p>
+            </div>
+
+            {/* Query */}
+            <div className="relative">
+              <ShoppingCart className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-gray-500" />
+              <input
+                value={pQuery}
+                onChange={e => setPQuery(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && doProductSearch()}
+                placeholder="Contoh: rucas ultra stitch, kaos polos boxy, hoodie oversize fleece..."
+                className="input-field pl-10 w-full text-sm"
+              />
+            </div>
+
+            {/* Price filter */}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-brand-gray-500 mb-2 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3 h-3" /> Filter Harga (Rp):
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-gray-500">Min</span>
+                  <input type="number" value={pPriceMin} onChange={e => setPPriceMin(e.target.value)}
+                    placeholder="700000" className="input-field pl-10 w-full text-sm" min={0} />
+                </div>
+                <span className="text-brand-gray-600 flex-shrink-0">–</span>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-brand-gray-500">Max</span>
+                  <input type="number" value={pPriceMax} onChange={e => setPPriceMax(e.target.value)}
+                    placeholder="1000000" className="input-field pl-10 w-full text-sm" min={0} />
+                </div>
+                {(pPriceMin || pPriceMax) && (
+                  <button onClick={() => { setPPriceMin(""); setPPriceMax(""); }}
+                    className="p-2 text-brand-gray-500 hover:text-white transition-colors flex-shrink-0">
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Platform selector */}
+            <div>
+              <p className="text-[10px] uppercase tracking-widest text-brand-gray-500 mb-2">Cari di:</p>
+              <div className="flex gap-2">
+                {(["shopee", "tokopedia"] as const).map(key => {
+                  const cfg = PLATFORM_CONFIG[key];
+                  const active = pPlatforms.has(key);
+                  return (
+                    <button key={key}
+                      onClick={() => setPPlatforms(prev => {
+                        const next = new Set(prev);
+                        next.has(key) ? next.delete(key) : next.add(key);
+                        return next;
+                      })}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 text-xs border rounded-sm transition-all ${
+                        active ? cfg.color : "border-brand-gray-700 text-brand-gray-600"
+                      }`}>
+                      <span>{cfg.icon}</span> {cfg.label}
+                      {active && <CheckCircle2 className="w-3 h-3" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button onClick={doProductSearch} disabled={pSearching || !pQuery.trim()}
+              className="btn-primary flex items-center gap-2 disabled:opacity-50">
+              {pSearching
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Mencari produk...</>
+                : <><Search className="w-4 h-4" /> Cari Produk</>}
+            </button>
+          </div>
+
+          {/* Results */}
+          {pResult && (
+            <div className="space-y-4">
+              {/* Summary + sort */}
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {pResult.count} produk ditemukan
+                    <span className="text-brand-gray-500 font-normal ml-2 text-xs">
+                      untuk &quot;{pResult.query}&quot;
+                      {(pResult.priceMin || pResult.priceMax) && (
+                        <> · {pResult.priceMin ? formatPrice(pResult.priceMin) : "?"} – {pResult.priceMax ? formatPrice(pResult.priceMax) : "?"}</>
+                      )}
+                    </span>
+                  </p>
+                  {/* Platform status */}
+                  <div className="flex items-center gap-3 mt-1">
+                    {Object.entries(pResult.platformStatus).map(([plt, st]) => (
+                      <span key={plt} className={`text-[10px] flex items-center gap-1 ${st.error ? "text-red-400" : "text-brand-gray-500"}`}>
+                        {PLATFORM_CONFIG[plt]?.icon} {st.error ? `Gagal (${st.error})` : `${st.count} hasil`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                {/* Sort */}
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-brand-gray-500 uppercase tracking-wider">Urutkan:</span>
+                  {([
+                    { v: "price",  l: "Harga Termurah" },
+                    { v: "rating", l: "Rating Tertinggi" },
+                    { v: "sold",   l: "Terlaris" },
+                  ] as const).map(opt => (
+                    <button key={opt.v} onClick={() => setPSortBy(opt.v)}
+                      className={`text-[10px] px-2.5 py-1 border transition-colors ${
+                        pSortBy === opt.v
+                          ? "border-white text-white bg-white/10"
+                          : "border-brand-gray-700 text-brand-gray-500 hover:text-white"
+                      }`}>
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* API errors notice */}
+              {pResult.errors && pResult.errors.length > 0 && (
+                <div className="bg-red-950/30 border border-red-700/40 px-4 py-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-xs font-bold text-red-400">Beberapa platform tidak dapat dijangkau</p>
+                    <p className="text-[11px] text-red-300/70 mt-0.5">
+                      {pResult.errors.join(" · ")}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {pResult.count === 0 ? (
+                <div className="text-center py-16 text-brand-gray-600">
+                  <ShoppingCart className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Tidak ada produk ditemukan</p>
+                  <p className="text-xs mt-1">Coba kata kunci lain atau perlebar rentang harga</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                  {sortedProducts(pResult.products).map(p => {
+                    const platCfg = PLATFORM_CONFIG[p.platform];
+                    const discount = p.priceOriginal
+                      ? Math.round((1 - p.price / p.priceOriginal) * 100)
+                      : null;
+                    return (
+                      <a
+                        key={p.id}
+                        href={p.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex flex-col bg-brand-gray-900 border border-brand-gray-700 hover:border-brand-gray-400 transition-all duration-200 overflow-hidden"
+                      >
+                        {/* Image */}
+                        <div className="relative w-full aspect-square bg-brand-gray-800 overflow-hidden flex-shrink-0">
+                          {p.image ? (
+                            <Image
+                              src={p.image}
+                              alt={p.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                              unoptimized
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full">
+                              <ImageOff className="w-8 h-8 text-brand-gray-600" />
+                            </div>
+                          )}
+                          {/* Platform badge */}
+                          <div className={`absolute top-1.5 left-1.5 text-[9px] font-bold px-1.5 py-0.5 border ${platCfg.color}`}>
+                            {platCfg.icon}
+                          </div>
+                          {/* Discount badge */}
+                          {discount && (
+                            <div className="absolute top-1.5 right-1.5 bg-red-600 text-white text-[9px] font-bold px-1.5 py-0.5">
+                              -{discount}%
+                            </div>
+                          )}
+                          {/* Open link overlay */}
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                            <div className="opacity-0 group-hover:opacity-100 transition-opacity bg-white text-black text-[10px] font-bold px-2 py-1 flex items-center gap-1">
+                              <ExternalLink className="w-3 h-3" /> Lihat
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Info */}
+                        <div className="p-2.5 flex flex-col gap-1 flex-1">
+                          <p className="text-[11px] leading-tight line-clamp-2 text-white/80 group-hover:text-white transition-colors">
+                            {p.name}
+                          </p>
+
+                          {/* Price */}
+                          <div className="mt-auto pt-1">
+                            <p className="text-sm font-bold text-white">{p.priceFormatted}</p>
+                            {p.priceOriginal && (
+                              <p className="text-[10px] text-brand-gray-500 line-through">
+                                {formatPrice(p.priceOriginal)}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Rating + Sold */}
+                          {(p.rating || p.sold) && (
+                            <div className="flex items-center gap-2 text-[10px] text-brand-gray-500">
+                              {p.rating && (
+                                <span className="flex items-center gap-0.5 text-amber-400">
+                                  <Star className="w-2.5 h-2.5 fill-current" />
+                                  {p.rating.toFixed(1)}
+                                </span>
+                              )}
+                              {p.sold && <span>{p.sold}</span>}
+                            </div>
+                          )}
+
+                          {/* Shop + Location */}
+                          {(p.shop || p.location) && (
+                            <div className="text-[10px] text-brand-gray-600 truncate">
+                              {p.shop && <span className="flex items-center gap-0.5"><Store className="w-2.5 h-2.5 inline" /> {p.shop}</span>}
+                              {p.location && <span className="flex items-center gap-0.5 mt-0.5"><MapPin className="w-2.5 h-2.5 inline" /> {p.location}</span>}
+                            </div>
+                          )}
+                        </div>
+                      </a>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!pResult && !pSearching && (
+            <div className="text-center py-16 text-brand-gray-600">
+              <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-20" />
+              <p className="text-sm">Cari produk spesifik dari Shopee &amp; Tokopedia</p>
+              <p className="text-xs mt-1">Contoh: &quot;rucas ultra stitch&quot;, &quot;rucas tailor&quot;, &quot;visvim&quot;</p>
             </div>
           )}
         </div>
