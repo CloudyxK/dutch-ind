@@ -5,21 +5,13 @@ import FloatingContact from "./FloatingContact";
 import BackToTop from "./BackToTop";
 import AnnouncementTicker from "./AnnouncementTicker";
 import PageTransition from "./PageTransition";
-import dynamic from "next/dynamic";
-
-// Dynamically import heavy components so they don't block initial page render
-// Three.js SplashScreen is ~500KB — lazy load keeps it out of the main bundle
-const SplashScreen  = dynamic(() => import("./SplashScreen"),           { ssr: false });
-const CustomCursor  = dynamic(() => import("@/components/ui/CustomCursor"),  { ssr: false });
-const MusicToggle   = dynamic(() => import("@/components/ui/MusicToggle"),   { ssr: false });
+import ClientShopComponents from "./ClientShopComponents";
 
 export default function ShopLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* Heavy components — code-split via dynamic import */}
-      <CustomCursor />
-      <MusicToggle />
-      <SplashScreen />
+      {/* Heavy client-only components — lazy loaded via ClientShopComponents */}
+      <ClientShopComponents />
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col min-h-screen">
