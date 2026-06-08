@@ -1,16 +1,17 @@
 import prisma from "@/lib/prisma";
 import { formatPrice, formatDate } from "@/lib/utils";
-import { ShoppingCart, Users, Package, TrendingUp, AlertCircle, Crown, AlertTriangle } from "lucide-react";
+import { ShoppingCart, Users, Package, AlertCircle, Crown, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import RecentOrdersWidget from "@/components/admin/RecentOrdersWidget";
 import { RankBadge, LoyaltyBadge } from "@/components/profile/RankBadge";
-import RankIcon from "@/components/profile/RankIcon";
 import type { RankKey } from "@/lib/rank";
 
 async function getDashboardStats() {
   const today        = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
+  // Each query has its own .catch() so a single column/table missing in DB
+  // does NOT crash the entire dashboard — it just shows 0 / empty for that card.
   const [
     totalRevenue,
     totalOrders,
@@ -23,14 +24,23 @@ async function getDashboardStats() {
     lowStockVariantCount,
     outOfStockVariantCount,
   ] = await Promise.all([
-    prisma.payment.aggregate({ where: { status: "SUCCESS" }, _sum: { amount: true } }),
-    prisma.order.count(),
-    prisma.user.count({ where: { role: "CUSTOMER" } }),
-    prisma.product.count({ where: { isActive: true } }),
+    prisma.payment.aggregate({ where: { status: "SUCCESS" }, _sum: { amount: true } })
+      .catch(() => ({ _sum: { amount: 0 } })),
+
+    prisma.order.count()
+      .catch(() => 0),
+
+    prisma.user.count({ where: { role: "CUSTOMER" } })
+      .catch(() => 0),
+
+    prisma.product.count({ where: { isActive: true } })
+      .catch(() => 0),
+
     prisma.payment.aggregate({
       where: { status: "SUCCESS", paidAt: { gte: startOfMonth } },
       _sum: { amount: true },
-    }),
+    }).catch(() => ({ _sum: { amount: 0 } })),
+
     prisma.order.findMany({
       take: 8, orderBy: { createdAt: "desc" },
       include: {
@@ -39,11 +49,15 @@ async function getDashboardStats() {
         items:   { select: { id: true } },
         payment: { select: { status: true } },
       },
-    }),
+    }).catch(() => []),
+
+    // totalStock column — added in a later migration; fall back to [] if missing
     prisma.product.findMany({
       where: { isActive: true, totalStock: { lte: 5 } },
       orderBy: { totalStock: "asc" }, take: 5,
-    }),
+    }).catch(() => []),
+
+    // rank / totalSpend / orderCount columns — fall back to [] if missing
     prisma.user.findMany({
       where: { role: "CUSTOMER", rank: { in: ["DIAMOND", "PLATINUM", "GOLD", "SILVER"] } },
       orderBy: [{ rank: "desc" }, { totalSpend: "desc" }],
@@ -52,9 +66,13 @@ async function getDashboardStats() {
         id: true, name: true, email: true, avatar: true,
         rank: true, totalSpend: true, orderCount: true, createdAt: true,
       },
-    }),
-    prisma.productVariant.count({ where: { stock: { lte: 5, gt: 0 } } }),
-    prisma.productVariant.count({ where: { stock: 0 } }),
+    }).catch(() => []),
+
+    prisma.productVariant.count({ where: { stock: { lte: 5, gt: 0 } } })
+      .catch(() => 0),
+
+    prisma.productVariant.count({ where: { stock: 0 } })
+      .catch(() => 0),
   ]);
 
   return {
