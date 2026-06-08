@@ -75,13 +75,6 @@ const nextConfig: NextConfig = {
   // top-level key (moved out of `experimental`).
   outputFileTracingRoot: path.resolve(__dirname),
 
-  // Turbopack (default bundler in Next.js 16) does NOT generate
-  // middleware.js.nft.json. Vercel's build adapter reads this file during
-  // "Finalizing page optimization". We pre-create it in the buildCommand
-  // with an empty trace, and disable cleanDistDir so next build does not
-  // delete it before the adapter reads it.
-  cleanDistDir: false,
-
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
