@@ -68,6 +68,13 @@ const nextConfig: NextConfig = {
   // Remove "X-Powered-By: Next.js" — reduces information disclosure
   poweredByHeader: false,
 
+  // Pin the file-tracing root to the project directory.
+  // Vercel's `modifyConfig` can inject a different path which causes
+  // middleware.js.nft.json to be written and read from mismatched locations,
+  // breaking the production build with ENOENT. In Next.js 16 this is a
+  // top-level key (moved out of `experimental`).
+  outputFileTracingRoot: path.resolve(__dirname),
+
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
@@ -91,11 +98,6 @@ const nextConfig: NextConfig = {
     },
     // Tree-shake large packages — reduces JS bundle size
     optimizePackageImports: ["lucide-react", "framer-motion", "recharts", "swiper"],
-    // Explicitly pin the tracing root to the project directory.
-    // This prevents Vercel's modifyConfig from injecting a mismatched
-    // outputFileTracingRoot that causes middleware.js.nft.json to be
-    // written to one path but read from another, breaking the build.
-    outputFileTracingRoot: path.resolve(__dirname),
   },
 
   async headers() {
