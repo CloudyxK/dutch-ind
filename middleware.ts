@@ -1,3 +1,4 @@
+// Edge middleware — runs on Vercel Edge Network before every request.
 import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
