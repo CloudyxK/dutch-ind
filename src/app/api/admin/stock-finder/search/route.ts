@@ -50,17 +50,75 @@ function generateKeywords(query: string, category: string): string[] {
   return [...new Set(keywords)].slice(0, 8);
 }
 
-// ─── Build marketplace search URLs ───────────────────────────────────────────
-function buildSearchLinks(keyword: string) {
+// ─── Build marketplace search URLs (with optional price filter) ───────────────
+function buildSearchLinks(keyword: string, priceMin?: number, priceMax?: number) {
   const enc = encodeURIComponent(keyword);
+
+  let shopee = `https://shopee.co.id/search?keyword=${enc}&sortBy=price&order=asc&is_official_shop=false`;
+  if (priceMin) shopee += `&price_min=${priceMin}`;
+  if (priceMax) shopee += `&price_max=${priceMax}`;
+
+  let tokopedia = `https://www.tokopedia.com/search?st=product&q=${enc}&source=universe&ob=3&page=1`;
+  if (priceMin) tokopedia += `&minPrice=${priceMin}`;
+  if (priceMax) tokopedia += `&maxPrice=${priceMax}`;
+
+  let lazada = `https://www.lazada.co.id/catalog/?q=${enc}&sort=priceasc`;
+  if (priceMin) lazada += `&price_min=${priceMin}`;
+  if (priceMax) lazada += `&price_max=${priceMax}`;
+
+  let blibli = `https://www.blibli.com/jual/${enc.replace(/%20/g, '-')}?sort=7`;
+  if (priceMin) blibli += `&minPrice=${priceMin}`;
+  if (priceMax) blibli += `&maxPrice=${priceMax}`;
+
   return {
-    shopee:    `https://shopee.co.id/search?keyword=${enc}&sortBy=price&order=asc&is_official_shop=false`,
-    tokopedia: `https://www.tokopedia.com/search?st=product&q=${enc}&source=universe&ob=3&page=1`,
-    lazada:    `https://www.lazada.co.id/catalog/?q=${enc}&sort=priceasc`,
-    facebook:  `https://www.facebook.com/marketplace/category/clothing/?query=${enc}`,
-    tiktok:    `https://www.tiktok.com/search?q=${enc}&type=product`,
-    blibli:    `https://www.blibli.com/jual/${enc.replace(/%20/g, '-')}?sort=7`,
+    shopee,
+    tokopedia,
+    lazada,
+    facebook: `https://www.facebook.com/marketplace/category/clothing/?query=${enc}`,
+    tiktok:   `https://www.tiktok.com/search?q=${enc}&type=product`,
+    blibli,
   };
+}
+
+// ─── Fetch matching products from our store ───────────────────────────────────
+async function getRelatedProducts(query: string, category: string) {
+  try {
+    const words = query.toLowerCase().split(/\s+/).filter(w => w.length > 2).slice(0, 4);
+    const products = await prisma.product.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          ...words.map(w => ({ name: { contains: w, mode: "insensitive" as const } })),
+          ...words.map(w => ({ tags: { contains: w,  mode: "insensitive" as const } })),
+          { category: { name: { contains: category, mode: "insensitive" as const } } },
+        ],
+      },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        price: true,
+        totalStock: true,
+        images: {
+          where: { isPrimary: true },
+          select: { url: true, alt: true },
+          take: 1,
+        },
+      },
+      orderBy: { totalStock: "asc" }, // low stock first — most relevant to restock
+      take: 6,
+    });
+    return products.map(p => ({
+      id:         p.id,
+      name:       p.name,
+      slug:       p.slug,
+      price:      p.price,
+      totalStock: p.totalStock,
+      image:      p.images[0]?.url ?? null,
+    }));
+  } catch {
+    return [];
+  }
 }
 
 // ─── Optional: Call Claude AI if ANTHROPIC_API_KEY is set ─────────────────────
@@ -112,27 +170,32 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { query, category = "general" } = body;
+    const { query, category = "general", priceMin, priceMax } = body;
 
     if (!query?.trim()) {
       return NextResponse.json({ error: "Kata kunci wajib diisi" }, { status: 400 });
     }
 
-    const cleanQuery = String(query).trim().slice(0, 100);
-    const cleanCat   = String(category).trim().toLowerCase();
+    const cleanQuery    = String(query).trim().slice(0, 100);
+    const cleanCat      = String(category).trim().toLowerCase();
+    const cleanPriceMin = priceMin ? Number(priceMin) : undefined;
+    const cleanPriceMax = priceMax ? Number(priceMax) : undefined;
 
-    // Generate keywords + links
+    // Generate keywords + links (with optional price filter)
     const keywords = generateKeywords(cleanQuery, cleanCat);
     const estimate = PRICE_ESTIMATES[cleanCat] ?? PRICE_ESTIMATES.general;
 
     // Build results per keyword × platform
     const results = keywords.map((kw) => ({
       keyword: kw,
-      links:   buildSearchLinks(kw),
+      links:   buildSearchLinks(kw, cleanPriceMin, cleanPriceMax),
     }));
 
-    // AI insight (optional)
-    const aiNotes = await callAI(cleanQuery, cleanCat);
+    // Fetch related products from our store + AI insight (parallel)
+    const [aiNotes, relatedProducts] = await Promise.all([
+      callAI(cleanQuery, cleanCat),
+      getRelatedProducts(cleanQuery, cleanCat),
+    ]);
 
     // Save search history
     await prisma.stockSearch.create({
@@ -153,6 +216,9 @@ export async function POST(request: NextRequest) {
         keywords,
         results,
         aiNotes,
+        relatedProducts,
+        priceMin: cleanPriceMin,
+        priceMax: cleanPriceMax,
         platforms: Object.keys(buildSearchLinks("")),
       },
     });

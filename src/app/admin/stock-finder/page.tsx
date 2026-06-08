@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import {
   Search, Sparkles, ExternalLink, Plus, Trash2, Star, RefreshCw,
   ShoppingBag, Package, Loader2, ChevronDown, ChevronUp, BookmarkPlus,
-  TrendingDown, Clock, Globe, CheckCircle2, X, Filter,
+  TrendingDown, Clock, Globe, CheckCircle2, X, Filter, SlidersHorizontal,
+  ImageOff, AlertCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -15,6 +17,15 @@ interface SearchResult {
   links: Record<string, string>;
 }
 
+interface RelatedProduct {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  totalStock: number;
+  image: string | null;
+}
+
 interface SearchData {
   query: string;
   category: string;
@@ -22,7 +33,10 @@ interface SearchData {
   keywords: string[];
   results: SearchResult[];
   aiNotes: string | null;
+  relatedProducts: RelatedProduct[];
   platforms: string[];
+  priceMin?: number;
+  priceMax?: number;
 }
 
 interface Source {
@@ -91,6 +105,8 @@ export default function StockFinderPage() {
   // Search state
   const [query,    setQuery]    = useState("");
   const [category, setCategory] = useState("hoodie");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [searching, setSearching] = useState(false);
   const [result,   setResult]   = useState<SearchData | null>(null);
   const [expandedKw, setExpandedKw] = useState<string | null>(null);
@@ -144,7 +160,12 @@ export default function StockFinderPage() {
       const r = await fetch("/api/admin/stock-finder/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), category }),
+        body: JSON.stringify({
+          query:    query.trim(),
+          category,
+          priceMin: priceMin ? Number(priceMin) : undefined,
+          priceMax: priceMax ? Number(priceMax) : undefined,
+        }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
@@ -298,6 +319,53 @@ export default function StockFinderPage() {
               </select>
             </div>
 
+            {/* Price filter */}
+            <div className="mb-4">
+              <p className="text-[10px] uppercase tracking-widest text-brand-gray-500 mb-2 flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3 h-3" /> Filter Harga Grosir (Rp):
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-brand-gray-500">Min</span>
+                  <input
+                    type="number"
+                    value={priceMin}
+                    onChange={e => setPriceMin(e.target.value)}
+                    placeholder="Contoh: 30000"
+                    className="input-field pl-10 w-full text-sm"
+                    min={0}
+                  />
+                </div>
+                <span className="text-brand-gray-600 text-sm flex-shrink-0">–</span>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-brand-gray-500">Max</span>
+                  <input
+                    type="number"
+                    value={priceMax}
+                    onChange={e => setPriceMax(e.target.value)}
+                    placeholder="Contoh: 120000"
+                    className="input-field pl-10 w-full text-sm"
+                    min={0}
+                  />
+                </div>
+                {(priceMin || priceMax) && (
+                  <button
+                    onClick={() => { setPriceMin(""); setPriceMax(""); }}
+                    className="p-2 text-brand-gray-500 hover:text-white transition-colors flex-shrink-0"
+                    title="Reset filter harga"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+              {(priceMin || priceMax) && (
+                <p className="text-[10px] text-amber-400/80 mt-1.5 flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Filter harga akan diterapkan ke URL Shopee, Tokopedia, Lazada &amp; Blibli
+                </p>
+              )}
+            </div>
+
             {/* Platform filter */}
             <div className="mb-4">
               <p className="text-[10px] uppercase tracking-widest text-brand-gray-500 mb-2">Cari di Platform:</p>
@@ -347,10 +415,81 @@ export default function StockFinderPage() {
                   </p>
                 </div>
                 <div className="flex-1" />
-                <div className="text-xs text-amber-300/70">
-                  {result.keywords.length} variasi kata kunci · {activePlatforms.size} platform aktif
+                <div className="flex flex-col items-end gap-1">
+                  <div className="text-xs text-amber-300/70">
+                    {result.keywords.length} variasi kata kunci · {activePlatforms.size} platform aktif
+                  </div>
+                  {(result.priceMin || result.priceMax) && (
+                    <div className="text-[10px] text-amber-400 flex items-center gap-1">
+                      <SlidersHorizontal className="w-3 h-3" />
+                      Filter: {result.priceMin ? formatPrice(result.priceMin) : "?"} – {result.priceMax ? formatPrice(result.priceMax) : "?"}
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Related products from our store */}
+              {result.relatedProducts && result.relatedProducts.length > 0 && (
+                <div className="bg-brand-gray-900 border border-brand-gray-700 p-5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-400 mb-3 flex items-center gap-2">
+                    <Package className="w-4 h-4" /> Produk di Tokomu yang Terkait
+                    <span className="text-brand-gray-600 font-normal normal-case tracking-normal">— perlu restock?</span>
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                    {result.relatedProducts.map(p => (
+                      <a
+                        key={p.id}
+                        href={`/admin/products`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="group flex flex-col bg-brand-gray-800 border border-brand-gray-700 hover:border-brand-gray-500 transition-colors overflow-hidden"
+                      >
+                        {/* Image */}
+                        <div className="relative w-full aspect-square bg-brand-gray-700 overflow-hidden">
+                          {p.image ? (
+                            <Image
+                              src={p.image}
+                              alt={p.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-300"
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center w-full h-full">
+                              <ImageOff className="w-6 h-6 text-brand-gray-600" />
+                            </div>
+                          )}
+                          {/* Stock badge */}
+                          <div className={`absolute top-1.5 right-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded-sm ${
+                            p.totalStock === 0
+                              ? "bg-red-900/90 text-red-300"
+                              : p.totalStock <= 5
+                              ? "bg-amber-900/90 text-amber-300"
+                              : "bg-green-900/90 text-green-300"
+                          }`}>
+                            {p.totalStock === 0 ? "Habis" : `${p.totalStock} pcs`}
+                          </div>
+                        </div>
+                        {/* Info */}
+                        <div className="p-2 flex-1 flex flex-col gap-0.5">
+                          <p className="text-[10px] font-medium leading-tight line-clamp-2 text-white/80 group-hover:text-white transition-colors">
+                            {p.name}
+                          </p>
+                          <p className="text-[10px] text-green-400 font-bold mt-auto">
+                            {formatPrice(p.price)}
+                          </p>
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                  {result.relatedProducts.some(p => p.totalStock === 0) && (
+                    <p className="text-[10px] text-red-400/70 mt-3 flex items-center gap-1.5">
+                      <AlertCircle className="w-3 h-3" />
+                      Ada produk yang stoknya habis — prioritaskan restock item tersebut
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* AI Notes */}
               {result.aiNotes && (
