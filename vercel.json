@@ -1,5 +1,6 @@
 {
   "buildCommand": "npx prisma generate && npx prisma db push --accept-data-loss && npx next build",
+  "framework": null,
   "crons": [
     {
       "path": "/api/cron/abandoned-cart",
