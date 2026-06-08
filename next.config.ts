@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 // ─── Security Headers ─────────────────────────────────────────────────────────
 // Applied to every response via headers() config.
@@ -90,6 +91,11 @@ const nextConfig: NextConfig = {
     },
     // Tree-shake large packages — reduces JS bundle size
     optimizePackageImports: ["lucide-react", "framer-motion", "recharts", "swiper"],
+    // Explicitly pin the tracing root to the project directory.
+    // This prevents Vercel's modifyConfig from injecting a mismatched
+    // outputFileTracingRoot that causes middleware.js.nft.json to be
+    // written to one path but read from another, breaking the build.
+    outputFileTracingRoot: path.resolve(__dirname),
   },
 
   async headers() {
