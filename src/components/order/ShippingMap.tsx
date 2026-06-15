@@ -46,7 +46,6 @@ export default function ShippingMap({ originCoords, destCoords, originLabel, des
         dragging: false,
         doubleClickZoom: false,
         keyboard: false,
-        tap: false,
         touchZoom: false,
       });
 

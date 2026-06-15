@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import {
   Search, Sparkles, ExternalLink, Plus, Trash2,
   ShoppingBag, Package, Loader2, ChevronDown, ChevronUp, BookmarkPlus,
   TrendingDown, Clock, Globe, CheckCircle2, X, Filter, SlidersHorizontal,
   ImageOff, AlertCircle, Star, MapPin, Store, ShoppingCart,
+  Calculator, Bookmark, BookmarkCheck, TrendingUp, RefreshCw, PackagePlus, Minus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -89,6 +91,36 @@ interface ProductSearchState {
   errors?:        string[];
 }
 
+interface BookmarkItem {
+  id:           string;
+  name:         string;
+  price:        number;          // harga saat disimpan
+  lastPrice:    number;          // harga terakhir dicek
+  image:        string | null;
+  url:          string;
+  platform:     string;
+  platformId:   string;
+  shop:         string | null;
+  location:     string | null;
+  rating:       number | null;
+  sold:         string | null;
+  notes:        string | null;
+  priceHistory: string;          // JSON
+  isTracking:   boolean;
+  createdAt:    string;
+  updatedAt:    string;
+}
+
+interface ProductHistoryItem {
+  id:        string;
+  query:     string;
+  priceMin:  number | null;
+  priceMax:  number | null;
+  platforms: string;
+  count:     number;
+  createdAt: string;
+}
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -128,6 +160,8 @@ function timeAgo(iso: string) {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function StockFinderPage() {
+  const router = useRouter();
+
   // Search state
   const [query,    setQuery]    = useState("");
   const [category, setCategory] = useState("hoodie");
@@ -149,13 +183,24 @@ export default function StockFinderPage() {
   const [pResult,         setPResult]         = useState<ProductSearchState | null>(null);
   const [pSortBy,         setPSortBy]         = useState<"price" | "rating" | "sold">("price");
 
+  // Margin calculator — per-product expanded panel + intended sell price
+  const [marginOpenId, setMarginOpenId] = useState<string | null>(null);
+  const [marginSell,   setMarginSell]   = useState<Record<string, string>>({});
+
+  // Bookmark / price-tracking state
+  const [bookmarks,        setBookmarks]        = useState<BookmarkItem[]>([]);
+  const [loadingBookmarks, setLoadingBookmarks] = useState(false);
+  const [checkingId,       setCheckingId]       = useState<string | null>(null);
+  const [savingBookmarkId, setSavingBookmarkId] = useState<string | null>(null);
+  const [productHistory,   setProductHistory]   = useState<ProductHistoryItem[]>([]);
+
   // Sources state
   const [sources,        setSources]        = useState<Source[]>([]);
   const [history,        setHistory]        = useState<SearchHistory[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
   const [showAddForm,    setShowAddForm]    = useState(false);
   const [filterCat,      setFilterCat]      = useState("all");
-  const [activeTab,      setActiveTab]      = useState<"search" | "products" | "sources" | "history">("search");
+  const [activeTab,      setActiveTab]      = useState<"search" | "products" | "bookmarks" | "sources" | "history">("search");
 
   // Add source form
   const [newSource, setNewSource] = useState({
@@ -166,6 +211,8 @@ export default function StockFinderPage() {
   useEffect(() => {
     fetchSources();
     fetchHistory();
+    fetchBookmarks();
+    fetchProductHistory();
   }, []);
 
   async function fetchSources() {
@@ -290,6 +337,7 @@ export default function StockFinderPage() {
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
       setPResult(d.data);
+      fetchProductHistory();
     } catch (e: any) {
       toast.error(e.message ?? "Gagal mencari produk");
     } finally {
@@ -309,8 +357,99 @@ export default function StockFinderPage() {
     });
   }
 
+  // ─── Bookmarks (#2) + Price tracking (#3) ───────────────────────────────────
+  async function fetchBookmarks() {
+    setLoadingBookmarks(true);
+    try {
+      const r = await fetch("/api/admin/stock-finder/bookmarks");
+      const d = await r.json();
+      setBookmarks(d.data ?? []);
+    } catch {} finally {
+      setLoadingBookmarks(false);
+    }
+  }
+
+  async function fetchProductHistory() {
+    try {
+      const r = await fetch("/api/admin/stock-finder/product-history");
+      const d = await r.json();
+      setProductHistory(d.data ?? []);
+    } catch {}
+  }
+
+  const bookmarkedIds = new Set(bookmarks.map(b => b.platformId));
+
+  async function saveBookmark(p: ProductResult) {
+    if (bookmarkedIds.has(p.id)) { toast("Produk ini sudah dibookmark", { icon: "🔖" }); return; }
+    setSavingBookmarkId(p.id);
+    try {
+      const r = await fetch("/api/admin/stock-finder/bookmarks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: p.id, name: p.name, price: p.price, image: p.image,
+          url: p.url, platform: p.platform, shop: p.shop,
+          location: p.location, rating: p.rating, sold: p.sold,
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setBookmarks(prev => [d.data, ...prev]);
+      toast.success("Produk dibookmark — harga akan dipantau");
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal menyimpan bookmark");
+    } finally {
+      setSavingBookmarkId(null);
+    }
+  }
+
+  async function deleteBookmark(id: string) {
+    if (!confirm("Hapus bookmark ini?")) return;
+    try {
+      await fetch(`/api/admin/stock-finder/bookmarks/${id}`, { method: "DELETE" });
+      setBookmarks(prev => prev.filter(b => b.id !== id));
+      toast.success("Bookmark dihapus");
+    } catch { toast.error("Gagal menghapus"); }
+  }
+
+  async function checkBookmarkPrice(id: string) {
+    setCheckingId(id);
+    try {
+      const r = await fetch(`/api/admin/stock-finder/bookmarks/${id}`, { method: "POST" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error);
+      setBookmarks(prev => prev.map(b => b.id === id ? d.data : b));
+      const { change, changePct } = d.meta;
+      if (change === 0)      toast("Harga tidak berubah", { icon: "➖" });
+      else if (change > 0)   toast.error(`Harga NAIK ${changePct}% (+${formatPrice(change)})`);
+      else                   toast.success(`Harga TURUN ${Math.abs(changePct)}% (${formatPrice(change)})`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Gagal cek harga");
+    } finally {
+      setCheckingId(null);
+    }
+  }
+
+  // ─── Add to store (#7) — prefill new-product form via sessionStorage ─────────
+  function addToStore(p: { name: string; price: number; image: string | null }) {
+    try {
+      sessionStorage.setItem("stockfinder_prefill", JSON.stringify({
+        name:  p.name,
+        cost:  p.price,
+        image: p.image ?? "",
+      }));
+      toast.success("Membuka form produk baru...");
+      router.push("/admin/products/new?from=stockfinder");
+    } catch {
+      toast.error("Gagal membuka form produk");
+    }
+  }
+
   const filteredSources = filterCat === "all" ? sources : sources.filter(s => s.category === filterCat);
   const catEmoji = (c: string) => CATEGORIES.find(x => x.value === c)?.emoji ?? "📦";
+
+  // Bookmarks with detected price changes (for tab badge)
+  const bookmarksWithChange = bookmarks.filter(b => b.lastPrice !== b.price).length;
 
   return (
     <div className="space-y-6">
@@ -339,10 +478,11 @@ export default function StockFinderPage() {
       {/* Tabs */}
       <div className="flex border-b border-brand-gray-700">
         {[
-          { key: "search",   label: "🔍 Cari Stok Grosir",  count: null },
-          { key: "products", label: "🛒 Cari Produk Nyata",  count: pResult?.count ?? null },
-          { key: "sources",  label: "📋 Supplier Tersimpan", count: sources.length },
-          { key: "history",  label: "🕐 Histori",            count: history.length },
+          { key: "search",    label: "🔍 Cari Stok Grosir",  count: null },
+          { key: "products",  label: "🛒 Cari Produk Nyata",  count: pResult?.count ?? null },
+          { key: "bookmarks", label: "🔖 Produk Disimpan",    count: bookmarks.length },
+          { key: "sources",   label: "📋 Supplier",           count: sources.length },
+          { key: "history",   label: "🕐 Histori",            count: history.length + productHistory.length },
         ].map(tab => (
           <button
             key={tab.key}
@@ -827,16 +967,24 @@ export default function StockFinderPage() {
                     const discount = p.priceOriginal
                       ? Math.round((1 - p.price / p.priceOriginal) * 100)
                       : null;
+                    const isBookmarked = bookmarkedIds.has(p.id);
+                    const marginOpen   = marginOpenId === p.id;
+                    const sellVal      = Number(marginSell[p.id] ?? "");
+                    const profit       = sellVal > 0 ? sellVal - p.price : 0;
+                    const marginPct    = sellVal > 0 ? Math.round((profit / sellVal) * 100) : 0;
+                    const markupPct    = p.price > 0 && sellVal > 0 ? Math.round((profit / p.price) * 100) : 0;
                     return (
-                      <a
+                      <div
                         key={p.id}
-                        href={p.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
                         className="group flex flex-col bg-brand-gray-900 border border-brand-gray-700 hover:border-brand-gray-400 transition-all duration-200 overflow-hidden"
                       >
-                        {/* Image */}
-                        <div className="relative w-full aspect-square bg-brand-gray-800 overflow-hidden flex-shrink-0">
+                        {/* Image (clickable → opens product) */}
+                        <a
+                          href={p.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative w-full aspect-square bg-brand-gray-800 overflow-hidden flex-shrink-0 block"
+                        >
                           {p.image ? (
                             <Image
                               src={p.image}
@@ -867,13 +1015,14 @@ export default function StockFinderPage() {
                               <ExternalLink className="w-3 h-3" /> Lihat
                             </div>
                           </div>
-                        </div>
+                        </a>
 
                         {/* Info */}
                         <div className="p-2.5 flex flex-col gap-1 flex-1">
-                          <p className="text-[11px] leading-tight line-clamp-2 text-white/80 group-hover:text-white transition-colors">
+                          <a href={p.url} target="_blank" rel="noopener noreferrer"
+                            className="text-[11px] leading-tight line-clamp-2 text-white/80 hover:text-white transition-colors">
                             {p.name}
-                          </p>
+                          </a>
 
                           {/* Price */}
                           <div className="mt-auto pt-1">
@@ -905,8 +1054,92 @@ export default function StockFinderPage() {
                               {p.location && <span className="flex items-center gap-0.5 mt-0.5"><MapPin className="w-2.5 h-2.5 inline" /> {p.location}</span>}
                             </div>
                           )}
+
+                          {/* ── Margin calculator (#1) ── */}
+                          {marginOpen && (
+                            <div className="mt-2 pt-2 border-t border-brand-gray-700 space-y-1.5">
+                              <p className="text-[9px] uppercase tracking-wider text-brand-gray-500 flex items-center gap-1">
+                                <Calculator className="w-3 h-3" /> Hitung Margin
+                              </p>
+                              <div className="flex items-center justify-between text-[10px] text-brand-gray-400">
+                                <span>Modal</span>
+                                <span className="font-bold text-white">{p.priceFormatted}</span>
+                              </div>
+                              <div>
+                                <label className="text-[9px] text-brand-gray-500">Harga jual rencanamu</label>
+                                <input
+                                  type="number"
+                                  value={marginSell[p.id] ?? ""}
+                                  onChange={e => setMarginSell(prev => ({ ...prev, [p.id]: e.target.value }))}
+                                  placeholder="Contoh: 250000"
+                                  className="input-field text-xs w-full mt-0.5 py-1"
+                                  min={0}
+                                />
+                              </div>
+                              {sellVal > 0 && (
+                                <div className={`text-[10px] space-y-0.5 p-1.5 ${profit >= 0 ? "bg-green-950/40" : "bg-red-950/40"}`}>
+                                  <div className="flex justify-between">
+                                    <span className="text-brand-gray-400">Profit/pcs</span>
+                                    <span className={`font-bold ${profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                                      {formatPrice(profit)}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-brand-gray-400">Margin</span>
+                                    <span className={`font-bold ${marginPct >= 0 ? "text-green-400" : "text-red-400"}`}>{marginPct}%</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-brand-gray-400">Markup</span>
+                                    <span className="text-brand-gray-300">{markupPct}%</span>
+                                  </div>
+                                  <div className="flex justify-between pt-0.5 border-t border-white/10">
+                                    <span className="text-brand-gray-400">Profit 12 pcs</span>
+                                    <span className={`font-bold ${profit >= 0 ? "text-green-400" : "text-red-400"}`}>
+                                      {formatPrice(profit * 12)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* ── Action buttons ── */}
+                          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-brand-gray-800">
+                            <button
+                              onClick={() => saveBookmark(p)}
+                              disabled={isBookmarked || savingBookmarkId === p.id}
+                              title={isBookmarked ? "Sudah dibookmark" : "Bookmark & pantau harga"}
+                              className={`p-1.5 border transition-colors ${
+                                isBookmarked
+                                  ? "border-amber-700/50 text-amber-400 bg-amber-900/20"
+                                  : "border-brand-gray-700 text-brand-gray-400 hover:text-white hover:border-brand-gray-500"
+                              }`}
+                            >
+                              {savingBookmarkId === p.id
+                                ? <Loader2 className="w-3 h-3 animate-spin" />
+                                : isBookmarked ? <BookmarkCheck className="w-3 h-3" /> : <Bookmark className="w-3 h-3" />}
+                            </button>
+                            <button
+                              onClick={() => setMarginOpenId(marginOpen ? null : p.id)}
+                              title="Hitung margin"
+                              className={`p-1.5 border transition-colors ${
+                                marginOpen
+                                  ? "border-white text-white bg-white/10"
+                                  : "border-brand-gray-700 text-brand-gray-400 hover:text-white hover:border-brand-gray-500"
+                              }`}
+                            >
+                              <Calculator className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={() => addToStore(p)}
+                              title="Tambah ke toko"
+                              className="flex-1 p-1.5 border border-brand-gray-700 text-brand-gray-400 hover:text-white hover:border-brand-gray-500 transition-colors flex items-center justify-center gap-1 text-[10px] font-bold"
+                            >
+                              <PackagePlus className="w-3 h-3" /> Ke Toko
+                            </button>
+                          </div>
                         </div>
-                      </a>
+                      </div>
                     );
                   })}
                 </div>
@@ -920,6 +1153,120 @@ export default function StockFinderPage() {
               <ShoppingCart className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p className="text-sm">Cari produk spesifik dari Shopee &amp; Tokopedia</p>
               <p className="text-xs mt-1">Contoh: &quot;rucas ultra stitch&quot;, &quot;rucas tailor&quot;, &quot;visvim&quot;</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Tab: Bookmarked Products (#2 + #3) ─────────────────────────────────── */}
+      {activeTab === "bookmarks" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <p className="text-sm font-semibold text-white flex items-center gap-2">
+                <Bookmark className="w-4 h-4 text-amber-400" /> Produk Disimpan
+              </p>
+              <p className="text-[11px] text-brand-gray-500 mt-0.5">
+                Produk dari marketplace yang kamu pantau harganya. Klik "Cek Harga" untuk update harga terbaru.
+              </p>
+            </div>
+            {bookmarksWithChange > 0 && (
+              <span className="text-[10px] text-amber-400 flex items-center gap-1 border border-amber-700/40 bg-amber-900/20 px-2 py-1">
+                <AlertCircle className="w-3 h-3" /> {bookmarksWithChange} produk berubah harga
+              </span>
+            )}
+          </div>
+
+          {loadingBookmarks ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-brand-gray-500" />
+            </div>
+          ) : bookmarks.length === 0 ? (
+            <div className="text-center py-16 text-brand-gray-600">
+              <Bookmark className="w-12 h-12 mx-auto mb-3 opacity-20" />
+              <p className="text-sm">Belum ada produk disimpan</p>
+              <p className="text-xs mt-1">Cari produk di tab "Cari Produk Nyata" lalu klik ikon bookmark</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {bookmarks.map(b => {
+                const platCfg = PLATFORM_CONFIG[b.platform] ?? { label: b.platform, color: "text-white border-brand-gray-700", icon: "🔗" };
+                const change    = b.lastPrice - b.price;
+                const changePct = b.price > 0 ? Math.round((change / b.price) * 100) : 0;
+                const history: { price: number; checkedAt: string }[] = (() => {
+                  try { return JSON.parse(b.priceHistory); } catch { return []; }
+                })();
+                const prices  = history.map(h => h.price);
+                const lowest  = prices.length ? Math.min(...prices) : b.lastPrice;
+                const highest = prices.length ? Math.max(...prices) : b.lastPrice;
+                return (
+                  <div key={b.id} className="bg-brand-gray-900 border border-brand-gray-700 p-3 flex gap-3">
+                    {/* Image */}
+                    <a href={b.url} target="_blank" rel="noopener noreferrer"
+                      className="relative w-20 h-20 bg-brand-gray-800 flex-shrink-0 overflow-hidden">
+                      {b.image ? (
+                        <Image src={b.image} alt={b.name} fill className="object-cover" sizes="80px" unoptimized />
+                      ) : (
+                        <div className="flex items-center justify-center w-full h-full"><ImageOff className="w-6 h-6 text-brand-gray-600" /></div>
+                      )}
+                      <div className={`absolute bottom-0 left-0 text-[8px] font-bold px-1 ${platCfg.color}`}>{platCfg.icon}</div>
+                    </a>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <a href={b.url} target="_blank" rel="noopener noreferrer"
+                        className="text-xs font-medium line-clamp-2 text-white/90 hover:text-white">{b.name}</a>
+
+                      {/* Current price + change */}
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-sm font-bold text-white">{formatPrice(b.lastPrice)}</span>
+                        {change !== 0 && (
+                          <span className={`text-[10px] font-bold flex items-center gap-0.5 ${change > 0 ? "text-red-400" : "text-green-400"}`}>
+                            {change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                            {change > 0 ? "+" : ""}{changePct}%
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Price range since tracking */}
+                      {prices.length > 1 && (
+                        <p className="text-[10px] text-brand-gray-500 mt-0.5">
+                          Terendah {formatPrice(lowest)} · Tertinggi {formatPrice(highest)} · {prices.length}× dicek
+                        </p>
+                      )}
+                      <p className="text-[10px] text-brand-gray-600 mt-0.5">
+                        Disimpan {timeAgo(b.createdAt)}{b.shop ? ` · ${b.shop}` : ""}
+                      </p>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <button
+                          onClick={() => checkBookmarkPrice(b.id)}
+                          disabled={checkingId === b.id}
+                          className="text-[10px] flex items-center gap-1 px-2 py-1 border border-brand-gray-700 text-brand-gray-300 hover:text-white hover:border-brand-gray-500 transition-colors disabled:opacity-50"
+                        >
+                          {checkingId === b.id
+                            ? <Loader2 className="w-3 h-3 animate-spin" />
+                            : <RefreshCw className="w-3 h-3" />}
+                          Cek Harga
+                        </button>
+                        <button
+                          onClick={() => addToStore({ name: b.name, price: b.lastPrice, image: b.image })}
+                          className="text-[10px] flex items-center gap-1 px-2 py-1 border border-brand-gray-700 text-brand-gray-300 hover:text-white hover:border-brand-gray-500 transition-colors"
+                        >
+                          <PackagePlus className="w-3 h-3" /> Ke Toko
+                        </button>
+                        <button
+                          onClick={() => deleteBookmark(b.id)}
+                          className="text-[10px] p-1 text-brand-gray-600 hover:text-red-400 transition-colors ml-auto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1119,27 +1466,68 @@ export default function StockFinderPage() {
 
       {/* ── Tab: History ──────────────────────────────────────────────────────── */}
       {activeTab === "history" && (
-        <div className="space-y-3">
-          {history.length === 0 ? (
+        <div className="space-y-6">
+          {history.length === 0 && productHistory.length === 0 && (
             <div className="text-center py-16 text-brand-gray-600">
               <Clock className="w-12 h-12 mx-auto mb-3 opacity-30" />
               <p className="text-sm">Belum ada histori pencarian</p>
             </div>
-          ) : (
-            history.map(h => (
-              <div key={h.id}
-                className="bg-brand-gray-900 border border-brand-gray-700 p-4 flex items-center gap-4 cursor-pointer hover:border-brand-gray-500 transition-colors"
-                onClick={() => { setQuery(h.query); setCategory(h.category); setActiveTab("search"); }}>
-                <Clock className="w-4 h-4 text-brand-gray-500 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{h.query}</p>
-                  <p className="text-[10px] text-brand-gray-500">
-                    {catEmoji(h.category)} {h.category} · {timeAgo(h.createdAt)}
-                  </p>
+          )}
+
+          {/* Product search history (#6) */}
+          {productHistory.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-500 flex items-center gap-2">
+                <ShoppingCart className="w-3.5 h-3.5" /> Pencarian Produk Nyata
+              </p>
+              {productHistory.map(h => (
+                <div key={h.id}
+                  className="bg-brand-gray-900 border border-brand-gray-700 p-3 flex items-center gap-3 cursor-pointer hover:border-brand-gray-500 transition-colors"
+                  onClick={() => {
+                    setPQuery(h.query);
+                    setPPriceMin(h.priceMin ? String(h.priceMin) : "");
+                    setPPriceMax(h.priceMax ? String(h.priceMax) : "");
+                    setPPlatforms(new Set(h.platforms.split(",")));
+                    setActiveTab("products");
+                  }}>
+                  <ShoppingCart className="w-4 h-4 text-brand-gray-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{h.query}</p>
+                    <p className="text-[10px] text-brand-gray-500">
+                      {h.count} hasil
+                      {(h.priceMin || h.priceMax) && (
+                        <> · {h.priceMin ? formatPrice(h.priceMin) : "?"} – {h.priceMax ? formatPrice(h.priceMax) : "?"}</>
+                      )}
+                      {" · "}{timeAgo(h.createdAt)}
+                    </p>
+                  </div>
+                  <Search className="w-4 h-4 text-brand-gray-600 flex-shrink-0" />
                 </div>
-                <Search className="w-4 h-4 text-brand-gray-600 flex-shrink-0" />
-              </div>
-            ))
+              ))}
+            </div>
+          )}
+
+          {/* Grosir keyword search history */}
+          {history.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-gray-500 flex items-center gap-2">
+                <Search className="w-3.5 h-3.5" /> Pencarian Stok Grosir
+              </p>
+              {history.map(h => (
+                <div key={h.id}
+                  className="bg-brand-gray-900 border border-brand-gray-700 p-3 flex items-center gap-3 cursor-pointer hover:border-brand-gray-500 transition-colors"
+                  onClick={() => { setQuery(h.query); setCategory(h.category); setActiveTab("search"); }}>
+                  <Clock className="w-4 h-4 text-brand-gray-500 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{h.query}</p>
+                    <p className="text-[10px] text-brand-gray-500">
+                      {catEmoji(h.category)} {h.category} · {timeAgo(h.createdAt)}
+                    </p>
+                  </div>
+                  <Search className="w-4 h-4 text-brand-gray-600 flex-shrink-0" />
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

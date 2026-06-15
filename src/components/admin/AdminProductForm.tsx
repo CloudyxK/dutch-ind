@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, X, ImagePlus, Loader2, Link as LinkIcon, GripVertical } from "lucide-react";
+import { Plus, X, ImagePlus, Loader2, Link as LinkIcon, GripVertical, Sparkles } from "lucide-react";
 import { slugify } from "@/lib/utils";
 import Image from "next/image";
 
@@ -74,6 +74,30 @@ export default function AdminProductForm({ categories, initialData }: Props) {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [prefillNote, setPrefillNote] = useState<{ cost: number } | null>(null);
+
+  // Prefill from Stock Finder "Tambah ke Toko" (#7)
+  useEffect(() => {
+    if (isEdit) return;
+    try {
+      const raw = sessionStorage.getItem("stockfinder_prefill");
+      if (!raw) return;
+      sessionStorage.removeItem("stockfinder_prefill");
+      const data = JSON.parse(raw) as { name?: string; cost?: number; image?: string };
+
+      setForm((prev) => ({
+        ...prev,
+        name: data.name ?? prev.name,
+        slug: data.name ? slugify(data.name) : prev.slug,
+        // Suggested retail price = cost × 2.2 (rounded to nearest 1.000)
+        price: data.cost ? String(Math.round((data.cost * 2.2) / 1000) * 1000) : prev.price,
+      }));
+      if (data.image) setImages([data.image]);
+      if (data.cost) setPrefillNote({ cost: data.cost });
+      toast.success("Data produk diisi dari Stock Finder");
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNameChange = (name: string) => {
     setForm((prev) => ({
@@ -223,6 +247,18 @@ export default function AdminProductForm({ categories, initialData }: Props) {
     <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Main info */}
       <div className="lg:col-span-2 space-y-5">
+        {prefillNote && (
+          <div className="bg-amber-900/20 border border-amber-700/40 p-4 flex items-start gap-3 lg:col-span-2">
+            <Sparkles className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-100/90">
+              <p className="font-bold text-amber-400">Diisi dari Stock Finder</p>
+              <p className="mt-0.5">
+                Modal grosir <span className="font-bold">Rp {prefillNote.cost.toLocaleString("id-ID")}</span> ·
+                Harga jual disarankan otomatis (markup 2,2×). Sesuaikan harga, foto, varian &amp; stok sebelum menyimpan.
+              </p>
+            </div>
+          </div>
+        )}
         <div className="bg-brand-gray-900 border border-brand-gray-700 p-6 space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-widest mb-4">Informasi Produk</h2>
 

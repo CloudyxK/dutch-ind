@@ -2,18 +2,36 @@ import Link from "next/link";
 import Image from "next/image";
 import prisma from "@/lib/prisma";
 import { formatPrice } from "@/lib/utils";
-import { Plus, Edit, Trash2, Upload } from "lucide-react";
+import { Plus, Upload, ChevronLeft, ChevronRight } from "lucide-react";
 import AdminProductActions from "@/components/admin/AdminProductActions";
 
-export default async function AdminProductsPage() {
-  const products = await prisma.product.findMany({
-    include: {
-      images: { take: 1, orderBy: { sortOrder: "asc" } },
-      category: true,
-      variants: true,
-    },
-    orderBy: { createdAt: "desc" },
-  });
+const PAGE_SIZE = 50;
+
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const sp = await searchParams;
+  const page = Math.max(1, parseInt(sp.page ?? "1") || 1);
+  const skip = (page - 1) * PAGE_SIZE;
+
+  // Only load fields used by the table; totalStock is a column so variants
+  // don't need to be fetched. Paginated to avoid loading the whole catalog.
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      include: {
+        images: { take: 1, orderBy: { sortOrder: "asc" } },
+        category: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: PAGE_SIZE,
+      skip,
+    }),
+    prisma.product.count(),
+  ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-6">
@@ -130,6 +148,38 @@ export default async function AdminProductsPage() {
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <p className="text-xs text-brand-gray-500">
+          Menampilkan {products.length === 0 ? 0 : skip + 1}–{skip + products.length} dari {total} produk
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
+            {page > 1 ? (
+              <Link href={`/admin/products?page=${page - 1}`}
+                className="flex items-center gap-1 px-3 py-1.5 border border-brand-gray-700 hover:border-white text-xs transition-colors">
+                <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 px-3 py-1.5 border border-brand-gray-800 text-xs text-brand-gray-700 cursor-not-allowed">
+                <ChevronLeft className="w-3.5 h-3.5" /> Sebelumnya
+              </span>
+            )}
+            <span className="text-xs text-brand-gray-400 px-2">Hal {page} / {totalPages}</span>
+            {page < totalPages ? (
+              <Link href={`/admin/products?page=${page + 1}`}
+                className="flex items-center gap-1 px-3 py-1.5 border border-brand-gray-700 hover:border-white text-xs transition-colors">
+                Berikutnya <ChevronRight className="w-3.5 h-3.5" />
+              </Link>
+            ) : (
+              <span className="flex items-center gap-1 px-3 py-1.5 border border-brand-gray-800 text-xs text-brand-gray-700 cursor-not-allowed">
+                Berikutnya <ChevronRight className="w-3.5 h-3.5" />
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

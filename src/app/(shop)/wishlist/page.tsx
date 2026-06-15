@@ -11,7 +11,7 @@ import type { Product } from "@/types";
 
 export default function WishlistPage() {
   const { items: wishlistIds } = useWishlistStore();
-  const { addItem, openCart } = useCartStore();
+  const { addItem } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [addingAll, setAddingAll] = useState(false);
@@ -69,11 +69,10 @@ export default function WishlistPage() {
       }
 
       try {
-        const promises = wishlistIds.map((id) =>
-          fetch(`/api/products/${id}`).then((r) => r.json())
-        );
-        const results = await Promise.all(promises);
-        setProducts(results.filter((r) => r.success).map((r) => r.data));
+        // Single batch request instead of N parallel fetches (avoids lag with large wishlists)
+        const r = await fetch(`/api/products/batch?ids=${wishlistIds.join(",")}`);
+        const d = await r.json();
+        setProducts(d.products ?? []);
       } catch {
         setProducts([]);
       } finally {

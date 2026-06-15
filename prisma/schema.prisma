@@ -517,3 +517,39 @@ model BundleItem {
   @@unique([bundleId, productId])
   @@map("bundle_items")
 }
+
+// ─── Stock Finder: bookmarked marketplace products ────────────────────────────
+model BookmarkedProduct {
+  id           String   @id @default(cuid())
+  name         String
+  price        Float                       // harga saat pertama kali disimpan
+  lastPrice    Float                       // harga saat terakhir dicek
+  image        String?
+  url          String
+  platform     String                      // "shopee" | "tokopedia"
+  platformId   String                      // "{shopid}_{itemid}" / product-id
+  shop         String?
+  location     String?
+  rating       Float?
+  sold         String?
+  notes        String?
+  priceHistory String   @default("[]")     // JSON: [{price,checkedAt}]
+  isTracking   Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("bookmarked_products")
+}
+
+// ─── Stock Finder: product search history ("Cari Produk Nyata") ───────────────
+model ProductSearch {
+  id        String   @id @default(cuid())
+  query     String
+  priceMin  Float?
+  priceMax  Float?
+  platforms String                         // comma-separated
+  count     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("product_searches")
+}

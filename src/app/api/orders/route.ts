@@ -49,7 +49,16 @@ export async function POST(request: NextRequest) {
 
     // Validasi stok dan hitung subtotal
     let subtotal = 0;
-    const validatedItems = [];
+    const validatedItems: Array<{
+      productId: string;
+      variantId: string;
+      quantity: number;
+      price: number;
+      subtotal: number;
+      productName: string;
+      size: string;
+      [key: string]: any;
+    }> = [];
 
     for (const item of items) {
       const variant = await prisma.productVariant.findUnique({
